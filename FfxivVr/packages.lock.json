@@ -7,6 +7,115 @@
         "requested": "[2.1.13, )",
         "resolved": "2.1.13",
         "contentHash": "rMN1omGe8536f4xLMvx9NwfvpAc9YFFfeXJ1t4P4PE6Gu8WCIoFliR1sh07hM+bfODmesk/dvMbji7vNI+B/pQ=="
+      },
+      "OpenXR.Loader": {
+        "type": "Direct",
+        "requested": "[1.0.10.2, )",
+        "resolved": "1.0.10.2",
+        "contentHash": "L6fNOSC1FanLkGIaiBjQT124E2xFa6uLDI43U8nlI3JEMFh1O2fLhlllSzkSoJyVLwbuldYoo55Z8ZJmSsNx/Q==",
+        "dependencies": {
+          "OpenXR.Headers": "1.0.10.2"
+        }
+      },
+      "Silk.NET.OpenXR": {
+        "type": "Direct",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "9nKrHqqjhM26VwUztDaFVj5xiOG6LcwPmPbBPLb2P9TLyClfF7E8nPT8vmNYUC9Sa1oudeac0n0E3kwItnruOg==",
+        "dependencies": {
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.Maths": "2.21.0"
+        }
+      },
+      "Silk.NET.OpenXR.Extensions.EXT": {
+        "type": "Direct",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "Kg3hHN37Hp48+OlruaJMzks2UdeO2vBhfoiSkrNwXSUHICDRO0Uym2vGjDeQtl1ZcXaGkWx1eUG0tzfmO2z5cQ==",
+        "dependencies": {
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.OpenXR": "2.21.0"
+        }
+      },
+      "Silk.NET.OpenXR.Extensions.FB": {
+        "type": "Direct",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "mQ6lV7TyLqgZwXzS0/lMAbPCShi5sNNTJCh35+QoFNduZJvcAh2BBKEJ9m1ql8gyz3Tbz6KjsHpeGLyjHGJa/w==",
+        "dependencies": {
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.OpenXR": "2.21.0"
+        }
+      },
+      "Microsoft.CSharp": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA=="
+      },
+      "Microsoft.DotNet.PlatformAbstractions": {
+        "type": "Transitive",
+        "resolved": "3.1.6",
+        "contentHash": "jek4XYaQ/PGUwDKKhwR8K47Uh1189PFzMeLqO83mXrXQVIpARZCcfuDedH50YDTepBkfijCZN5U/vZi++erxtg=="
+      },
+      "Microsoft.Extensions.DependencyModel": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "NSmDw3K0ozNDgShSIpsZcbFIzBX4w28nDag+TfaQujkXGazBm+lid5onlWoCBy4VsLxqnnKjEBbGSJVWJMf43g==",
+        "dependencies": {
+          "System.Text.Encodings.Web": "8.0.0",
+          "System.Text.Json": "8.0.0"
+        }
+      },
+      "OpenXR.Headers": {
+        "type": "Transitive",
+        "resolved": "1.0.10.2",
+        "contentHash": "sUpa63pxk4ZpE+cnUiQ0non6MXT4pB/pmANETTk4vIQr0zNyYyPtSFalTon8IvwYE6OyhF6QqeUZkE4kfeUhRg=="
+      },
+      "Silk.NET.Core": {
+        "type": "Transitive",
+        "resolved": "2.21.0",
+        "contentHash": "U8gATeEGvSIc1ogSdG/LKr6SLgOjkis7Oo/QzCq+aOoGjw4tHYRVpm02V+pHp/qlQhziBbdQ/Vl5d58cmFY+PA==",
+        "dependencies": {
+          "Microsoft.CSharp": "4.7.0",
+          "Microsoft.DotNet.PlatformAbstractions": "3.1.6",
+          "Microsoft.Extensions.DependencyModel": "8.0.0",
+          "System.Memory": "4.5.5",
+          "System.Numerics.Vectors": "4.5.0",
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      },
+      "Silk.NET.Maths": {
+        "type": "Transitive",
+        "resolved": "2.21.0",
+        "contentHash": "1Hv05KJmKXzzlp3+nFHl2A8yaugGkAj0gCSOaSsLFNFnwuLUIKLBGaC6y23JgGYnK+1t1DS40oPOquHQPI06rg=="
+      },
+      "System.Memory": {
+        "type": "Transitive",
+        "resolved": "4.5.5",
+        "contentHash": "XIWiDvKPXaTveaB7HVganDlOCRoj03l+jrwNvcge/t8vhGYKvqV+dMv6G4SAX2NoNmN0wZfVPTAlFwZcZvVOUw=="
+      },
+      "System.Numerics.Vectors": {
+        "type": "Transitive",
+        "resolved": "4.5.0",
+        "contentHash": "QQTlPTl06J/iiDbJCiepZ4H//BVraReU4O4EoRw1U02H5TLUIT7xn3GnDp9AXPSlJUDyFs4uWjWafNX6WrAojQ=="
+      },
+      "System.Runtime.CompilerServices.Unsafe": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg=="
+      },
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "yev/k9GHAEGx2Rg3/tU6MQh4HGBXJs70y7j1LaM1i/ER9po+6nnQ6RRqTJn1E7Xu0fbIFK80Nh5EoODxrbxwBQ=="
+      },
+      "System.Text.Json": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "OdrZO2WjkiEG6ajEFRABTRCi/wuXQPxeV6g8xvUJqdxMvvuCCEk86zPla8UiIQJz3durtUEbNyY/3lIhS0yZvQ==",
+        "dependencies": {
+          "System.Text.Encodings.Web": "8.0.0"
+        }
       }
     }
   }

@@ -13,8 +13,9 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
+    [PluginService] internal static IChatGui ChatGui{ get; private set; } = null!;
 
-    private const string CommandName = "/pmycommand";
+    private const string CommandName = "/vr";
 
     public Configuration Configuration { get; init; }
 
@@ -48,6 +49,8 @@ public sealed class Plugin : IDalamudPlugin
 
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+
+        ChatGui.Print("hello world");
     }
 
     public void Dispose()
@@ -59,11 +62,21 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.RemoveHandler(CommandName);
     }
+    private VrMain vrMain = new VrMain();
 
-    private void OnCommand(string command, string args)
+    private unsafe void OnCommand(string command, string args)
     {
-        // in response to the slash command, just toggle the display status of our main ui
-        ToggleMainUI();
+        if(command == CommandName)
+        {
+            switch (args)
+            {
+                case "start":
+                    ChatGui.Print("hello world");
+                    vrMain.Initialize();
+                    break;
+
+            }
+        }
     }
 
     private void DrawUI() => WindowSystem.Draw();
