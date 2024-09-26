@@ -1,12 +1,12 @@
-﻿using Dalamud.Game.Command;
+using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using SamplePlugin.Windows;
+using FfxivVr.Windows;
 
-namespace SamplePlugin;
+namespace FfxivVr;
 
 public sealed class Plugin : IDalamudPlugin
 {

@@ -1,0 +1,12 @@
+{
+    "Author": "Wes",
+    "Name": "FFXIV VR",
+    "Punchline": "A VR mod for FFXIV",
+    "Description": "A VR mod for FFXIV",
+    "ApplicableVersion": "any",
+    "Tags": [
+        "sample",
+        "plugin",
+        "goats"
+    ]
+}
