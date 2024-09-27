@@ -32,7 +32,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin()
     {
-        logger = PluginInterface.Create<Logger>();
+        logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         Framework.Update += Update;
@@ -101,8 +101,9 @@ public sealed class Plugin : IDalamudPlugin
     {
         logger.Info("Starting VR");
         vRSession?.Dispose();
+        var dir = PluginInterface.AssemblyLocation.Directory ?? throw new NullReferenceException("Assembly Location missing");
         vRSession = new VRSession(
-            Path.Combine(PluginInterface.AssemblyLocation.Directory.ToString(), "openxr_loader.dll"),
+            Path.Combine(dir.ToString(), "openxr_loader.dll"),
             logger,
             Device.Instance()
         );
@@ -115,7 +116,7 @@ public sealed class Plugin : IDalamudPlugin
             ChatGui.Print("VR Session failed to load");
             vRSession.Dispose();
             vRSession = null;
-            throw ex;
+            throw new Exception("Failed to start VR", ex);
         }
     }
     private unsafe void StopVR()

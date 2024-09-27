@@ -15,29 +15,31 @@ unsafe class VRSession : IDisposable
 {
 
     private XR xr;
-    private VRSystem system;
+    private VRSystem vrSystem;
     private Logger logger;
+    private VRState vrState;
     private Renderer renderer;
     private EventHandler eventHandler;
 
     internal VRSession(String openXRLoaderDllPath, Logger logger, Device* device)
     {
-        xr = new XR(XR.CreateDefaultContext(openXRLoaderDllPath));
-        system = new VRSystem(xr, device, logger);
+        xr = new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath }));
+        vrSystem = new VRSystem(xr, device, logger);
         this.logger = logger;
-        this.renderer = new Renderer(xr, system);
-        this.eventHandler = new EventHandler(xr);
+        vrState = new VRState();
+        renderer = new Renderer(xr, vrSystem, vrState);
+        eventHandler = new EventHandler(xr, vrSystem, logger, vrState);
     }
 
     internal void Initialize()
     {
-        system.Initialize();
+        vrSystem.Initialize();
     }
 
 
     public void Dispose()
     {
-        system.Dispose();
+        vrSystem.Dispose();
     }
 
     internal void Update()
