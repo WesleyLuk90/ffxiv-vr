@@ -38,5 +38,10 @@ namespace FfxivVR
         {
             return Native.ReadCString(instanceProperties.RuntimeName);
         }
+
+        internal static unsafe string GetExtensionName(this ExtensionProperties extensionProperties)
+        {
+            return Native.ReadCString(extensionProperties.ExtensionName);
+        }
     }
 }

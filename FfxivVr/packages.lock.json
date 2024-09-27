@@ -47,6 +47,16 @@
           "Silk.NET.OpenXR": "2.21.0"
         }
       },
+      "Silk.NET.OpenXR.Extensions.KHR": {
+        "type": "Direct",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "fufpDWkjItFDuJWkrP7kVGia38souTjzm6EOAQUtQVej9m/hgTBs978nroQjhT6PAwJWteaXRBkjeGQrSNsOfg==",
+        "dependencies": {
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.OpenXR": "2.21.0"
+        }
+      },
       "Microsoft.CSharp": {
         "type": "Transitive",
         "resolved": "4.7.0",

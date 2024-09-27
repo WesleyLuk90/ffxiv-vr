@@ -54,7 +54,7 @@ public sealed class Plugin : IDalamudPlugin
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
-        ChatGui.Print("hello world");
+        ChatGui.Print("Loaded VR Plugin");
     }
 
     public void Dispose()
