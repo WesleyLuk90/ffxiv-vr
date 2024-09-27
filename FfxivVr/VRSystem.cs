@@ -10,16 +10,17 @@ using System.Threading.Tasks;
 namespace FfxivVR;
 unsafe class VRSystem : IDisposable
 {
-    Instance instance = new Instance();
-    Session session = new Session();
+    internal Instance Instance = new Instance();
+    internal Session Session = new Session();
+    internal ViewConfigurationType ViewConfigurationType = ViewConfigurationType.PrimaryStereo;
 
-    private XR xr;
+    private XR xR;
     private Device* device;
     private Logger logger;
 
     internal VRSystem(XR xr, Device* device, Logger logger)
     {
-        this.xr = xr;
+        this.xR = xr;
         this.device = device;
         this.logger = logger;
     }
@@ -32,10 +33,10 @@ unsafe class VRSystem : IDisposable
         appInfo.SetApplicationName("FFXIV VR");
 
         uint extensionsCount;
-        xr.EnumerateInstanceExtensionProperties((byte*)null, 0, &extensionsCount, null);
-        logger.Info($"Found {extensionsCount} extensions");
+        xR.EnumerateInstanceExtensionProperties((byte*)null, 0, &extensionsCount, null);
+        logger.Debug($"Found {extensionsCount} extensions");
         var properties = Native.CreateArray(new ExtensionProperties(next: null), extensionsCount);
-        xr.EnumerateInstanceExtensionProperties((byte*)null, extensionsCount, &extensionsCount, properties);
+        xR.EnumerateInstanceExtensionProperties((byte*)null, extensionsCount, &extensionsCount, properties);
 
         var dx11Extension = properties.Where(p => p.GetExtensionName() == "XR_KHR_D3D11_enable")
             .First();
@@ -44,34 +45,32 @@ unsafe class VRSystem : IDisposable
         createInfo.ApplicationInfo = appInfo;
 
 
-        fixed (Instance* i = &instance)
-        {
-            xr.CreateInstance(&createInfo, i).CheckResult("CreateInstance");
-        }
+        xR.CreateInstance(&createInfo, ref Instance).CheckResult("CreateInstance");
 
         var instanceProperties = new InstanceProperties(next: null);
-        xr.GetInstanceProperties(instance, &instanceProperties).CheckResult("GetInstanceProperties");
+        xR.GetInstanceProperties(Instance, &instanceProperties).CheckResult("GetInstanceProperties");
 
-        logger.Info($"Runtime Name {instanceProperties.GetRuntimeName()} Runtime Version {instanceProperties.RuntimeVersion}");
+        logger.Debug($"Runtime Name {instanceProperties.GetRuntimeName()} Runtime Version {instanceProperties.RuntimeVersion}");
 
         ulong systemId;
         var getInfo = new SystemGetInfo(next: null, formFactor: FormFactor.HeadMountedDisplay);
-        var result = xr.GetSystem(instance, &getInfo, &systemId);
+        var result = xR.GetSystem(Instance, &getInfo, &systemId);
         if (result == Result.ErrorFormFactorUnavailable)
         {
+            logger.Error("Headset not found");
             throw new FormFactorUnavailableException();
         }
         result.CheckResult("GetSystem");
 
 
         PfnVoidFunction function = new PfnVoidFunction();
-        xr.GetInstanceProcAddr(instance, "xrGetD3D11GraphicsRequirementsKHR", &function).CheckResult("GetInstanceProcAddr");
+        xR.GetInstanceProcAddr(Instance, "xrGetD3D11GraphicsRequirementsKHR", &function).CheckResult("GetInstanceProcAddr");
         var getRequirements = (delegate* unmanaged[Cdecl]<Instance, ulong, GraphicsRequirementsD3D11KHR*, Result>)function.Handle;
 
         GraphicsRequirementsD3D11KHR requirements = new GraphicsRequirementsD3D11KHR(next: null);
-        getRequirements(instance, systemId, &requirements).CheckResult("xrGetD3D11GraphicsRequirementsKHR");
+        getRequirements(Instance, systemId, &requirements).CheckResult("xrGetD3D11GraphicsRequirementsKHR");
 
-        logger.Info($"Requirements Adapter {requirements.AdapterLuid} Feature level {requirements.MinFeatureLevel}");
+        logger.Debug($"Requirements Adapter {requirements.AdapterLuid} Feature level {requirements.MinFeatureLevel}");
 
         if (device == null)
         {
@@ -85,15 +84,12 @@ unsafe class VRSystem : IDisposable
 
         var sessionInfo = new SessionCreateInfo(systemId: systemId, createFlags: 0, next: &binding);
 
-        fixed (Session* s = &session)
-        {
-            xr.CreateSession(instance, ref sessionInfo, s).CheckResult("CreateSession");
-        }
+        xR.CreateSession(Instance, ref sessionInfo, ref Session).CheckResult("CreateSession");
     }
 
     public void Dispose()
     {
-        xr.DestroySession(session);
-        xr.DestroyInstance(instance);
+        xR.DestroySession(Session);
+        xR.DestroyInstance(Instance);
     }
 }

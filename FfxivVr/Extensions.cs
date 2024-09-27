@@ -1,3 +1,4 @@
+using FFXIVClientStructs;
 using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
@@ -43,5 +44,11 @@ namespace FfxivVR
         {
             return Native.ReadCString(extensionProperties.ExtensionName);
         }
+
+        internal static bool Equals(this Session session, Session other)
+        {
+            return session.Handle == other.Handle;
+        }
+
     }
 }

@@ -6,6 +6,8 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using FfxivVR.Windows;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using System;
 
 namespace FfxivVR;
 
@@ -15,6 +17,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
+    [PluginService] internal static IFramework Framework { get; private set; } = null!;
 
     private const string CommandName = "/vr";
 
@@ -24,12 +27,15 @@ public sealed class Plugin : IDalamudPlugin
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
-    private Logger logger;
+
+    private Logger logger { get; init; }
 
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>();
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+
+        Framework.Update += Update;
 
         // you might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
@@ -57,8 +63,14 @@ public sealed class Plugin : IDalamudPlugin
         ChatGui.Print("Loaded VR Plugin");
     }
 
+    private void Update(IFramework framework)
+    {
+        vRSession?.Update();
+    }
+
     public void Dispose()
     {
+        Framework.Update -= Update;
         WindowSystem.RemoveAllWindows();
 
         ConfigWindow.Dispose();
@@ -87,7 +99,6 @@ public sealed class Plugin : IDalamudPlugin
 
     private unsafe void StartVR()
     {
-        ChatGui.Print("Starting VR");
         logger.Info("Starting VR");
         vRSession?.Dispose();
         vRSession = new VRSession(
@@ -95,11 +106,20 @@ public sealed class Plugin : IDalamudPlugin
             logger,
             Device.Instance()
         );
-        vRSession.Initialize();
+        try
+        {
+            vRSession.Initialize();
+        }
+        catch (Exception ex)
+        {
+            ChatGui.Print("VR Session failed to load");
+            vRSession.Dispose();
+            vRSession = null;
+            throw ex;
+        }
     }
     private unsafe void StopVR()
     {
-        ChatGui.Print("Stopping VR");
         logger.Info("Stopping VR");
         vRSession?.Dispose();
         vRSession = null;

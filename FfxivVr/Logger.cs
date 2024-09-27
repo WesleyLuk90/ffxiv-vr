@@ -11,15 +11,24 @@ namespace FfxivVR
 {
     public class Logger
     {
-        [PluginService] public static IPluginLog? Log { get; private set; } = null;
+        [PluginService] public static IPluginLog Log { get; private set; } = null!;
+        [PluginService] public static IChatGui ChatGui { get; private set; } = null!;
 
+        internal void Debug(string message)
+        {
+            Log.Info($"[Debug] {message}");
+        }
         internal void Info(string message)
         {
-            Log!.Info(message);
+            var log = $"[Info] {message}";
+            Log.Info(log);
+            ChatGui.Print(log);
         }
         internal void Error(string message)
         {
-            Log!.Error(message);
+            var log = $"[Error] {message}";
+            Log.Info(log);
+            ChatGui.Print(log);
         }
     }
 }
