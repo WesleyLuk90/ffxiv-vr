@@ -2,7 +2,7 @@
 using Dalamud.Plugin;
 using System;
 
-namespace FfxivVr;
+namespace FfxivVR;
 
 [Serializable]
 public class Configuration : IPluginConfiguration

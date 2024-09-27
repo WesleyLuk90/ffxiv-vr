@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FfxivVr
+namespace FfxivVR
 {
-    public static class Native
+    static class Native
     {
-        public static T[] CreateArray<T>(T t, uint count)
+        internal static T[] CreateArray<T>(T t, uint count)
         {
             T[] array = new T[count];
             for (uint i = 0; i < count; i++)
@@ -20,18 +20,19 @@ namespace FfxivVr
             return array;
         }
 
-        public unsafe static String? ByteToString(byte* pointer)
+        internal unsafe static string ReadCString(byte* pointer)
         {
-            return Marshal.PtrToStringUTF8((IntPtr)pointer);
+            return Marshal.PtrToStringUTF8((IntPtr)pointer)!;
         }
-        public unsafe static void Write(byte* pointer, String value)
+        internal unsafe static void WriteCString(byte* pointer, string value, int maxLength)
         {
             var bytes = Encoding.UTF8.GetBytes(value);
-            for (int i = 0; i < bytes.Length; i++)
+            var toWrite = Math.Min(maxLength - 1, bytes.Length);
+            for (int i = 0; i < toWrite; i++)
             {
                 pointer[i] = bytes[i];
             }
-            pointer[bytes.Length] = 0;
+            pointer[toWrite] = 0;
         }
     }
 }

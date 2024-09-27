@@ -4,16 +4,17 @@ using Dalamud.Plugin;
 using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using FfxivVr.Windows;
+using FfxivVR.Windows;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 
-namespace FfxivVr;
+namespace FfxivVR;
 
 public sealed class Plugin : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
-    [PluginService] internal static IChatGui ChatGui{ get; private set; } = null!;
+    [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
 
     private const string CommandName = "/vr";
 
@@ -23,8 +24,11 @@ public sealed class Plugin : IDalamudPlugin
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
+    private Logger logger;
+
     public Plugin()
     {
+        logger = PluginInterface.Create<Logger>();
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         // you might normally want to embed resources and load them from the manifest stream
@@ -61,22 +65,44 @@ public sealed class Plugin : IDalamudPlugin
         MainWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
-    }
-    private VrMain vrMain = new VrMain();
 
+        vRSession?.Dispose();
+    }
+    private VRSession? vRSession;
     private unsafe void OnCommand(string command, string args)
     {
-        if(command == CommandName)
+        if (command == CommandName)
         {
             switch (args)
             {
                 case "start":
-                    ChatGui.Print("hello world");
-                    vrMain.Initialize();
+                    StartVR();
                     break;
-
+                case "stop":
+                    StopVR();
+                    break;
             }
         }
+    }
+
+    private unsafe void StartVR()
+    {
+        ChatGui.Print("Starting VR");
+        logger.Info("Starting VR");
+        vRSession?.Dispose();
+        vRSession = new VRSession(
+            Path.Combine(PluginInterface.AssemblyLocation.Directory.ToString(), "openxr_loader.dll"),
+            logger,
+            Device.Instance()
+        );
+        vRSession.Initialize();
+    }
+    private unsafe void StopVR()
+    {
+        ChatGui.Print("Stopping VR");
+        logger.Info("Stopping VR");
+        vRSession?.Dispose();
+        vRSession = null;
     }
 
     private void DrawUI() => WindowSystem.Draw();

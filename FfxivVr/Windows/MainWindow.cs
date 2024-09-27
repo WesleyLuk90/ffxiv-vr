@@ -6,7 +6,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using ImGuiNET;
 
-namespace FfxivVr.Windows;
+namespace FfxivVR.Windows;
 
 public class MainWindow : Window, IDisposable
 {

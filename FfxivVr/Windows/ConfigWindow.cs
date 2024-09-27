@@ -3,7 +3,7 @@ using System.Numerics;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
-namespace FfxivVr.Windows;
+namespace FfxivVR.Windows;
 
 public class ConfigWindow : Window, IDisposable
 {
