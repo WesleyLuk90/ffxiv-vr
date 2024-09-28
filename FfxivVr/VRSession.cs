@@ -27,18 +27,20 @@ unsafe class VRSession : IDisposable
         vrSystem = new VRSystem(xr, device, logger);
         this.logger = logger;
         vrState = new VRState();
-        renderer = new Renderer(xr, vrSystem, vrState);
+        renderer = new Renderer(xr, vrSystem, vrState, logger);
         eventHandler = new EventHandler(xr, vrSystem, logger, vrState);
     }
 
     internal void Initialize()
     {
         vrSystem.Initialize();
+        renderer.Initialize();
     }
 
 
     public void Dispose()
     {
+        renderer.Dispose();
         vrSystem.Dispose();
     }
 

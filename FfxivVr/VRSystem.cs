@@ -13,6 +13,7 @@ unsafe class VRSystem : IDisposable
     internal Instance Instance = new Instance();
     internal Session Session = new Session();
     internal ViewConfigurationType ViewConfigurationType = ViewConfigurationType.PrimaryStereo;
+    internal ulong SystemId;
 
     private XR xR;
     private Device* device;
@@ -52,9 +53,9 @@ unsafe class VRSystem : IDisposable
 
         logger.Debug($"Runtime Name {instanceProperties.GetRuntimeName()} Runtime Version {instanceProperties.RuntimeVersion}");
 
-        ulong systemId;
         var getInfo = new SystemGetInfo(next: null, formFactor: FormFactor.HeadMountedDisplay);
-        var result = xR.GetSystem(Instance, &getInfo, &systemId);
+
+        var result = xR.GetSystem(Instance, &getInfo, ref SystemId);
         if (result == Result.ErrorFormFactorUnavailable)
         {
             logger.Error("Headset not found");
@@ -68,7 +69,7 @@ unsafe class VRSystem : IDisposable
         var getRequirements = (delegate* unmanaged[Cdecl]<Instance, ulong, GraphicsRequirementsD3D11KHR*, Result>)function.Handle;
 
         GraphicsRequirementsD3D11KHR requirements = new GraphicsRequirementsD3D11KHR(next: null);
-        getRequirements(Instance, systemId, &requirements).CheckResult("xrGetD3D11GraphicsRequirementsKHR");
+        getRequirements(Instance, SystemId, &requirements).CheckResult("xrGetD3D11GraphicsRequirementsKHR");
 
         logger.Debug($"Requirements Adapter {requirements.AdapterLuid} Feature level {requirements.MinFeatureLevel}");
 
@@ -82,7 +83,7 @@ unsafe class VRSystem : IDisposable
         }
         var binding = new GraphicsBindingD3D11KHR(device: device->D3D11Forwarder);
 
-        var sessionInfo = new SessionCreateInfo(systemId: systemId, createFlags: 0, next: &binding);
+        var sessionInfo = new SessionCreateInfo(systemId: SystemId, createFlags: 0, next: &binding);
 
         xR.CreateSession(Instance, ref sessionInfo, ref Session).CheckResult("CreateSession");
     }
