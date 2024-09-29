@@ -1,11 +1,7 @@
 using Silk.NET.OpenXR;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static FFXIVClientStructs.STD.Helper.IStaticEncoding;
 
 namespace FfxivVR;
 
@@ -48,7 +44,7 @@ internal unsafe static class XRExtensions
     {
         uint count = 0;
         enumerate(0, &count, null).CheckResult(action);
-        var result = new T[count];
+        var result = Native.CreateArray(initialValue, count);
         enumerate(count, &count, result).CheckResult(action);
         return result;
     }

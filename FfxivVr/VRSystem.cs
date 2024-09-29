@@ -23,7 +23,7 @@ public unsafe class VRSystem : IDisposable
         this.logger = logger;
     }
 
-    class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
+    public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
 
     public void Initialize()
     {
