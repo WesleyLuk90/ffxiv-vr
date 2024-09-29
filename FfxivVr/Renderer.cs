@@ -17,110 +17,28 @@ namespace FfxivVR
         private VRSystem system;
         private VRState vrState;
         private Logger logger;
-        //private List<ViewConfigurationView>? viewConfigurationViews;
-        private List<View>? views;
+        private readonly VRSwapchains swapchains;
         private Space localSpace = new Space();
-        private const ViewConfigurationType ViewConfigType = ViewConfigurationType.PrimaryStereo;
 
-        private List<Format> ColorFormats = new List<Format>() {
-            Format.FormatR8G8B8A8Unorm,
-            Format.FormatB8G8R8A8Unorm,
-            Format.FormatR8G8B8A8UnormSrgb,
-            Format.FormatB8G8R8A8UnormSrgb,
-        };
-        private List<Format> DepthFormats = new List<Format>() {
-            Format.FormatD32Float,
-            Format.FormatD16Unorm,
-        };
-
-        internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger)
+        internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains)
         {
             this.xr = xr;
             this.system = system;
             this.vrState = vrState;
             this.logger = logger;
+            this.swapchains = swapchains;
         }
 
         internal void Initialize()
         {
-            CreateViews();
             CreateReferenceSpace();
         }
 
-        class SwapchainInfo
-        {
-            internal Swapchain swapchain;
-            internal long swapchainFormat;
-            internal List<IntPtr> imageViews;
-
-            internal SwapchainInfo(long swapchainFormat, List<IntPtr> imageViews, Swapchain swapchain = new Swapchain())
-            {
-                this.swapchain = swapchain;
-                this.swapchainFormat = swapchainFormat;
-                this.imageViews = imageViews;
-            }
-        }
-        class View
-        {
-            ViewConfigurationView viewConfigurationView;
-            SwapchainInfo colorSwapchainInfo;
-            SwapchainInfo depthSwapchainInfo;
-
-            internal View(ViewConfigurationView viewConfigurationView, SwapchainInfo colorSwapchainInfo, SwapchainInfo depthSwapchainInfo)
-            {
-                this.viewConfigurationView = viewConfigurationView;
-                this.colorSwapchainInfo = colorSwapchainInfo;
-                this.depthSwapchainInfo = depthSwapchainInfo;
-            }
-        }
 
         private void CreateReferenceSpace()
         {
             var referenceSpace = new ReferenceSpaceCreateInfo(referenceSpaceType: ReferenceSpaceType.Local, poseInReferenceSpace: new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0)));
             xr.CreateReferenceSpace(system.Session, ref referenceSpace, ref localSpace).CheckResult("CreateReferenceSpace");
-        }
-
-        private void CreateViews()
-        {
-            var viewConfigurationViews = xr.GetViewConfigurationViews(system.Instance, system.SystemId, ViewConfigType);
-            logger.Debug($"Got {viewConfigurationViews.Count} views");
-
-            var formats = xr.GetSwapchainFormats(system.Session);
-            var colorFormat = formats.Where(f => ColorFormats.Contains((Format)f)).First();
-            var depthFormat = formats.Where(f => DepthFormats.Contains((Format)f)).First();
-
-            views = viewConfigurationViews.ConvertAll(viewConfigurationView =>
-            {
-                var colorSwapchainInfo = CreateSwapchainInfo(viewConfigurationView, colorFormat, SwapchainUsageFlags.SampledBit | SwapchainUsageFlags.ColorAttachmentBit);
-                var depthSwapchainInfo = CreateSwapchainInfo(viewConfigurationView, depthFormat, SwapchainUsageFlags.SampledBit | SwapchainUsageFlags.DepthStencilAttachmentBit);
-
-                return new View(
-                    viewConfigurationView: viewConfigurationView,
-                    colorSwapchainInfo: colorSwapchainInfo,
-                    depthSwapchainInfo: depthSwapchainInfo
-                );
-            });
-        }
-
-        private SwapchainInfo CreateSwapchainInfo(ViewConfigurationView viewConfigurationView, long colorFormat, SwapchainUsageFlags usageFlags)
-        {
-            var colorSwapchainInfo = new SwapchainInfo(swapchainFormat: colorFormat, new List<IntPtr>());
-            var colorSwapchainCreateInfo = new SwapchainCreateInfo(
-                createFlags: 0,
-                usageFlags: usageFlags,
-                format: colorFormat,
-                sampleCount: viewConfigurationView.RecommendedSwapchainSampleCount,
-                width: viewConfigurationView.RecommendedImageRectWidth,
-                height: viewConfigurationView.RecommendedImageRectHeight,
-                faceCount: 1,
-                arraySize: 1,
-                mipCount: 1
-            );
-            xr.CreateSwapchain(system.Session, ref colorSwapchainCreateInfo, ref colorSwapchainInfo.swapchain);
-
-            var images = xr.GetSwapchainImages(colorSwapchainInfo.swapchain);
-
-            return colorSwapchainInfo;
         }
 
         internal void Render()
@@ -159,12 +77,12 @@ namespace FfxivVR
 
         private CompositionLayerProjectionView[] InnerRender(long predictedDisplayTime)
         {
-            var views = Native.CreateArray(new View(), (uint)viewConfigurationViews!.Count());
-            var viewState = new ViewState(next: null);
-            var viewLocateInfo = new ViewLocateInfo(next: null, viewConfigurationType: ViewConfigType, displayTime: predictedDisplayTime, space: localSpace);
-            uint viewCount = 0;
-            xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
-
+            //var views = Native.CreateArray(new View(), (uint)viewConfigurationViews!.Count());
+            //var viewState = new ViewState(next: null);
+            //var viewLocateInfo = new ViewLocateInfo(next: null, viewConfigurationType: ViewConfigType, displayTime: predictedDisplayTime, space: localSpace);
+            //uint viewCount = 0;
+            //xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
+            var viewCount = 10;
             var layers = new CompositionLayerProjectionView[viewCount];
             for (int viewIndex = 0; viewIndex < viewCount; viewIndex++)
             {

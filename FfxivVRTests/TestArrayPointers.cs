@@ -3,7 +3,7 @@ using Silk.NET.OpenXR;
 namespace FfxivVRTests
 {
     [TestClass]
-    unsafe public class UnitTest1
+    unsafe public class TestArrayPointers
     {
         [TestMethod]
         public void TestMethod1()

@@ -11,13 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\Data\goat.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Visible>false</Visible>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Remove="C:\Users\lukwe\.nuget\packages\openxr.loader\1.0.10.2\native\x64\release\bin\openxr_loader.dll" />
   </ItemGroup>
 

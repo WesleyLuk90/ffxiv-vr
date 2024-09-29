@@ -2,13 +2,10 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using Silk.NET.Core;
 using Silk.NET.OpenXR;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FfxivVR;
-unsafe class VRSystem : IDisposable
+public unsafe class VRSystem : IDisposable
 {
     internal Instance Instance = new Instance();
     internal Session Session = new Session();
@@ -19,7 +16,7 @@ unsafe class VRSystem : IDisposable
     private Device* device;
     private Logger logger;
 
-    internal VRSystem(XR xr, Device* device, Logger logger)
+    public VRSystem(XR xr, Device* device, Logger logger)
     {
         this.xr = xr;
         this.device = device;
@@ -28,7 +25,7 @@ unsafe class VRSystem : IDisposable
 
     class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
 
-    internal void Initialize()
+    public void Initialize()
     {
         ApplicationInfo appInfo = new ApplicationInfo(applicationVersion: 1, engineVersion: 1, apiVersion: 1UL << 48);
         appInfo.SetApplicationName("FFXIV VR");

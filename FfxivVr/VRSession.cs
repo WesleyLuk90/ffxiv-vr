@@ -1,13 +1,6 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using Silk.NET.OpenXR;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FfxivVR;
 
@@ -20,6 +13,7 @@ unsafe class VRSession : IDisposable
     private VRState vrState;
     private Renderer renderer;
     private EventHandler eventHandler;
+    private VRSwapchains swapchains;
 
     internal VRSession(String openXRLoaderDllPath, Logger logger, Device* device)
     {
@@ -27,13 +21,15 @@ unsafe class VRSession : IDisposable
         vrSystem = new VRSystem(xr, device, logger);
         this.logger = logger;
         vrState = new VRState();
-        renderer = new Renderer(xr, vrSystem, vrState, logger);
+        swapchains = new VRSwapchains(xr, vrSystem, logger);
+        renderer = new Renderer(xr, vrSystem, vrState, logger, swapchains);
         eventHandler = new EventHandler(xr, vrSystem, logger, vrState);
     }
 
     internal void Initialize()
     {
         vrSystem.Initialize();
+        swapchains.Initialize();
         renderer.Initialize();
     }
 
@@ -41,6 +37,7 @@ unsafe class VRSession : IDisposable
     public void Dispose()
     {
         renderer.Dispose();
+        swapchains.Dispose();
         vrSystem.Dispose();
     }
 
