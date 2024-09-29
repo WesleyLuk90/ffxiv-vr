@@ -1,5 +1,5 @@
-using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using Silk.NET.Core;
+using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
 using System.Linq;
@@ -13,10 +13,10 @@ public unsafe class VRSystem : IDisposable
     internal ulong SystemId;
 
     private XR xr;
-    private Device* device;
+    private ID3D11Device* device;
     private Logger logger;
 
-    public VRSystem(XR xr, Device* device, Logger logger)
+    public VRSystem(XR xr, ID3D11Device* device, Logger logger)
     {
         this.xr = xr;
         this.device = device;
@@ -65,15 +65,7 @@ public unsafe class VRSystem : IDisposable
 
         logger.Debug($"Requirements Adapter {requirements.AdapterLuid} Feature level {requirements.MinFeatureLevel}");
 
-        if (device == null)
-        {
-            throw new Exception("Device was null");
-        }
-        if (device->D3D11Forwarder == null)
-        {
-            throw new Exception("D3D11Forwarder was null");
-        }
-        var binding = new GraphicsBindingD3D11KHR(device: device->D3D11Forwarder);
+        var binding = new GraphicsBindingD3D11KHR(device: device);
 
         var sessionInfo = new SessionCreateInfo(systemId: SystemId, createFlags: 0, next: &binding);
 

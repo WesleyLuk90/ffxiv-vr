@@ -1,13 +1,13 @@
 using Dalamud.Game.Command;
+using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using System.IO;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using FfxivVR.Windows;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FfxivVR.Windows;
+using Silk.NET.Direct3D11;
 using System;
+using System.IO;
 
 namespace FfxivVR;
 
@@ -102,10 +102,14 @@ public sealed class Plugin : IDalamudPlugin
         logger.Info("Starting VR");
         vRSession?.Dispose();
         var dir = PluginInterface.AssemblyLocation.Directory ?? throw new NullReferenceException("Assembly Location missing");
+        var device = Device.Instance();
+        ID3D11Device* d11Device = (ID3D11Device*)device->D3D11Forwarder;
+        ID3D11DeviceContext* d11DeviceContext = (ID3D11DeviceContext*)device->D3D11DeviceContext;
         vRSession = new VRSession(
             Path.Combine(dir.ToString(), "openxr_loader.dll"),
             logger,
-            Device.Instance()
+            device: d11Device,
+            deviceContext: d11DeviceContext
         );
         try
         {

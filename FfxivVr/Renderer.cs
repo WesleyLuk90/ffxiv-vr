@@ -1,13 +1,6 @@
-using Silk.NET.DXGI;
+using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using static FfxivVR.Renderer;
-using static Lumina.Data.Parsing.Layer.LayerCommon;
 
 namespace FfxivVR
 {
@@ -18,15 +11,17 @@ namespace FfxivVR
         private VRState vrState;
         private Logger logger;
         private readonly VRSwapchains swapchains;
+        private readonly ID3D11DeviceContext* deviceContext;
         private Space localSpace = new Space();
 
-        internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains)
+        internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, ID3D11DeviceContext* deviceContext)
         {
             this.xr = xr;
             this.system = system;
             this.vrState = vrState;
             this.logger = logger;
             this.swapchains = swapchains;
+            this.deviceContext = deviceContext;
         }
 
         internal void Initialize()
@@ -77,16 +72,49 @@ namespace FfxivVR
 
         private CompositionLayerProjectionView[] InnerRender(long predictedDisplayTime)
         {
-            //var views = Native.CreateArray(new View(), (uint)viewConfigurationViews!.Count());
-            //var viewState = new ViewState(next: null);
-            //var viewLocateInfo = new ViewLocateInfo(next: null, viewConfigurationType: ViewConfigType, displayTime: predictedDisplayTime, space: localSpace);
-            //uint viewCount = 0;
-            //xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
-            var viewCount = 10;
+            var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
+            var viewState = new ViewState(next: null);
+            var viewLocateInfo = new ViewLocateInfo(next: null, viewConfigurationType: VRSwapchains.ViewConfigType, displayTime: predictedDisplayTime, space: localSpace);
+            uint viewCount = 0;
+            xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
             var layers = new CompositionLayerProjectionView[viewCount];
             for (int viewIndex = 0; viewIndex < viewCount; viewIndex++)
             {
+                var swapchainView = swapchains.Views[viewIndex];
+                var imageAcquireInfo = new SwapchainImageAcquireInfo(next: null);
+                uint colorImageIndex = 0;
+                xr.AcquireSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref imageAcquireInfo, ref colorImageIndex).CheckResult("AcquireSwapchainImage");
+                uint depthSwapchainInfo = 0;
+                xr.AcquireSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref imageAcquireInfo, ref depthSwapchainInfo).CheckResult("AcquireSwapchainImage");
+                var waitInfo = new SwapchainImageWaitInfo(next: null);
+                waitInfo.Timeout = 1000000000L;
+                xr.WaitSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref waitInfo).CheckResult("WaitSwapchainImage");
+                xr.WaitSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref waitInfo).CheckResult("WaitSwapchainImage");
 
+                var width = (int)swapchainView.ViewConfigurationView.RecommendedImageRectWidth;
+                var height = (int)swapchainView.ViewConfigurationView.RecommendedImageRectHeight;
+
+                layers[viewIndex] = new CompositionLayerProjectionView(
+                    pose: views[viewIndex].Pose,
+                    fov: views[viewIndex].Fov,
+                    subImage: new SwapchainSubImage(
+                        swapchain: swapchainView.ColorSwapchainInfo.Swapchain,
+                        imageRect: new Rect2Di(
+                            offset: new Offset2Di(
+                                x: 0,
+                                y: 0
+                            ),
+                            extent: new Extent2Di(
+                                width: width,
+                                height: height
+                            )
+                        ),
+                        imageArrayIndex: 0
+                    )
+                );
+                var color = new float[] { 0.17f, 0.17f, 0.17f, 1 };
+                deviceContext->ClearRenderTargetView(swapchainView.ColorSwapchainInfo.Views[0], ref color[0]);
+                deviceContext->ClearDepthStencilView(swapchainView.DepthSwapchainInfo.Views[0], (uint)ClearFlag.Depth, 1.0f, 0);
             }
             return layers;
         }
@@ -94,12 +122,6 @@ namespace FfxivVR
         public void Dispose()
         {
             xr.DestroySpace(localSpace).CheckResult("DestroySpace");
-            DestoryViews();
-        }
-
-        private void DestoryViews()
-        {
-            throw new NotImplementedException();
         }
     }
 
