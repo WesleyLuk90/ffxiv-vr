@@ -1,3 +1,4 @@
+using Silk.NET.DXGI;
 using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
@@ -5,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using static FfxivVR.Renderer;
 using static Lumina.Data.Parsing.Layer.LayerCommon;
 
 namespace FfxivVR
@@ -15,7 +17,8 @@ namespace FfxivVR
         private VRSystem system;
         private VRState vrState;
         private Logger logger;
-        private List<ViewConfigurationView> viewConfigurationViews;
+        //private List<ViewConfigurationView>? viewConfigurationViews;
+        private List<View>? views;
         private Space localSpace = new Space();
         private const ViewConfigurationType ViewConfigType = ViewConfigurationType.PrimaryStereo;
 
@@ -29,15 +32,63 @@ namespace FfxivVR
 
         internal void Initialize()
         {
-            uint count = 0;
-            xr.EnumerateViewConfigurationView(system.Instance, system.SystemId, 0, ref count, null).CheckResult("EnumerateViewConfigurationView");
-            var views = Native.CreateArray(new ViewConfigurationView(next: null), count);
-            xr.EnumerateViewConfigurationView(system.Instance, system.SystemId, ViewConfigType, count, ref count, ref views[0]).CheckResult("EnumerateViewConfigurationView");
-            this.viewConfigurationViews = views.ToList();
-            logger.Debug($"Got {views.Length} views");
+            CreateViews();
+            CreateReferenceSpace();
+        }
 
+        class SwapchainInfo
+        {
+            Swapchain swapchain;
+            long swapchainFormat;
+            List<IntPtr> imageViews;
+
+            SwapchainInfo(Swapchain swapchain, long swapchainFormat, List<IntPtr> imageViews)
+            {
+                this.swapchain = swapchain;
+                this.swapchainFormat = swapchainFormat;
+                this.imageViews = imageViews;
+            }
+        }
+        class View
+        {
+            ViewConfigurationView viewConfigurationView;
+            SwapchainInfo colorSwapchainInfo;
+            SwapchainInfo depthSwapchainInfo;
+
+            View(ViewConfigurationView viewConfigurationView, SwapchainInfo colorSwapchainInfo, SwapchainInfo depthSwapchainInfo)
+            {
+                this.viewConfigurationView = viewConfigurationView;
+                this.colorSwapchainInfo = colorSwapchainInfo;
+                this.depthSwapchainInfo = depthSwapchainInfo;
+            }
+        }
+
+        private void CreateReferenceSpace()
+        {
             var referenceSpace = new ReferenceSpaceCreateInfo(referenceSpaceType: ReferenceSpaceType.Local, poseInReferenceSpace: new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0)));
             xr.CreateReferenceSpace(system.Session, ref referenceSpace, ref localSpace).CheckResult("CreateReferenceSpace");
+        }
+
+        private void CreateViews()
+        {
+            var viewConfigurationViews = xr.GetViewConfigurationViews(system.Instance, system.SystemId, ViewConfigType);
+            logger.Debug($"Got {viewConfigurationViews.Count} views");
+
+            views = viewConfigurationViews.Select(viewConfigurationView =>
+             {
+                 return new View(viewConfigurationView);
+             });
+            var formats = xr.GetSwapchainFormats(system.Session);
+            if (!formats.Contains(((long)Format.FormatD32Float)) && !formats.Contains(((long)Format.FormatD16Unorm)))
+            {
+                throw new Exception($"Incompatible formats {formats}");
+            }
+            var colorSwapchainInfos = new List<SwapchainInfo>();
+            var depthSwapchainInfos = new List<SwapchainInfo>();
+            for (var viewConfigurationViewIndex = 0; i < viewConfigurationViewIndex; i++)
+            {
+
+            }
         }
 
         internal void Render()
@@ -76,7 +127,7 @@ namespace FfxivVR
 
         private CompositionLayerProjectionView[] InnerRender(long predictedDisplayTime)
         {
-            var views = Native.CreateArray(new View(), (uint)viewConfigurationViews.Count());
+            var views = Native.CreateArray(new View(), (uint)viewConfigurationViews!.Count());
             var viewState = new ViewState(next: null);
             var viewLocateInfo = new ViewLocateInfo(next: null, viewConfigurationType: ViewConfigType, displayTime: predictedDisplayTime, space: localSpace);
             uint viewCount = 0;
@@ -93,6 +144,12 @@ namespace FfxivVR
         public void Dispose()
         {
             xr.DestroySpace(localSpace).CheckResult("DestroySpace");
+            DestoryViews();
+        }
+
+        private void DestoryViews()
+        {
+            throw new NotImplementedException();
         }
     }
 

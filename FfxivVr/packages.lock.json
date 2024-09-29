@@ -17,6 +17,16 @@
           "OpenXR.Headers": "1.0.10.2"
         }
       },
+      "Silk.NET.Direct3D11": {
+        "type": "Direct",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "PFOIzXdvJ6REPpRnmWmGfRhNLED6qdXoEGHlwTisd1K7zJVnA65u18AbqQDq61r36IXvPmUOD+ECfxiBMRkaSQ==",
+        "dependencies": {
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.DXGI": "2.21.0"
+        }
+      },
       "Silk.NET.OpenXR": {
         "type": "Direct",
         "requested": "[2.21.0, )",
@@ -92,6 +102,15 @@
           "System.Memory": "4.5.5",
           "System.Numerics.Vectors": "4.5.0",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      },
+      "Silk.NET.DXGI": {
+        "type": "Transitive",
+        "resolved": "2.21.0",
+        "contentHash": "4sUH4Kr+XFmmQyHmNS8EEEM5MfrVS/Z9TfdW3rzVtv2q8aJ7MW6nmKVKGucc75pSvWCM9txApUWS6H2qBL60Qw==",
+        "dependencies": {
+          "Silk.NET.Core": "2.21.0",
+          "Silk.NET.Maths": "2.21.0"
         }
       },
       "Silk.NET.Maths": {

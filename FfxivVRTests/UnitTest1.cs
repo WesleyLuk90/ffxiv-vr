@@ -20,8 +20,6 @@ namespace FfxivVRTests
                 }
                 Assert.AreEqual((uint)pointers[0] + 96, (uint)pointers[1]);
                 Assert.AreEqual((uint)pointers[1] + 96, (uint)pointers[2]);
-
-                CompositionLayerProjectionView* listPointer = pointers;
             }
         }
     }
