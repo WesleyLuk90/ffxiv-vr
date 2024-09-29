@@ -114,7 +114,6 @@ unsafe internal class VRSwapchains : IDisposable
             mipCount: 1
         );
         xr.CreateSwapchain(system.Session, ref swapchainCreateInfo, ref swapchain).CheckResult("CreateSwapchain");
-
         return swapchain;
     }
     public void Dispose()
@@ -123,14 +122,20 @@ unsafe internal class VRSwapchains : IDisposable
         {
             foreach (var v in view.ColorSwapchainInfo.Views)
             {
-                v->Release();
+                if (v != null)
+                {
+                    v->Release();
+                }
             }
             foreach (var v in view.DepthSwapchainInfo.Views)
             {
-                v->Release();
+                if (v != null)
+                {
+                    v->Release();
+                }
             }
-            xr.DestroySwapchain(view.ColorSwapchainInfo.Swapchain).CheckResult("DestroySwapchain");
-            xr.DestroySwapchain(view.DepthSwapchainInfo.Swapchain).CheckResult("DestroySwapchain");
+            xr.DestroySwapchain(view.ColorSwapchainInfo.Swapchain).LogResult("DestroySwapchain", logger);
+            xr.DestroySwapchain(view.DepthSwapchainInfo.Swapchain).LogResult("DestroySwapchain", logger);
         });
     }
 }

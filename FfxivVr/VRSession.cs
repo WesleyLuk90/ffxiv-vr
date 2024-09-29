@@ -44,6 +44,9 @@ unsafe class VRSession : IDisposable
     internal void Update()
     {
         this.eventHandler.PollEvents();
-        this.renderer.Render();
+        if (vrState.SessionRunning)
+        {
+            this.renderer.Render();
+        }
     }
 }

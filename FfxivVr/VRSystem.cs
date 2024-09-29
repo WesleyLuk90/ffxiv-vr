@@ -74,7 +74,7 @@ public unsafe class VRSystem : IDisposable
 
     public void Dispose()
     {
-        xr.DestroySession(Session);
-        xr.DestroyInstance(Instance);
+        xr.DestroySession(Session).LogResult("DestroySession", logger);
+        xr.DestroyInstance(Instance).LogResult("DestroyInstance", logger);
     }
 }

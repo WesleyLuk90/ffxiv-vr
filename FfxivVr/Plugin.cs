@@ -7,6 +7,7 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FfxivVR.Windows;
 using Silk.NET.Direct3D11;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace FfxivVR;
@@ -63,9 +64,26 @@ public sealed class Plugin : IDalamudPlugin
         ChatGui.Print("Loaded VR Plugin");
     }
 
+    private Dictionary<string, int> exceptionCount = new Dictionary<string, int>();
     private void Update(IFramework framework)
     {
-        vRSession?.Update();
+        try
+        {
+            vRSession?.Update();
+        }
+        catch (Exception ex)
+        {
+            var currentCount = exceptionCount.GetValueOrDefault(ex.Message) + 1;
+            exceptionCount[ex.Message] = currentCount;
+            if (currentCount == 5)
+            {
+                logger.Error($"Got same error 5 times ({ex.Message}), surpressing");
+            }
+            else if (currentCount < 5)
+            {
+                throw;
+            }
+        }
     }
 
     public void Dispose()
@@ -117,8 +135,15 @@ public sealed class Plugin : IDalamudPlugin
         }
         catch (Exception ex)
         {
-            ChatGui.Print("VR Session failed to load");
-            vRSession.Dispose();
+            logger.Error("VR Session failed to load");
+            try
+            {
+                vRSession.Dispose();
+            }
+            catch (Exception e)
+            {
+                logger.Error($"Got error when disposing session {e}");
+            }
             vRSession = null;
             throw new Exception("Failed to start VR", ex);
         }

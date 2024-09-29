@@ -1,12 +1,5 @@
-using Lumina;
 using Silk.NET.OpenXR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using static FFXIVClientStructs.STD.Helper.IStaticEncoding;
 
 namespace FfxivVR
 {
@@ -26,9 +19,9 @@ namespace FfxivVR
         }
         internal unsafe void PollEvents()
         {
-            var eventDataBuffer = new EventDataBuffer(next: null);
             while (true)
             {
+                var eventDataBuffer = new EventDataBuffer(next: null);
                 var result = xr.PollEvent(vrSystem.Instance, ref eventDataBuffer);
                 if (result == Result.EventUnavailable)
                 {
@@ -78,11 +71,12 @@ namespace FfxivVR
 
         private unsafe void HandleSessionStateChanged(EventDataSessionStateChanged stateChanged)
         {
-            if (stateChanged.Session.Equals(vrSystem.Session))
+            if (!stateChanged.Session.Equals(vrSystem.Session))
             {
-                logger.Error($"Session state changed for different session");
+                logger.Error($"Session state changed for different session, got {stateChanged.Session.Handle} but expected {vrSystem.Session.Handle}");
                 return;
             }
+            logger.Debug($"Session state has changed to {stateChanged.State}");
             switch (stateChanged.State)
             {
                 case SessionState.Ready:

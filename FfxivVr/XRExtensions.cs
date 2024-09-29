@@ -30,13 +30,14 @@ internal unsafe static class XRExtensions
 
     internal static List<SwapchainImageD3D11KHR> GetSwapchainImages(this XR xr, Swapchain swapchain)
     {
-        return EnumerateListValue((capacity, countOut, outArray) =>
+        uint count = 0;
+        xr.EnumerateSwapchainImages(swapchain, 0, &count, null).CheckResult("EnumerateSwapchainImages");
+        var images = Native.CreateArray(new SwapchainImageD3D11KHR(next: null), count);
+        fixed (SwapchainImageD3D11KHR* pointer = &images[0])
         {
-            fixed (SwapchainImageD3D11KHR* firstImage = &outArray[0])
-            {
-                return xr.EnumerateSwapchainImages(swapchain, capacity, countOut, (SwapchainImageBaseHeader*)firstImage);
-            }
-        }, new SwapchainImageD3D11KHR(next: null), "EnumerateSwapchainImages").ToList();
+            xr.EnumerateSwapchainImages(swapchain, count, &count, (SwapchainImageBaseHeader*)pointer).CheckResult("EnumerateSwapchainImages");
+        }
+        return images.ToList();
     }
 
     internal delegate Result EnumerateDelegate<T>(uint capacity, uint* countOut, Span<T> outArray);
