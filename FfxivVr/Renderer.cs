@@ -22,6 +22,17 @@ namespace FfxivVR
         private Space localSpace = new Space();
         private const ViewConfigurationType ViewConfigType = ViewConfigurationType.PrimaryStereo;
 
+        private List<Format> ColorFormats = new List<Format>() {
+            Format.FormatR8G8B8A8Unorm,
+            Format.FormatB8G8R8A8Unorm,
+            Format.FormatR8G8B8A8UnormSrgb,
+            Format.FormatB8G8R8A8UnormSrgb,
+        };
+        private List<Format> DepthFormats = new List<Format>() {
+            Format.FormatD32Float,
+            Format.FormatD16Unorm,
+        };
+
         internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger)
         {
             this.xr = xr;
@@ -38,11 +49,11 @@ namespace FfxivVR
 
         class SwapchainInfo
         {
-            Swapchain swapchain;
-            long swapchainFormat;
-            List<IntPtr> imageViews;
+            internal Swapchain swapchain;
+            internal long swapchainFormat;
+            internal List<IntPtr> imageViews;
 
-            SwapchainInfo(Swapchain swapchain, long swapchainFormat, List<IntPtr> imageViews)
+            internal SwapchainInfo(long swapchainFormat, List<IntPtr> imageViews, Swapchain swapchain = new Swapchain())
             {
                 this.swapchain = swapchain;
                 this.swapchainFormat = swapchainFormat;
@@ -55,7 +66,7 @@ namespace FfxivVR
             SwapchainInfo colorSwapchainInfo;
             SwapchainInfo depthSwapchainInfo;
 
-            View(ViewConfigurationView viewConfigurationView, SwapchainInfo colorSwapchainInfo, SwapchainInfo depthSwapchainInfo)
+            internal View(ViewConfigurationView viewConfigurationView, SwapchainInfo colorSwapchainInfo, SwapchainInfo depthSwapchainInfo)
             {
                 this.viewConfigurationView = viewConfigurationView;
                 this.colorSwapchainInfo = colorSwapchainInfo;
@@ -74,21 +85,42 @@ namespace FfxivVR
             var viewConfigurationViews = xr.GetViewConfigurationViews(system.Instance, system.SystemId, ViewConfigType);
             logger.Debug($"Got {viewConfigurationViews.Count} views");
 
-            views = viewConfigurationViews.Select(viewConfigurationView =>
-             {
-                 return new View(viewConfigurationView);
-             });
             var formats = xr.GetSwapchainFormats(system.Session);
-            if (!formats.Contains(((long)Format.FormatD32Float)) && !formats.Contains(((long)Format.FormatD16Unorm)))
-            {
-                throw new Exception($"Incompatible formats {formats}");
-            }
-            var colorSwapchainInfos = new List<SwapchainInfo>();
-            var depthSwapchainInfos = new List<SwapchainInfo>();
-            for (var viewConfigurationViewIndex = 0; i < viewConfigurationViewIndex; i++)
-            {
+            var colorFormat = formats.Where(f => ColorFormats.Contains((Format)f)).First();
+            var depthFormat = formats.Where(f => DepthFormats.Contains((Format)f)).First();
 
-            }
+            views = viewConfigurationViews.ConvertAll(viewConfigurationView =>
+            {
+                var colorSwapchainInfo = CreateSwapchainInfo(viewConfigurationView, colorFormat, SwapchainUsageFlags.SampledBit | SwapchainUsageFlags.ColorAttachmentBit);
+                var depthSwapchainInfo = CreateSwapchainInfo(viewConfigurationView, depthFormat, SwapchainUsageFlags.SampledBit | SwapchainUsageFlags.DepthStencilAttachmentBit);
+
+                return new View(
+                    viewConfigurationView: viewConfigurationView,
+                    colorSwapchainInfo: colorSwapchainInfo,
+                    depthSwapchainInfo: depthSwapchainInfo
+                );
+            });
+        }
+
+        private SwapchainInfo CreateSwapchainInfo(ViewConfigurationView viewConfigurationView, long colorFormat, SwapchainUsageFlags usageFlags)
+        {
+            var colorSwapchainInfo = new SwapchainInfo(swapchainFormat: colorFormat, new List<IntPtr>());
+            var colorSwapchainCreateInfo = new SwapchainCreateInfo(
+                createFlags: 0,
+                usageFlags: usageFlags,
+                format: colorFormat,
+                sampleCount: viewConfigurationView.RecommendedSwapchainSampleCount,
+                width: viewConfigurationView.RecommendedImageRectWidth,
+                height: viewConfigurationView.RecommendedImageRectHeight,
+                faceCount: 1,
+                arraySize: 1,
+                mipCount: 1
+            );
+            xr.CreateSwapchain(system.Session, ref colorSwapchainCreateInfo, ref colorSwapchainInfo.swapchain);
+
+            var images = xr.GetSwapchainImages(colorSwapchainInfo.swapchain);
+
+            return colorSwapchainInfo;
         }
 
         internal void Render()
