@@ -100,6 +100,7 @@ namespace FfxivVR
             for (int viewIndex = 0; viewIndex < viewCount; viewIndex++)
             {
                 var swapchainView = swapchains.Views[viewIndex];
+                var view = views[viewIndex];
                 var imageAcquireInfo = new SwapchainImageAcquireInfo(next: null);
                 uint colorImageIndex = 0;
                 xr.AcquireSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref imageAcquireInfo, ref colorImageIndex).CheckResult("AcquireSwapchainImage");
@@ -114,8 +115,8 @@ namespace FfxivVR
                 var height = (int)swapchainView.ViewConfigurationView.RecommendedImageRectHeight;
 
                 layers[viewIndex] = new CompositionLayerProjectionView(
-                    pose: views[viewIndex].Pose,
-                    fov: views[viewIndex].Fov,
+                    pose: view.Pose,
+                    fov: view.Fov,
                     subImage: new SwapchainSubImage(
                         swapchain: swapchainView.ColorSwapchainInfo.Swapchain,
                         imageRect: new Rect2Di(
@@ -134,9 +135,15 @@ namespace FfxivVR
                 var color = new float[4] { 0.17f, 0.17f, 0.17f, 1 };
                 fixed (float* p = &color[0])
                 {
-                    deviceContext->ClearRenderTargetView(swapchainView.ColorSwapchainInfo.Views[0], p);
+                    foreach (var v in swapchainView.ColorSwapchainInfo.Views)
+                    {
+                        deviceContext->ClearRenderTargetView(v, p);
+                    }
                 }
-                deviceContext->ClearDepthStencilView(swapchainView.DepthSwapchainInfo.Views[0], (uint)ClearFlag.Depth, 1.0f, 0);
+                foreach (var v in swapchainView.DepthSwapchainInfo.Views)
+                {
+                    deviceContext->ClearDepthStencilView(v, (uint)ClearFlag.Depth, 1.0f, 0);
+                }
 
                 deviceContext->OMSetRenderTargets(1, in swapchainView.ColorSwapchainInfo.Views[0], swapchainView.DepthSwapchainInfo.Views[0]);
                 Viewport viewport = new Viewport(
@@ -151,15 +158,17 @@ namespace FfxivVR
                 deviceContext->RSSetViewports(1, &viewport);
                 deviceContext->RSSetScissorRects(1, &scissor);
 
-                // Compute the view-projection transform.
-                // All matrices (including OpenXR's) are column-major, right-handed.
-                //XrMatrix4x4f proj;
-                //XrMatrix4x4f_CreateProjectionFov(&proj, m_apiType, views[i].fov, nearZ, farZ);
-                //XrMatrix4x4f toView;
-                //XrVector3f scale1m{ 1.0f, 1.0f, 1.0f};
-                //XrMatrix4x4f_CreateTranslationRotationScale(&toView, &views[i].pose.position, &views[i].pose.orientation, &scale1m);
-                //XrMatrix4x4f view;
-                //XrMatrix4x4f_InvertRigidBody(&view, &toView);
+                var horizontal = view.Fov.AngleRight - view.Fov.AngleLeft;
+                var vertical = view.Fov.AngleUp - view.Fov.AngleDown;
+                var proj = Matrix4X4.CreatePerspectiveFieldOfView<float>(horizontal, ((float)width) / height, nearPlaneDistance: 0.05f, farPlaneDistance: 100f);
+                var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
+                var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
+                var toView = Matrix4X4.Multiply(rotation, translation);
+                var viewInverted = new Matrix4X4<float>();
+                Matrix4X4.Invert(toView, out viewInverted);
+                var viewProj = Matrix4X4.Multiply(proj, viewInverted);
+
+                RenderCube(viewProj);
                 //XrMatrix4x4f_Multiply(&cameraConstants.viewProj, &proj, &view);
                 // XR_DOCS_TAG_END_SetupFrameRendering
 
@@ -176,6 +185,10 @@ namespace FfxivVR
                 xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
             }
             return layers;
+        }
+
+        private void RenderCube(Matrix4X4<float> viewProj)
+        {
         }
 
         public void Dispose()
