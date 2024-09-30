@@ -13,6 +13,7 @@ public unsafe class VRSession : IDisposable
     public VRState State;
     private Renderer renderer;
     private EventHandler eventHandler;
+    private VRShaders vrShaders;
     private VRSwapchains swapchains;
 
     public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
@@ -26,19 +27,21 @@ public unsafe class VRSession : IDisposable
         swapchains = new VRSwapchains(xr, vrSystem, logger, device);
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, deviceContext);
         eventHandler = new EventHandler(xr, vrSystem, logger, State);
+        vrShaders = new VRShaders(device, logger);
     }
 
     public void Initialize()
     {
         vrSystem.Initialize();
+        vrShaders.Initialize();
         swapchains.Initialize();
         renderer.Initialize();
     }
 
-
     public void Dispose()
     {
         renderer.Dispose();
+        vrShaders?.Dispose();
         swapchains.Dispose();
         vrSystem.Dispose();
     }
