@@ -101,11 +101,12 @@ namespace FfxivVR
             {
                 var swapchainView = swapchains.Views[viewIndex];
                 var view = views[viewIndex];
-                var imageAcquireInfo = new SwapchainImageAcquireInfo(next: null);
                 uint colorImageIndex = 0;
-                xr.AcquireSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref imageAcquireInfo, ref colorImageIndex).CheckResult("AcquireSwapchainImage");
-                uint depthSwapchainInfo = 0;
-                xr.AcquireSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref imageAcquireInfo, ref depthSwapchainInfo).CheckResult("AcquireSwapchainImage");
+                xr.AcquireSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null, ref colorImageIndex).CheckResult("AcquireSwapchainImage");
+                var currentColorSwapchainImage = swapchainView.ColorSwapchainInfo.Views[colorImageIndex];
+                uint depthSwapchainIndex = 0;
+                xr.AcquireSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null, ref depthSwapchainIndex).CheckResult("AcquireSwapchainImage");
+                var currentDepthSwapchainImage = swapchainView.DepthSwapchainInfo.Views[depthSwapchainIndex];
                 var waitInfo = new SwapchainImageWaitInfo(next: null);
                 waitInfo.Timeout = 1000000000L;
                 xr.WaitSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref waitInfo).CheckResult("WaitSwapchainImage");
@@ -135,17 +136,11 @@ namespace FfxivVR
                 var color = new float[4] { 0.17f, 0.17f, 0.17f, 1 };
                 fixed (float* p = &color[0])
                 {
-                    foreach (var v in swapchainView.ColorSwapchainInfo.Views)
-                    {
-                        deviceContext->ClearRenderTargetView(v, p);
-                    }
+                    deviceContext->ClearRenderTargetView(currentColorSwapchainImage, p);
                 }
-                foreach (var v in swapchainView.DepthSwapchainInfo.Views)
-                {
-                    deviceContext->ClearDepthStencilView(v, (uint)ClearFlag.Depth, 1.0f, 0);
-                }
+                deviceContext->ClearDepthStencilView(currentDepthSwapchainImage, (uint)ClearFlag.Depth, 1.0f, 0);
 
-                deviceContext->OMSetRenderTargets(1, in swapchainView.ColorSwapchainInfo.Views[0], swapchainView.DepthSwapchainInfo.Views[0]);
+                deviceContext->OMSetRenderTargets(1, in currentColorSwapchainImage, currentDepthSwapchainImage);
                 Viewport viewport = new Viewport(
                     topLeftX: 0f,
                     topLeftY: 0f,

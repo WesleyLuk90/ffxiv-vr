@@ -33,7 +33,7 @@ unsafe internal class VRSwapchains : IDisposable
     public void Initialize()
     {
         var viewConfigurationViews = xr.GetViewConfigurationViews(system.Instance, system.SystemId, ViewConfigType);
-        logger.Debug($"Got {viewConfigurationViews.Count} views");
+        logger.Debug($"Got {viewConfigurationViews.Count} ViewConfigurationViews");
 
         var formats = xr.GetSwapchainFormats(system.Session);
         var colorFormat = formats.Where(f => ColorFormats.Contains((Format)f)).First();
@@ -53,6 +53,7 @@ unsafe internal class VRSwapchains : IDisposable
             {
                 throw new Exception($"Expected 1 color image but got {colorImages.Count}");
             }
+            logger.Debug($"Created {colorImages.Count} color swapchain images");
 
             var renderTargetViews = new ID3D11RenderTargetView*[colorImages.Count];
             for (int i = 0; i < colorImages.Count; i++)
@@ -77,6 +78,7 @@ unsafe internal class VRSwapchains : IDisposable
                 SwapchainUsageFlags.SampledBit | SwapchainUsageFlags.DepthStencilAttachmentBit);
 
             var depthImages = xr.GetSwapchainImages(depthSwapchain);
+            logger.Debug($"Created {depthImages.Count} depth swapchain images");
 
             if (depthImages.Count == 0)
             {
