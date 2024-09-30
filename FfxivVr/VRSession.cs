@@ -4,29 +4,31 @@ using System;
 
 namespace FfxivVR;
 
-unsafe class VRSession : IDisposable
+public unsafe class VRSession : IDisposable
 {
 
     private XR xr;
     private VRSystem vrSystem;
     private Logger logger;
-    private VRState vrState;
+    public VRState State;
     private Renderer renderer;
     private EventHandler eventHandler;
     private VRSwapchains swapchains;
 
-    internal VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, deviceContext) { }
+    public VRSession(XR xr, Logger logger, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
     {
-        xr = new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath }));
+        this.xr = xr;
         vrSystem = new VRSystem(xr, device, logger);
         this.logger = logger;
-        vrState = new VRState();
+        State = new VRState();
         swapchains = new VRSwapchains(xr, vrSystem, logger, device);
-        renderer = new Renderer(xr, vrSystem, vrState, logger, swapchains, deviceContext);
-        eventHandler = new EventHandler(xr, vrSystem, logger, vrState);
+        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, deviceContext);
+        eventHandler = new EventHandler(xr, vrSystem, logger, State);
     }
 
-    internal void Initialize()
+    public void Initialize()
     {
         vrSystem.Initialize();
         swapchains.Initialize();
@@ -41,10 +43,10 @@ unsafe class VRSession : IDisposable
         vrSystem.Dispose();
     }
 
-    internal void Update()
+    public void Update()
     {
         this.eventHandler.PollEvents();
-        if (vrState.SessionRunning)
+        if (State.SessionRunning)
         {
             this.renderer.Render();
         }

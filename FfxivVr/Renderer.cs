@@ -1,4 +1,5 @@
 using Silk.NET.Direct3D11;
+using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 
@@ -45,50 +46,41 @@ namespace FfxivVR
             var beginFrameInfo = new FrameBeginInfo(next: null);
             xr.BeginFrame(system.Session, ref beginFrameInfo).CheckResult("BeginFrame");
 
-            var endFrameInfo = new FrameEndInfo(
-                displayTime: frameState.PredictedDisplayTime,
-                environmentBlendMode: EnvironmentBlendMode.Opaque,
-                layerCount: 0,
-                layers: null
-            );
-            xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
-            //CompositionLayerProjectionView[] compositionLayers = new CompositionLayerProjectionView[] { };
-            //if (vrState.IsActive() && frameState.ShouldRender != 0)
-            //{
-            //    compositionLayers = InnerRender(frameState.PredictedDisplayTime);
-            //}
-            //if (compositionLayers.Length > 0 || false)
-            //{
-            //    fixed (CompositionLayerProjectionView* firstLayer = &compositionLayers[0])
-            //    {
-            //        CompositionLayerBaseHeader*[] layerPointers = new CompositionLayerBaseHeader*[compositionLayers.Length];
-            //        for (int i = 0; i < compositionLayers.Length; i++)
-            //        {
-            //            CompositionLayerProjectionView* viewPointer = &firstLayer[i];
-            //            layerPointers[i] = (CompositionLayerBaseHeader*)viewPointer;
-            //        }
-            //        fixed (CompositionLayerBaseHeader** layersListPointer = &layerPointers[0])
-            //        {
-            //            var endFrameInfo = new FrameEndInfo(
-            //                displayTime: frameState.PredictedDisplayTime,
-            //                environmentBlendMode: EnvironmentBlendMode.Opaque,
-            //                layerCount: (uint)compositionLayers.Length,
-            //                layers: layersListPointer
-            //            );
-            //            xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
-            //        }
-            //    }
-            //}
-            //else
-            //{
-            //    var endFrameInfo = new FrameEndInfo(
-            //        displayTime: frameState.PredictedDisplayTime,
-            //        environmentBlendMode: EnvironmentBlendMode.Opaque,
-            //        layerCount: 0,
-            //        layers: null
-            //    );
-            //    xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
-            //}
+            CompositionLayerProjectionView[] compositionLayers = Array.Empty<CompositionLayerProjectionView>();
+            if (vrState.IsActive() && frameState.ShouldRender != 0)
+            {
+                compositionLayers = InnerRender(frameState.PredictedDisplayTime);
+            }
+            if (compositionLayers.Length > 0)
+            {
+                fixed (CompositionLayerProjectionView* firstLayer = &compositionLayers[0])
+                {
+                    var layerProjection = new CompositionLayerProjection(
+                        layerFlags: CompositionLayerFlags.BlendTextureSourceAlphaBit | CompositionLayerFlags.CorrectChromaticAberrationBit,
+                        space: localSpace,
+                        viewCount: (uint)compositionLayers.Length,
+                        views: firstLayer
+                    );
+                    CompositionLayerProjection* layerProjectionPointer = &layerProjection;
+                    var endFrameInfo = new FrameEndInfo(
+                        displayTime: frameState.PredictedDisplayTime,
+                        environmentBlendMode: EnvironmentBlendMode.Opaque,
+                        layerCount: 1,
+                        layers: (CompositionLayerBaseHeader**)&layerProjectionPointer
+                    );
+                    xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
+                }
+            }
+            else
+            {
+                var endFrameInfo = new FrameEndInfo(
+                    displayTime: frameState.PredictedDisplayTime,
+                    environmentBlendMode: EnvironmentBlendMode.Opaque,
+                    layerCount: 0,
+                    layers: null
+                );
+                xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
+            }
         }
 
         private CompositionLayerProjectionView[] InnerRender(long predictedDisplayTime)
@@ -98,6 +90,12 @@ namespace FfxivVR
             var viewLocateInfo = new ViewLocateInfo(next: null, viewConfigurationType: VRSwapchains.ViewConfigType, displayTime: predictedDisplayTime, space: localSpace);
             uint viewCount = 0;
             xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
+
+            if (viewCount != swapchains.Views.Count)
+            {
+                throw new Exception($"Unexpected view count, got {viewCount} but expected {swapchains.Views.Count}");
+            }
+
             var layers = new CompositionLayerProjectionView[viewCount];
             for (int viewIndex = 0; viewIndex < viewCount; viewIndex++)
             {
@@ -133,9 +131,49 @@ namespace FfxivVR
                         imageArrayIndex: 0
                     )
                 );
-                var color = new float[] { 0.17f, 0.17f, 0.17f, 1 };
-                deviceContext->ClearRenderTargetView(swapchainView.ColorSwapchainInfo.Views[0], ref color[0]);
+                var color = new float[4] { 0.17f, 0.17f, 0.17f, 1 };
+                fixed (float* p = &color[0])
+                {
+                    deviceContext->ClearRenderTargetView(swapchainView.ColorSwapchainInfo.Views[0], p);
+                }
                 deviceContext->ClearDepthStencilView(swapchainView.DepthSwapchainInfo.Views[0], (uint)ClearFlag.Depth, 1.0f, 0);
+
+                deviceContext->OMSetRenderTargets(1, in swapchainView.ColorSwapchainInfo.Views[0], swapchainView.DepthSwapchainInfo.Views[0]);
+                Viewport viewport = new Viewport(
+                    topLeftX: 0f,
+                    topLeftY: 0f,
+                    width: width,
+                    height: height,
+                    minDepth: 0f,
+                    maxDepth: 1f);
+                var scissor = new Box2D<int>(
+                    minX: 0, minY: 0, maxX: width, maxY: height);
+                deviceContext->RSSetViewports(1, &viewport);
+                deviceContext->RSSetScissorRects(1, &scissor);
+
+                // Compute the view-projection transform.
+                // All matrices (including OpenXR's) are column-major, right-handed.
+                //XrMatrix4x4f proj;
+                //XrMatrix4x4f_CreateProjectionFov(&proj, m_apiType, views[i].fov, nearZ, farZ);
+                //XrMatrix4x4f toView;
+                //XrVector3f scale1m{ 1.0f, 1.0f, 1.0f};
+                //XrMatrix4x4f_CreateTranslationRotationScale(&toView, &views[i].pose.position, &views[i].pose.orientation, &scale1m);
+                //XrMatrix4x4f view;
+                //XrMatrix4x4f_InvertRigidBody(&view, &toView);
+                //XrMatrix4x4f_Multiply(&cameraConstants.viewProj, &proj, &view);
+                // XR_DOCS_TAG_END_SetupFrameRendering
+
+                // XR_DOCS_TAG_BEGIN_CallRenderCuboid
+                //renderCuboidIndex = 0;
+                // Draw a floor. Scale it by 2 in the X and Z, and 0.1 in the Y,
+                //RenderCuboid({ { 0.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, -m_viewHeightM, 0.0f} }, { 2.0f, 0.1f, 2.0f}, { 0.4f, 0.5f, 0.5f});
+                // Draw a "table".
+                //RenderCuboid({ { 0.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, -m_viewHeightM + 0.9f, -0.7f} }, { 1.0f, 0.2f, 1.0f}, { 0.6f, 0.6f, 0.4f});
+                // XR_DOCS_TAG_END_CallRenderCuboid
+
+                var releaseInfo = new SwapchainImageReleaseInfo(next: null);
+                xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
+                xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
             }
             return layers;
         }

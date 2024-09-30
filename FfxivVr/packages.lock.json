@@ -27,6 +27,12 @@
           "Silk.NET.DXGI": "2.21.0"
         }
       },
+      "Silk.NET.Maths": {
+        "type": "Direct",
+        "requested": "[2.21.0, )",
+        "resolved": "2.21.0",
+        "contentHash": "1Hv05KJmKXzzlp3+nFHl2A8yaugGkAj0gCSOaSsLFNFnwuLUIKLBGaC6y23JgGYnK+1t1DS40oPOquHQPI06rg=="
+      },
       "Silk.NET.OpenXR": {
         "type": "Direct",
         "requested": "[2.21.0, )",
@@ -112,11 +118,6 @@
           "Silk.NET.Core": "2.21.0",
           "Silk.NET.Maths": "2.21.0"
         }
-      },
-      "Silk.NET.Maths": {
-        "type": "Transitive",
-        "resolved": "2.21.0",
-        "contentHash": "1Hv05KJmKXzzlp3+nFHl2A8yaugGkAj0gCSOaSsLFNFnwuLUIKLBGaC6y23JgGYnK+1t1DS40oPOquHQPI06rg=="
       },
       "System.Memory": {
         "type": "Transitive",

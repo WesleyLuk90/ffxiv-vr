@@ -41,6 +41,7 @@ unsafe internal class VRSwapchains : IDisposable
 
         Views = viewConfigurationViews.ConvertAll(viewConfigurationView =>
         {
+            logger.Debug($"View has resolution {viewConfigurationView.RecommendedImageRectWidth}x{viewConfigurationView.RecommendedImageRectHeight}");
             var colorSwapchain = CreateSwapchain(
                 viewConfigurationView,
                 colorFormat,
@@ -48,6 +49,10 @@ unsafe internal class VRSwapchains : IDisposable
                );
 
             var colorImages = xr.GetSwapchainImages(colorSwapchain);
+            if (colorImages.Count == 0)
+            {
+                throw new Exception($"Expected 1 color image but got {colorImages.Count}");
+            }
 
             var renderTargetViews = new ID3D11RenderTargetView*[colorImages.Count];
             for (int i = 0; i < colorImages.Count; i++)
@@ -55,12 +60,13 @@ unsafe internal class VRSwapchains : IDisposable
                 var image = colorImages[i];
                 ID3D11RenderTargetView* rtv = null;
                 var rtvd = new RenderTargetViewDesc(
+                    format: (Format)colorFormat,
                     viewDimension: RtvDimension.Texture2D,
                     texture2D: new Tex2DRtv(
                         mipSlice: 0
                     )
-                );
-                d11Device->CreateRenderTargetView((ID3D11Resource*)image.Texture, ref rtvd, ref rtv);
+                ); ;
+                d11Device->CreateRenderTargetView((ID3D11Resource*)image.Texture, ref rtvd, ref rtv).D3D11Check("CreateRenderTargetView");
                 renderTargetViews[i] = rtv;
             }
             var colorSwapchainInfo = new SwapchainInfo<ID3D11RenderTargetView>(swapchain: colorSwapchain, swapchainFormat: colorFormat, views: renderTargetViews);
@@ -72,18 +78,23 @@ unsafe internal class VRSwapchains : IDisposable
 
             var depthImages = xr.GetSwapchainImages(depthSwapchain);
 
+            if (depthImages.Count == 0)
+            {
+                throw new Exception($"Expected 1 depth image but got {depthImages.Count}");
+            }
             var depthStencilViews = new ID3D11DepthStencilView*[depthImages.Count];
             for (int i = 0; i < depthImages.Count; i++)
             {
                 var image = depthImages[i];
                 var dsvd = new DepthStencilViewDesc(
+                    format: (Format)depthFormat,
                     viewDimension: DsvDimension.Texture2D,
                     texture2D: new Tex2DDsv(
                         mipSlice: 0
                     )
                 );
                 ID3D11DepthStencilView* dsv = null;
-                d11Device->CreateDepthStencilView((ID3D11Resource*)image.Texture, ref dsvd, ref dsv);
+                d11Device->CreateDepthStencilView((ID3D11Resource*)image.Texture, ref dsvd, ref dsv).D3D11Check("CreateRenderTargetView");
                 depthStencilViews[i] = dsv;
             }
             var depthSwapchainInfo = new SwapchainInfo<ID3D11DepthStencilView>(swapchain: depthSwapchain, swapchainFormat: depthFormat, views: depthStencilViews);
@@ -152,6 +163,13 @@ unsafe class SwapchainInfo<T>
         this.Swapchain = swapchain;
         this.SwapchainFormat = swapchainFormat;
         this.Views = views;
+        foreach (var v in views)
+        {
+            if (v == null)
+            {
+                throw new ArgumentNullException($"Got a null view");
+            }
+        }
     }
 #pragma warning restore 8500
 

@@ -13,42 +13,26 @@ unsafe internal static class Program
         IDXGIFactory4* factory = null;
         var dxgi = DXGI.GetApi();
         var guid = IDXGIFactory4.Guid;
-        D3D11Check(dxgi.CreateDXGIFactory(ref guid, (void**)&factory));
+        dxgi.CreateDXGIFactory(ref guid, (void**)&factory).D3D11Check("CreateDXGIFactory");
 
         IDXGIAdapter* adapter = null;
-        D3D11Check(factory->EnumAdapters(0, &adapter));
+        factory->EnumAdapters(0, &adapter).D3D11Check("EnumAdapters");
         AdapterDesc desc;
-        D3D11Check(adapter->GetDesc(&desc));
+        adapter->GetDesc(&desc).D3D11Check("GetDesc");
 
         var dx = D3D11.GetApi();
         ID3D11Device* device;
         ID3D11DeviceContext* deviceContext;
         var featureLevel = D3DFeatureLevel.Level110;
-        D3D11Check(dx.CreateDevice(adapter, D3DDriverType.Unknown, 0, (uint)CreateDeviceFlag.Debug, &featureLevel, 1, D3D11.SdkVersion, &device, null, &deviceContext));
+        dx.CreateDevice(adapter, D3DDriverType.Unknown, 0, (uint)CreateDeviceFlag.Debug, &featureLevel, 1, D3D11.SdkVersion, &device, null, &deviceContext).D3D11Check("CreateDevice");
         var logger = new Logger();
-        var vr = new VRSystem(XR.GetApi(), device, logger);
-        vr.Initialize();
-        vr.Dispose();
-    }
-
-    static void D3D11Check(int result)
-    {
-        switch ((uint)result)
+        var session = new VRSession(XR.GetApi(), logger, device, deviceContext);
+        session.Initialize();
+        while (!session.State.Exiting)
         {
-            case 0:
-                {
-                    return;
-                }
-            case 0x80070057:
-                {
-                    throw new Exception($"D3D11 call failed E_INVALIDARG (0x80070057)");
-                    break;
-                }
-            default:
-                {
-                    throw new Exception($"D3D11 call failed 0x{result.ToString("x")}");
-                }
-
+            session.Update();
         }
+        session.Dispose();
     }
+
 }
