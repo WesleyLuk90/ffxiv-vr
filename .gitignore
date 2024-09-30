@@ -4,3 +4,4 @@ bin/
 *.user
 *.dll
 TestResults
+*.cso

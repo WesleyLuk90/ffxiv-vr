@@ -111,6 +111,25 @@ public sealed class Plugin : IDalamudPlugin
                 case "stop":
                     StopVR();
                     break;
+                case "debug":
+                    Device* device = Device.Instance();
+                    SwapChain* swapchain = null;
+                    Texture* backbuffer = null;
+                    IntPtr dxTexture = 0;
+                    if (device != null)
+                    {
+                        swapchain = device->SwapChain;
+                        if (swapchain != null)
+                        {
+                            backbuffer = swapchain->BackBuffer;
+                            if (backbuffer != null)
+                            {
+                                dxTexture = (IntPtr)backbuffer->D3D11Texture2D;
+                            }
+                        }
+                    }
+                    logger.Info($"Device:{(IntPtr)device} SwapChain:{(IntPtr)swapchain} Texture:{(IntPtr)backbuffer} DXTexture:{dxTexture}");
+                    break;
             }
         }
     }

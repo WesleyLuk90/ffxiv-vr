@@ -164,8 +164,6 @@ namespace FfxivVR
                 var viewProj = Matrix4X4.Multiply(proj, viewInverted);
 
                 RenderCube(viewProj);
-                //XrMatrix4x4f_Multiply(&cameraConstants.viewProj, &proj, &view);
-                // XR_DOCS_TAG_END_SetupFrameRendering
 
                 // XR_DOCS_TAG_BEGIN_CallRenderCuboid
                 //renderCuboidIndex = 0;
