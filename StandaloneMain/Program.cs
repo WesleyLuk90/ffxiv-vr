@@ -11,7 +11,7 @@ unsafe internal static class Program
     static void Main()
     {
         IDXGIFactory4* factory = null;
-        var dxgi = DXGI.GetApi();
+        var dxgi = DXGI.GetApi(null);
         var guid = IDXGIFactory4.Guid;
         dxgi.CreateDXGIFactory(ref guid, (void**)&factory).D3D11Check("CreateDXGIFactory");
 
@@ -20,7 +20,7 @@ unsafe internal static class Program
         AdapterDesc desc;
         adapter->GetDesc(&desc).D3D11Check("GetDesc");
 
-        var dx = D3D11.GetApi();
+        var dx = D3D11.GetApi(null);
         ID3D11Device* device;
         ID3D11DeviceContext* deviceContext;
         var featureLevel = D3DFeatureLevel.Level110;

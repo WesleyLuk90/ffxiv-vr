@@ -1,7 +1,6 @@
 using Silk.NET.Direct3D11;
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace FfxivVR;
 
@@ -51,14 +50,39 @@ unsafe public class VRShaders
 
     public void Initialize()
     {
-        byte[] compiledVertexShader = LoadVertexShader();
+        var compiledVertexShader = LoadVertexShader();
         ID3D11VertexShader* vertexShader = null;
-        device->CreateVertexShader(Unsafe.AsPointer(ref compiledVertexShader), (nuint)compiledVertexShader.Length, null, ref vertexShader);
-        byte[] compiledPixelShader = LoadPixelShader();
+        fixed (byte* p = compiledVertexShader)
+        {
+            device->CreateVertexShader(p, (nuint)compiledVertexShader.Length, null, ref vertexShader)
+                .D3D11Check("CreateVertexShader");
+        }
         this.vertexShader = vertexShader;
+
+        byte[] compiledPixelShader = LoadPixelShader();
         ID3D11PixelShader* pixelShader = null;
-        device->CreatePixelShader(Unsafe.AsPointer(ref compiledPixelShader), (nuint)compiledVertexShader.Length, null, ref pixelShader);
+        fixed (byte* p = compiledPixelShader)
+        {
+            device->CreatePixelShader(p, (nuint)compiledPixelShader.Length, null, ref pixelShader)
+                .D3D11Check("CreatePixelShader");
+        }
         this.pixelShader = pixelShader;
+
+        SubresourceData data = new SubresourceData(
+            pSysMem: null, //Fixme
+            sysMemPitch: 10,
+            sysMemSlicePitch: 0
+        );
+        BufferDesc desc = new BufferDesc(
+            byteWidth: 10,
+            usage: Usage.Dynamic,
+            bindFlags: 10,
+            cPUAccessFlags: (uint)CpuAccessFlag.Write,
+            miscFlags: 0,
+            structureByteStride: 0
+        );
+        ID3D11Buffer* buffer = null;
+        device->CreateBuffer(ref desc, ref data, ref buffer).D3D11Check("CreateBuffer");
     }
 
     public void Dispose()

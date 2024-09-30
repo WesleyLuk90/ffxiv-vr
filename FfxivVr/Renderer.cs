@@ -182,6 +182,7 @@ namespace FfxivVR
 
         private void RenderCube(Matrix4X4<float> viewProj)
         {
+            //var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
         }
 
         public void Dispose()
