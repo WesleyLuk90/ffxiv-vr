@@ -9,9 +9,9 @@ public unsafe class TestGeometry
     [TestMethod]
     public void TestSpan()
     {
-        Assert.AreEqual(sizeof(Vector4f) * Geometry.CubeVertices.Length, 36 * 4 * 4);
+        Assert.AreEqual(sizeof(Vector4f) * Resources.CubeVertices.Length, 36 * 4 * 4);
 
-        var span = new Span<Vector4f>(Geometry.CubeVertices);
+        var span = new Span<Vector4f>(Resources.CubeVertices);
         var bytes = MemoryMarshal.AsBytes(span);
         Assert.AreEqual(bytes.Length, 36 * 4 * 4);
 

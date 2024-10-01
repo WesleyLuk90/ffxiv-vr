@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 
-unsafe public class Geometry
+unsafe public class Resources : IDisposable
 {
     struct CameraConstants
     {
@@ -54,10 +54,14 @@ unsafe public class Geometry
         24,25,26,27,28,29,
         30,31,32,33,34,35
     };
+    private D3DBuffer vertexBuffer;
+    private D3DBuffer indexBuffer;
+    private D3DBuffer uniformBuffer;
+    private D3DBuffer normalBuffer;
     private readonly ID3D11Device* device;
     private readonly ID3D11DeviceContext* context;
 
-    public Geometry(ID3D11Device* device, ID3D11DeviceContext* context)
+    public Resources(ID3D11Device* device, ID3D11DeviceContext* context)
     {
         this.device = device;
         this.context = context;
@@ -65,10 +69,10 @@ unsafe public class Geometry
 
     public void Initialize()
     {
-        var vertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vector4f>(CubeVertices)), BindFlag.VertexBuffer);
-        var indexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<int>(CubeIndices)), BindFlag.IndexBuffer);
-        var uniformBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
-        var normalBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vector4f>(Normals)), BindFlag.ConstantBuffer);
+        this.vertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vector4f>(CubeVertices)), BindFlag.VertexBuffer);
+        this.indexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<int>(CubeIndices)), BindFlag.IndexBuffer);
+        this.uniformBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
+        this.normalBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vector4f>(Normals)), BindFlag.ConstantBuffer);
     }
 
     class D3DBuffer : IDisposable
@@ -92,6 +96,10 @@ unsafe public class Geometry
     {
         fixed (byte* p = bytes)
         {
+            if (p == null)
+            {
+                throw new ArgumentNullException(nameof(bytes));
+            }
             SubresourceData subresourceData = new SubresourceData(
                 pSysMem: p,
                 sysMemPitch: 0,
@@ -120,5 +128,13 @@ unsafe public class Geometry
         MappedSubresource mappedSubresource = new MappedSubresource();
         context->Map((ID3D11Resource*)buffer, 0, Map.WriteDiscard, 0, ref mappedSubresource).D3D11Check("Map");
         //Buffer.MemoryCopy()
+    }
+
+    public void Dispose()
+    {
+        this.vertexBuffer.Dispose();
+        this.indexBuffer.Dispose();
+        this.uniformBuffer.Dispose();
+        this.normalBuffer.Dispose();
     }
 }

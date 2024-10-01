@@ -68,21 +68,21 @@ unsafe public class VRShaders
         }
         this.pixelShader = pixelShader;
 
-        SubresourceData data = new SubresourceData(
-            pSysMem: null, //Fixme
-            sysMemPitch: 10,
-            sysMemSlicePitch: 0
-        );
-        BufferDesc desc = new BufferDesc(
-            byteWidth: 10,
-            usage: Usage.Dynamic,
-            bindFlags: 10,
-            cPUAccessFlags: (uint)CpuAccessFlag.Write,
-            miscFlags: 0,
-            structureByteStride: 0
-        );
-        ID3D11Buffer* buffer = null;
-        device->CreateBuffer(ref desc, ref data, ref buffer).D3D11Check("CreateBuffer");
+        //SubresourceData data = new SubresourceData(
+        //    pSysMem: null, //Fixme
+        //    sysMemPitch: 10,
+        //    sysMemSlicePitch: 0
+        //);
+        //BufferDesc desc = new BufferDesc(
+        //    byteWidth: 10,
+        //    usage: Usage.Dynamic,
+        //    bindFlags: 10,
+        //    cPUAccessFlags: (uint)CpuAccessFlag.Write,
+        //    miscFlags: 0,
+        //    structureByteStride: 0
+        //);
+        //ID3D11Buffer* buffer = null;
+        //device->CreateBuffer(ref desc, ref data, ref buffer).D3D11Check("CreateBuffer");
     }
 
     public void Dispose()
