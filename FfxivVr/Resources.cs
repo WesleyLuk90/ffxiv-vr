@@ -1,5 +1,6 @@
-﻿using FFXIVClientStructs.FFXIV.Common.Math;
-using Silk.NET.Direct3D11;
+﻿using Silk.NET.Direct3D11;
+using Silk.NET.DXGI;
+using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.Runtime.InteropServices;
@@ -8,10 +9,21 @@ namespace FfxivVR;
 
 unsafe public class Resources : IDisposable
 {
-    struct CameraConstants
+    public struct CameraConstants
     {
-        Matrix4x4 viewProjm, modelViewProj, model;
+        Matrix4X4<float> viewProj, modelViewProj, model;
         Vector4f color, pad1, pad2, pad3;
+
+        public CameraConstants(Matrix4X4<float> viewProj, Matrix4X4<float> modelViewProj, Matrix4X4<float> model, Vector4f color)
+        {
+            this.viewProj = viewProj;
+            this.modelViewProj = modelViewProj;
+            this.model = model;
+            this.color = color;
+            this.pad1 = new Vector4f();
+            this.pad2 = new Vector4f();
+            this.pad3 = new Vector4f();
+        }
     }
 
     public static Vector4f[] Normals = new Vector4f[]
@@ -77,18 +89,18 @@ unsafe public class Resources : IDisposable
 
     class D3DBuffer : IDisposable
     {
-        ID3D11Buffer* buffer;
-        uint length;
+        public ID3D11Buffer* Handle;
+        public uint Length;
 
         internal D3DBuffer(ID3D11Buffer* buffer, uint length)
         {
-            this.buffer = buffer;
-            this.length = length;
+            this.Handle = buffer;
+            this.Length = length;
         }
 
         public void Dispose()
         {
-            buffer->Release();
+            Handle->Release();
         }
     }
 
@@ -119,15 +131,41 @@ unsafe public class Resources : IDisposable
         }
     }
 
-    private void SetBufferData(ID3D11Buffer* buffer, uint byteLength, void* pointer)
+    private void SetBufferData(Span<byte> bytes, D3DBuffer buffer)
     {
-        if (buffer == null)
+        if (bytes.Length != buffer.Length)
         {
-            return;
+            throw new Exception($"Invalid buffer data {bytes.Length}, expected {buffer.Length}");
         }
         MappedSubresource mappedSubresource = new MappedSubresource();
-        context->Map((ID3D11Resource*)buffer, 0, Map.WriteDiscard, 0, ref mappedSubresource).D3D11Check("Map");
-        //Buffer.MemoryCopy()
+        context->Map((ID3D11Resource*)buffer.Handle, 0, Map.WriteDiscard, 0, ref mappedSubresource).D3D11Check("Map");
+        fixed (byte* p = bytes)
+        {
+            Buffer.MemoryCopy(source: p, destination: mappedSubresource.PData, buffer.Length, bytes.Length);
+        }
+        context->Unmap((ID3D11Resource*)buffer.Handle, 0);
+    }
+
+    public void UpdateCamera(CameraConstants camera)
+    {
+        var cameraSpan = new Span<CameraConstants>(ref camera);
+        SetBufferData(MemoryMarshal.AsBytes(cameraSpan), this.uniformBuffer);
+
+        context->VSSetConstantBuffers(0, 1, ref uniformBuffer.Handle);
+    }
+
+    public void BindNormals()
+    {
+        context->VSSetConstantBuffers(1, 1, ref normalBuffer.Handle);
+    }
+
+    public void Draw()
+    {
+        uint stride = 4;
+        uint offset = 0;
+        context->IASetVertexBuffers(0, 1, ref vertexBuffer.Handle, ref stride, ref offset);
+        context->IASetIndexBuffer(indexBuffer.Handle, Format.FormatR32Uint, 0);
+        context->DrawIndexed(36, 0, 0);
     }
 
     public void Dispose()

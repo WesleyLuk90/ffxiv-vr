@@ -26,10 +26,10 @@ public unsafe class VRSession : IDisposable
         this.logger = logger;
         State = new VRState();
         swapchains = new VRSwapchains(xr, vrSystem, logger, device);
-        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, deviceContext);
-        eventHandler = new EventHandler(xr, vrSystem, logger, State);
-        vrShaders = new VRShaders(device, logger);
         resources = new Resources(device, deviceContext);
+        vrShaders = new VRShaders(device, logger, deviceContext);
+        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, deviceContext, resources, vrShaders);
+        eventHandler = new EventHandler(xr, vrSystem, logger, State);
     }
 
     public void Initialize()

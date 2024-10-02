@@ -2,6 +2,7 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using static FfxivVR.Resources;
 
 namespace FfxivVR
 {
@@ -13,9 +14,11 @@ namespace FfxivVR
         private Logger logger;
         private readonly VRSwapchains swapchains;
         private readonly ID3D11DeviceContext* deviceContext;
+        private readonly Resources resources;
+        private readonly VRShaders shaders;
         private Space localSpace = new Space();
 
-        internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, ID3D11DeviceContext* deviceContext)
+        internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, ID3D11DeviceContext* deviceContext, Resources resources, VRShaders shaders)
         {
             this.xr = xr;
             this.system = system;
@@ -23,6 +26,8 @@ namespace FfxivVR
             this.logger = logger;
             this.swapchains = swapchains;
             this.deviceContext = deviceContext;
+            this.resources = resources;
+            this.shaders = shaders;
         }
 
         internal void Initialize()
@@ -182,8 +187,18 @@ namespace FfxivVR
 
         private void RenderCube(Matrix4X4<float> viewProj)
         {
-            //var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
+            shaders.SetShaders();
+
+            resources.UpdateCamera(new CameraConstants(
+                modelViewProj: viewProj,
+                viewProj: viewProj,
+                model: Matrix4X4<float>.Identity,
+                color: new Vector4f(0.7f, 0.3f, 0.3f, 1)
+            ));
+            resources.BindNormals();
+            resources.Draw();
         }
+
 
         public void Dispose()
         {
