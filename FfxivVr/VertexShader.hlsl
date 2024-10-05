@@ -1,3 +1,7 @@
+cbuffer Camera
+{
+    float4x4 modelViewProjection;
+};
 struct VertexShaderOutput
 {
     float4 position : SV_POSITION;
@@ -14,7 +18,7 @@ VertexShaderOutput main(VertexShaderInput input)
 {
     VertexShaderOutput output;
 
-    output.position = input.position;
+    output.position = mul(modelViewProjection, input.position);
     output.color = input.color;
 
     return output;

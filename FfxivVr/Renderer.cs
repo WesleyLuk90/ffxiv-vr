@@ -2,6 +2,7 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using static FfxivVR.Resources;
 
 namespace FfxivVR
 {
@@ -37,7 +38,9 @@ namespace FfxivVR
 
         private void CreateReferenceSpace()
         {
-            var referenceSpace = new ReferenceSpaceCreateInfo(referenceSpaceType: ReferenceSpaceType.Local, poseInReferenceSpace: new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0)));
+            var referenceSpace = new ReferenceSpaceCreateInfo(
+                referenceSpaceType: ReferenceSpaceType.Local,
+                poseInReferenceSpace: new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0)));
             xr.CreateReferenceSpace(system.Session, ref referenceSpace, ref localSpace).CheckResult("CreateReferenceSpace");
         }
 
@@ -87,11 +90,16 @@ namespace FfxivVR
             }
         }
 
+        bool runOnce = true;
         private CompositionLayerProjectionView[] InnerRender(long predictedDisplayTime)
         {
             var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
             var viewState = new ViewState(next: null);
-            var viewLocateInfo = new ViewLocateInfo(next: null, viewConfigurationType: VRSwapchains.ViewConfigType, displayTime: predictedDisplayTime, space: localSpace);
+            var viewLocateInfo = new ViewLocateInfo(
+                viewConfigurationType: ViewConfigurationType.PrimaryStereo,
+                displayTime: predictedDisplayTime,
+                space: localSpace
+            );
             uint viewCount = 0;
             xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
 
@@ -152,30 +160,20 @@ namespace FfxivVR
                     height: height,
                     minDepth: 0f,
                     maxDepth: 1f);
-                var scissor = new Box2D<int>(
-                    minX: 0, minY: 0, maxX: width, maxY: height);
                 deviceContext->RSSetViewports(1, &viewport);
-                deviceContext->RSSetScissorRects(1, &scissor);
 
-                var horizontal = view.Fov.AngleRight - view.Fov.AngleLeft;
-                var vertical = view.Fov.AngleUp - view.Fov.AngleDown;
-                var proj = Matrix4X4.CreatePerspectiveFieldOfView<float>(horizontal, ((float)width) / height, nearPlaneDistance: 0.05f, farPlaneDistance: 100f);
                 var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
                 var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
                 var toView = Matrix4X4.Multiply(rotation, translation);
                 var viewInverted = new Matrix4X4<float>();
                 Matrix4X4.Invert(toView, out viewInverted);
-                var viewProj = Matrix4X4.Multiply(proj, viewInverted);
+
+                var horizontal = view.Fov.AngleRight - view.Fov.AngleLeft;
+                //var vertical = view.Fov.AngleUp - view.Fov.AngleDown;
+                var proj = Matrix4X4.CreatePerspectiveFieldOfView<float>(horizontal, ((float)width) / height, nearPlaneDistance: 0.05f, farPlaneDistance: 100f);
+                var viewProj = Matrix4X4.Multiply(viewInverted, proj);
 
                 RenderCube(viewProj);
-
-                // XR_DOCS_TAG_BEGIN_CallRenderCuboid
-                //renderCuboidIndex = 0;
-                // Draw a floor. Scale it by 2 in the X and Z, and 0.1 in the Y,
-                //RenderCuboid({ { 0.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, -m_viewHeightM, 0.0f} }, { 2.0f, 0.1f, 2.0f}, { 0.4f, 0.5f, 0.5f});
-                // Draw a "table".
-                //RenderCuboid({ { 0.0f, 0.0f, 0.0f, 1.0f}, { 0.0f, -m_viewHeightM + 0.9f, -0.7f} }, { 1.0f, 0.2f, 1.0f}, { 0.6f, 0.6f, 0.4f});
-                // XR_DOCS_TAG_END_CallRenderCuboid
 
                 var releaseInfo = new SwapchainImageReleaseInfo(next: null);
                 xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
@@ -183,18 +181,21 @@ namespace FfxivVR
             }
             return layers;
         }
-        private void RenderCube(Matrix4X4<float> viewProj)
+        private void RenderCube(Matrix4X4<float> viewProjection)
         {
-
-            //shaders.SetShaders();
-
-            //resources.UpdateCamera(new CameraConstants(
-            //    modelViewProj: viewProj,
-            //    viewProj: viewProj,
-            //    model: Matrix4X4<float>.Identity,
-            //    color: new Vector4f(0.7f, 0.3f, 0.3f, 1)
-            //));
-            //resources.BindNormals();
+            var translation = Matrix4X4.CreateTranslation(new Vector3D<float>(0.3f, 0.3f, -0.5f));
+            var modelViewProjection = Matrix4X4.Multiply(translation, viewProjection);
+            //var temp = new Matrix4X4<float>();
+            //Matrix4X4.Invert(translation, out temp);
+            resources.UpdateCamera(new CameraConstants(
+                modelViewProjection: modelViewProjection
+            ));
+            resources.Draw();
+            translation = Matrix4X4.CreateTranslation(new Vector3D<float>(-0.3f, -0.3f, -1f));
+            modelViewProjection = Matrix4X4.Multiply(translation, viewProjection);
+            resources.UpdateCamera(new CameraConstants(
+                modelViewProjection: modelViewProjection
+            ));
             resources.Draw();
         }
 

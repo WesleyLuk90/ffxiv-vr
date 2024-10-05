@@ -10,66 +10,16 @@ unsafe public class Resources : IDisposable
 {
     public struct CameraConstants
     {
-        Matrix4X4<float> viewProj, modelViewProj, model;
-        Vector4f color, pad1, pad2, pad3;
+        Matrix4X4<float> modelViewProjection;
 
-        public CameraConstants(Matrix4X4<float> viewProj, Matrix4X4<float> modelViewProj, Matrix4X4<float> model, Vector4f color)
+        public CameraConstants(Matrix4X4<float> modelViewProjection)
         {
-            this.viewProj = viewProj;
-            this.modelViewProj = modelViewProj;
-            this.model = model;
-            this.color = color;
-            this.pad1 = new Vector4f();
-            this.pad2 = new Vector4f();
-            this.pad3 = new Vector4f();
+            this.modelViewProjection = modelViewProjection;
         }
     }
 
-    public static Vector4f[] Normals = new Vector4f[]
-    {
-        new Vector4f(1,0,0,0),
-        new Vector4f(-1,0,0,0),
-        new Vector4f(0,1,0,0),
-        new Vector4f(0,-1,0,0),
-        new Vector4f(0,0,1,0),
-        new Vector4f(0,0,-1,0),
-    };
-
-    public static Vector4f[] VertexPositions = new Vector4f[]{
-        new Vector4f(+0.5f, +0.5f, +0.5f, 1),
-        new Vector4f(+0.5f, +0.5f, -0.5f, 1),
-        new Vector4f(+0.5f, -0.5f, +0.5f, 1),
-        new Vector4f(+0.5f, -0.5f, -0.5f, 1),
-        new Vector4f(-0.5f, +0.5f, +0.5f, 1),
-        new Vector4f(-0.5f, +0.5f, -0.5f, 1),
-        new Vector4f(-0.5f, -0.5f, +0.5f, 1),
-        new Vector4f(-0.5f, -0.5f, -0.5f, 1),
-    };
-
-    public static Vector4f[] CubeVertices = new Vector4f[]
-    {
-        VertexPositions[2], VertexPositions[1], VertexPositions[0], VertexPositions[2], VertexPositions[3], VertexPositions[1],
-        VertexPositions[6], VertexPositions[4], VertexPositions[5], VertexPositions[6], VertexPositions[5], VertexPositions[7],
-        VertexPositions[0], VertexPositions[1], VertexPositions[5], VertexPositions[0], VertexPositions[5], VertexPositions[4],
-        VertexPositions[2], VertexPositions[6], VertexPositions[7], VertexPositions[2], VertexPositions[7], VertexPositions[3],
-        VertexPositions[0], VertexPositions[4], VertexPositions[6], VertexPositions[0], VertexPositions[6], VertexPositions[2],
-        VertexPositions[1], VertexPositions[3], VertexPositions[7], VertexPositions[1], VertexPositions[7], VertexPositions[5],
-    };
-
-    public static int[] CubeIndices = new int[]
-    {
-        0,1,2,3,4,5,
-        6,7,8,9,10,11,
-        12,13,14,15,16,17,
-        18,19,20,21,22,23,
-        24,25,26,27,28,29,
-        30,31,32,33,34,35
-    };
+    private D3DBuffer cameraBuffer;
     private D3DBuffer vertexBuffer;
-    private D3DBuffer indexBuffer;
-    private D3DBuffer uniformBuffer;
-    private D3DBuffer normalBuffer;
-    private D3DBuffer simpleBuffer;
     private readonly ID3D11Device* device;
     private readonly ID3D11DeviceContext* context;
 
@@ -92,11 +42,8 @@ unsafe public class Resources : IDisposable
 
     public void Initialize()
     {
-        this.vertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vector4f>(CubeVertices)), BindFlag.VertexBuffer);
-        this.indexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<int>(CubeIndices)), BindFlag.IndexBuffer);
-        this.uniformBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
-        this.normalBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vector4f>(Normals)), BindFlag.ConstantBuffer);
-        this.simpleBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(
+        this.cameraBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
+        this.vertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(
         [
             new Vertex(new Vector3f(0, 0.5f, 0), new Vector4f(1, 0, 0, 1)),
             new Vertex(new Vector3f(0.45f, -0.5f, 0), new Vector4f(0, 1, 0, 1)),
@@ -166,19 +113,14 @@ unsafe public class Resources : IDisposable
     public void UpdateCamera(CameraConstants camera)
     {
         var cameraSpan = new Span<CameraConstants>(ref camera);
-        SetBufferData(MemoryMarshal.AsBytes(cameraSpan), this.uniformBuffer);
+        SetBufferData(MemoryMarshal.AsBytes(cameraSpan), this.cameraBuffer);
 
-        context->VSSetConstantBuffers(0, 1, ref uniformBuffer.Handle);
-    }
-
-    public void BindNormals()
-    {
-        context->VSSetConstantBuffers(1, 1, ref normalBuffer.Handle);
+        context->VSSetConstantBuffers(0, 1, ref cameraBuffer.Handle);
     }
 
     public void Draw()
     {
-        fixed (ID3D11Buffer** pHandle = &simpleBuffer.Handle)
+        fixed (ID3D11Buffer** pHandle = &vertexBuffer.Handle)
         {
             uint stride = (uint)sizeof(Vertex);
             uint offsets = 0;
@@ -186,19 +128,11 @@ unsafe public class Resources : IDisposable
             context->IASetPrimitiveTopology(Silk.NET.Core.Native.D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
             context->Draw(3, 0);
         }
-        //uint stride = 4;
-        //uint offset = 0;
-        //context->IASetVertexBuffers(0, 1, ref vertexBuffer.Handle, ref stride, ref offset);
-        //context->IASetIndexBuffer(indexBuffer.Handle, Format.FormatR32Uint, 0);
-        //context->DrawIndexed(36, 0, 0);
-        //context->IASetVertexBuffers(0, 1, )
     }
 
     public void Dispose()
     {
+        this.cameraBuffer.Dispose();
         this.vertexBuffer.Dispose();
-        this.indexBuffer.Dispose();
-        this.uniformBuffer.Dispose();
-        this.normalBuffer.Dispose();
     }
 }
