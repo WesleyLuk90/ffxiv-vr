@@ -2,7 +2,6 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
-using static FfxivVR.Resources;
 
 namespace FfxivVR
 {
@@ -184,18 +183,18 @@ namespace FfxivVR
             }
             return layers;
         }
-
         private void RenderCube(Matrix4X4<float> viewProj)
         {
-            shaders.SetShaders();
 
-            resources.UpdateCamera(new CameraConstants(
-                modelViewProj: viewProj,
-                viewProj: viewProj,
-                model: Matrix4X4<float>.Identity,
-                color: new Vector4f(0.7f, 0.3f, 0.3f, 1)
-            ));
-            resources.BindNormals();
+            //shaders.SetShaders();
+
+            //resources.UpdateCamera(new CameraConstants(
+            //    modelViewProj: viewProj,
+            //    viewProj: viewProj,
+            //    model: Matrix4X4<float>.Identity,
+            //    color: new Vector4f(0.7f, 0.3f, 0.3f, 1)
+            //));
+            //resources.BindNormals();
             resources.Draw();
         }
 

@@ -1,5 +1,4 @@
 ﻿using Silk.NET.Direct3D11;
-using Silk.NET.DXGI;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
@@ -70,6 +69,7 @@ unsafe public class Resources : IDisposable
     private D3DBuffer indexBuffer;
     private D3DBuffer uniformBuffer;
     private D3DBuffer normalBuffer;
+    private D3DBuffer simpleBuffer;
     private readonly ID3D11Device* device;
     private readonly ID3D11DeviceContext* context;
 
@@ -79,12 +79,29 @@ unsafe public class Resources : IDisposable
         this.context = context;
     }
 
+    public struct Vertex
+    {
+        Vector3f position;
+        Vector4f color;
+        public Vertex(Vector3f position, Vector4f color)
+        {
+            this.position = position;
+            this.color = color;
+        }
+    }
+
     public void Initialize()
     {
         this.vertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vector4f>(CubeVertices)), BindFlag.VertexBuffer);
         this.indexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<int>(CubeIndices)), BindFlag.IndexBuffer);
         this.uniformBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
         this.normalBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vector4f>(Normals)), BindFlag.ConstantBuffer);
+        this.simpleBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(
+        [
+            new Vertex(new Vector3f(0, 0.5f, 0), new Vector4f(1, 0, 0, 1)),
+            new Vertex(new Vector3f(0.45f, -0.5f, 0), new Vector4f(0, 1, 0, 1)),
+            new Vertex(new Vector3f(-0.45f, -0.5f, 0), new Vector4f(0, 0, 1, 1)),
+        ])), BindFlag.VertexBuffer);
     }
 
     class D3DBuffer : IDisposable
@@ -161,11 +178,20 @@ unsafe public class Resources : IDisposable
 
     public void Draw()
     {
-        uint stride = 4;
-        uint offset = 0;
-        context->IASetVertexBuffers(0, 1, ref vertexBuffer.Handle, ref stride, ref offset);
-        context->IASetIndexBuffer(indexBuffer.Handle, Format.FormatR32Uint, 0);
-        context->DrawIndexed(36, 0, 0);
+        fixed (ID3D11Buffer** pHandle = &simpleBuffer.Handle)
+        {
+            uint stride = (uint)sizeof(Vertex);
+            uint offsets = 0;
+            context->IASetVertexBuffers(0, 1, pHandle, &stride, &offsets);
+            context->IASetPrimitiveTopology(Silk.NET.Core.Native.D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
+            context->Draw(3, 0);
+        }
+        //uint stride = 4;
+        //uint offset = 0;
+        //context->IASetVertexBuffers(0, 1, ref vertexBuffer.Handle, ref stride, ref offset);
+        //context->IASetIndexBuffer(indexBuffer.Handle, Format.FormatR32Uint, 0);
+        //context->DrawIndexed(36, 0, 0);
+        //context->IASetVertexBuffers(0, 1, )
     }
 
     public void Dispose()

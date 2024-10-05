@@ -73,13 +73,51 @@ unsafe public class VRShaders
         }
         this.pixelShader = pixelShader;
 
+        context->VSSetShader(vertexShader, null, 0);
+        context->PSSetShader(pixelShader, null, 0);
+        var bstring = Marshal.StringToCoTaskMemAnsi("POSITION");
+        Native.WithStringPointer("POSITION", (positionStr) =>
+        {
+            Native.WithStringPointer("COLOR", (colorStr) =>
+            {
+                InputElementDesc[] inputElementDesc = [
+                    new InputElementDesc(
+                        semanticName: (byte*)positionStr,
+                        semanticIndex: 0,
+                        format: Silk.NET.DXGI.Format.FormatR32G32B32Float,
+                        inputSlot: 0,
+                        alignedByteOffset: 0,
+                        inputSlotClass: InputClassification.PerVertexData,
+                        instanceDataStepRate: 0
+                    ),
+                    new InputElementDesc(
+                        semanticName: (byte*)positionStr,
+                        semanticIndex: 0,
+                        format: Silk.NET.DXGI.Format.FormatR32G32B32A32Float,
+                        inputSlot: 0,
+                        alignedByteOffset: 12,
+                        inputSlotClass: InputClassification.PerVertexData,
+                        instanceDataStepRate: 0
+                    )
+                ];
+                var inputElementDescSpan = new Span<InputElementDesc>(inputElementDesc);
+                fixed (InputElementDesc* pInputElement = inputElementDescSpan)
+                {
+                    var vertexShaderSpan = new Span<byte>(vertexShaderBinary);
+                    fixed (byte* pVertexShader = vertexShaderSpan)
+                    {
+                        ID3D11InputLayout* inputLayout = null;
+                        device->CreateInputLayout(pInputElement, (uint)inputElementDescSpan.Length, pVertexShader, (nuint)vertexShaderSpan.Length, &inputLayout).D3D11Check("CreateInputLayout");
+                        context->IASetInputLayout(inputLayout); ;
+                    }
+                }
+            });
+        });
     }
 
     public void SetShaders()
     {
-        context->VSSetShader(vertexShader, null, 0);
-        context->PSSetShader(pixelShader, null, 0);
-
+        return;
         var bstring = Marshal.StringToCoTaskMemAnsi("TEXCOORD");
         var inputElementDesc = new InputElementDesc(
             semanticName: (byte*)bstring,
@@ -87,7 +125,7 @@ unsafe public class VRShaders
             format: Silk.NET.DXGI.Format.FormatR32G32B32A32Float,
             inputSlot: 0,
             alignedByteOffset: 0,
-            inputSlotClass: InputClassification.InputPerVertexData,
+            inputSlotClass: InputClassification.PerVertexData,
             instanceDataStepRate: 0
         );
         ID3D11InputLayout* layout = null;
