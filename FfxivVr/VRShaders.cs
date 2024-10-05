@@ -91,7 +91,7 @@ unsafe public class VRShaders
                         instanceDataStepRate: 0
                     ),
                     new InputElementDesc(
-                        semanticName: (byte*)positionStr,
+                        semanticName: (byte*)colorStr,
                         semanticIndex: 0,
                         format: Silk.NET.DXGI.Format.FormatR32G32B32A32Float,
                         inputSlot: 0,
