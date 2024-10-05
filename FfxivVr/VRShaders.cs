@@ -1,7 +1,6 @@
 using Silk.NET.Direct3D11;
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 
@@ -74,9 +73,6 @@ unsafe public class VRShaders
         }
         this.pixelShader = pixelShader;
 
-        context->VSSetShader(vertexShader, null, 0);
-        context->PSSetShader(pixelShader, null, 0);
-        var bstring = Marshal.StringToCoTaskMemAnsi("POSITION");
         Native.WithStringPointer("POSITION", (positionStr) =>
         {
             Native.WithStringPointer("COLOR", (colorStr) =>
@@ -109,7 +105,6 @@ unsafe public class VRShaders
                     {
                         ID3D11InputLayout* inputLayout = null;
                         device->CreateInputLayout(pInputElement, (uint)inputElementDescSpan.Length, pVertexShader, (nuint)vertexShaderSpan.Length, &inputLayout).D3D11Check("CreateInputLayout");
-                        context->IASetInputLayout(inputLayout);
                         this.inputLayout = inputLayout;
 
                     }
@@ -120,6 +115,9 @@ unsafe public class VRShaders
 
     public void SetShaders()
     {
+        context->IASetInputLayout(inputLayout);
+        context->VSSetShader(vertexShader, null, 0);
+        context->PSSetShader(pixelShader, null, 0);
     }
 
     public void Dispose()

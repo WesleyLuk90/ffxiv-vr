@@ -33,14 +33,14 @@ namespace FfxivVR
 
         internal unsafe static void WithStringPointer(string value, Action<IntPtr> block)
         {
-            var bytes = Marshal.StringToCoTaskMemAnsi(value);
+            var bytes = Marshal.StringToHGlobalAnsi(value);
             try
             {
                 block(bytes);
             }
             finally
             {
-                Marshal.FreeCoTaskMem(bytes);
+                Marshal.FreeHGlobal(bytes);
             }
         }
     }

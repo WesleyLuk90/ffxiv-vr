@@ -134,7 +134,7 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    private unsafe void StartVR()
+    public unsafe void StartVR()
     {
         logger.Info("Starting VR");
         vRSession?.Dispose();

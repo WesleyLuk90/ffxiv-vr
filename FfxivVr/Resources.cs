@@ -22,6 +22,10 @@ unsafe public class Resources : IDisposable
     private D3DBuffer vertexBuffer;
     private readonly ID3D11Device* device;
     private readonly ID3D11DeviceContext* context;
+    private ID3D11DepthStencilState* depthStencilStateOn = null;
+    private ID3D11DepthStencilState* depthStencilStateOff = null;
+    private ID3D11BlendState* blendState = null;
+    private ID3D11RasterizerState* rasterizerState = null;
 
     public Resources(ID3D11Device* device, ID3D11DeviceContext* context)
     {
@@ -49,6 +53,87 @@ unsafe public class Resources : IDisposable
             new Vertex(new Vector3f(0.45f, -0.5f, 0), new Vector4f(0, 1, 0, 1)),
             new Vertex(new Vector3f(-0.45f, -0.5f, 0), new Vector4f(0, 0, 1, 1)),
         ])), BindFlag.VertexBuffer);
+
+        var depthStencilOn = new DepthStencilDesc(
+            depthEnable: true,
+            depthWriteMask: DepthWriteMask.All,
+            depthFunc: ComparisonFunc.LessEqual,
+            stencilEnable: true,
+            stencilReadMask: 0xff,
+            stencilWriteMask: 0xff,
+            frontFace: new DepthStencilopDesc(
+                stencilFailOp: StencilOp.Keep,
+                stencilDepthFailOp: StencilOp.Keep,
+                stencilPassOp: StencilOp.Keep,
+                stencilFunc: ComparisonFunc.Always
+                ),
+            backFace: new DepthStencilopDesc(
+                stencilFailOp: StencilOp.Keep,
+                stencilDepthFailOp: StencilOp.Keep,
+                stencilPassOp: StencilOp.Keep,
+                stencilFunc: ComparisonFunc.Always
+                )
+            );
+        fixed (ID3D11DepthStencilState** ptr = &depthStencilStateOn)
+        {
+            device->CreateDepthStencilState(ref depthStencilOn, ptr).D3D11Check("CreateDepthStencilState");
+        }
+        var depthStencilOff = new DepthStencilDesc(
+            depthEnable: false,
+            depthWriteMask: DepthWriteMask.All,
+            depthFunc: ComparisonFunc.LessEqual,
+            stencilEnable: true,
+            stencilReadMask: 0xff,
+            stencilWriteMask: 0xff,
+            frontFace: new DepthStencilopDesc(
+                stencilFailOp: StencilOp.Keep,
+                stencilDepthFailOp: StencilOp.Keep,
+                stencilPassOp: StencilOp.Keep,
+                stencilFunc: ComparisonFunc.Always
+                ),
+            backFace: new DepthStencilopDesc(
+                stencilFailOp: StencilOp.Keep,
+                stencilDepthFailOp: StencilOp.Keep,
+                stencilPassOp: StencilOp.Keep,
+                stencilFunc: ComparisonFunc.Always
+                )
+            );
+        fixed (ID3D11DepthStencilState** ptr = &depthStencilStateOff)
+        {
+            device->CreateDepthStencilState(ref depthStencilOff, ptr).D3D11Check("CreateDepthStencilState");
+        }
+        var blendStateDesc = new BlendDesc(
+            alphaToCoverageEnable: false,
+            independentBlendEnable: false
+            );
+        blendStateDesc.RenderTarget[0].BlendEnable = true;
+        blendStateDesc.RenderTarget[0].SrcBlend = Blend.SrcColor;
+        blendStateDesc.RenderTarget[0].DestBlend = Blend.SrcAlpha;
+        blendStateDesc.RenderTarget[0].BlendOp = BlendOp.Add;
+        blendStateDesc.RenderTarget[0].SrcBlendAlpha = Blend.One;
+        blendStateDesc.RenderTarget[0].DestBlendAlpha = Blend.Zero;
+        blendStateDesc.RenderTarget[0].BlendOpAlpha = BlendOp.Add;
+        blendStateDesc.RenderTarget[0].RenderTargetWriteMask = (byte)ColorWriteEnable.All;
+        fixed (ID3D11BlendState** ptr = &blendState)
+        {
+            device->CreateBlendState(ref blendStateDesc, ptr).D3D11Check("CreateBlendState");
+        }
+        var rasterizerDesc = new RasterizerDesc(
+            fillMode: FillMode.Solid,
+            cullMode: CullMode.None,
+            frontCounterClockwise: true,
+            depthBias: 0,
+            depthBiasClamp: 100,
+            slopeScaledDepthBias: 0,
+            depthClipEnable: false,
+            scissorEnable: false,
+            multisampleEnable: false,
+            antialiasedLineEnable: false
+            );
+        fixed (ID3D11RasterizerState** ptr = &rasterizerState)
+        {
+            device->CreateRasterizerState(ref rasterizerDesc, ptr).D3D11Check("CreateRasterizerState");
+        }
     }
 
     class D3DBuffer : IDisposable
@@ -116,6 +201,8 @@ unsafe public class Resources : IDisposable
         SetBufferData(MemoryMarshal.AsBytes(cameraSpan), this.cameraBuffer);
 
         context->VSSetConstantBuffers(0, 1, ref cameraBuffer.Handle);
+
+        context->RSSetState(rasterizerState);
     }
 
     public void Draw()
@@ -134,5 +221,18 @@ unsafe public class Resources : IDisposable
     {
         this.cameraBuffer.Dispose();
         this.vertexBuffer.Dispose();
+    }
+
+    internal void SetDepthStencilState()
+    {
+        context->OMSetDepthStencilState(depthStencilStateOff, 0);
+    }
+
+    internal void SetBlendState()
+    {
+        fixed (float* ptr = new Span<float>([0, 0, 0, 0]))
+        {
+            context->OMSetBlendState(blendState, ptr, 1);
+        }
     }
 }

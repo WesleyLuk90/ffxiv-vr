@@ -84,6 +84,7 @@ namespace FfxivVR
                         var beginInfo = new SessionBeginInfo(next: null, primaryViewConfigurationType: vrSystem.ViewConfigurationType);
                         xr.BeginSession(vrSystem.Session, ref beginInfo).CheckResult("BeginSession");
                         vrState.SessionRunning = true;
+                        logger.Debug("Started session");
                         break;
                     }
                 case SessionState.Stopping:

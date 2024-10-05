@@ -44,7 +44,7 @@ public unsafe class VRSession : IDisposable
     public void Dispose()
     {
         renderer.Dispose();
-        vrShaders?.Dispose();
+        vrShaders.Dispose();
         swapchains.Dispose();
         resources.Dispose();
         vrSystem.Dispose();

@@ -52,7 +52,6 @@ namespace FfxivVR
 
             var beginFrameInfo = new FrameBeginInfo(next: null);
             xr.BeginFrame(system.Session, ref beginFrameInfo).CheckResult("BeginFrame");
-
             CompositionLayerProjectionView[] compositionLayers = Array.Empty<CompositionLayerProjectionView>();
             if (vrState.IsActive() && frameState.ShouldRender != 0)
             {
@@ -60,13 +59,14 @@ namespace FfxivVR
             }
             if (compositionLayers.Length > 0)
             {
-                fixed (CompositionLayerProjectionView* firstLayer = &compositionLayers[0])
+                var compositionLayerSpan = new Span<CompositionLayerProjectionView>(compositionLayers);
+                fixed (CompositionLayerProjectionView* ptr = compositionLayerSpan)
                 {
                     var layerProjection = new CompositionLayerProjection(
                         layerFlags: CompositionLayerFlags.BlendTextureSourceAlphaBit | CompositionLayerFlags.CorrectChromaticAberrationBit,
                         space: localSpace,
-                        viewCount: (uint)compositionLayers.Length,
-                        views: firstLayer
+                        viewCount: (uint)compositionLayerSpan.Length,
+                        views: ptr
                     );
                     CompositionLayerProjection* layerProjectionPointer = &layerProjection;
                     var endFrameInfo = new FrameEndInfo(
@@ -144,14 +144,15 @@ namespace FfxivVR
                         imageArrayIndex: 0
                     )
                 );
-                var color = new float[4] { 0.17f, 0.17f, 0.17f, 1 };
-                fixed (float* p = &color[0])
+                fixed (float* ptr = new Span<float>([0.17f, 0.17f, 0.17f, 1]))
                 {
-                    deviceContext->ClearRenderTargetView(currentColorSwapchainImage, p);
+                    deviceContext->ClearRenderTargetView(currentColorSwapchainImage, ptr);
                 }
                 deviceContext->ClearDepthStencilView(currentDepthSwapchainImage, (uint)ClearFlag.Depth, 1.0f, 0);
 
-                deviceContext->OMSetRenderTargets(1, in currentColorSwapchainImage, currentDepthSwapchainImage);
+                resources.SetDepthStencilState();
+                resources.SetBlendState();
+                deviceContext->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
                 Viewport viewport = new Viewport(
                     topLeftX: 0f,
                     topLeftY: 0f,
@@ -160,6 +161,11 @@ namespace FfxivVR
                     minDepth: 0f,
                     maxDepth: 1f);
                 deviceContext->RSSetViewports(1, &viewport);
+                Box2D<int> scissor = new Box2D<int>(
+                    new Vector2D<int>(0, 0),
+                    new Vector2D<int>(width, height)
+                );
+                deviceContext->RSSetScissorRects(1, &scissor);
 
                 var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
                 var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
@@ -173,10 +179,10 @@ namespace FfxivVR
                 var down = MathF.Tan(view.Fov.AngleDown) * near;
                 var up = MathF.Tan(view.Fov.AngleUp) * near;
 
-
                 var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
                 var viewProj = Matrix4X4.Multiply(viewInverted, proj);
 
+                shaders.SetShaders();
                 RenderCube(viewProj);
 
                 var releaseInfo = new SwapchainImageReleaseInfo(next: null);
@@ -189,8 +195,6 @@ namespace FfxivVR
         {
             var translation = Matrix4X4.CreateTranslation(new Vector3D<float>(0.3f, 0.3f, -0.5f));
             var modelViewProjection = Matrix4X4.Multiply(translation, viewProjection);
-            //var temp = new Matrix4X4<float>();
-            //Matrix4X4.Invert(translation, out temp);
             resources.UpdateCamera(new CameraConstants(
                 modelViewProjection: modelViewProjection
             ));
