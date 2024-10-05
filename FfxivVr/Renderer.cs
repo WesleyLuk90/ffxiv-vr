@@ -90,7 +90,6 @@ namespace FfxivVR
             }
         }
 
-        bool runOnce = true;
         private CompositionLayerProjectionView[] InnerRender(long predictedDisplayTime)
         {
             var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
@@ -168,9 +167,14 @@ namespace FfxivVR
                 var viewInverted = new Matrix4X4<float>();
                 Matrix4X4.Invert(toView, out viewInverted);
 
-                var horizontal = view.Fov.AngleRight - view.Fov.AngleLeft;
-                //var vertical = view.Fov.AngleUp - view.Fov.AngleDown;
-                var proj = Matrix4X4.CreatePerspectiveFieldOfView<float>(horizontal, ((float)width) / height, nearPlaneDistance: 0.05f, farPlaneDistance: 100f);
+                var near = 0.05f;
+                var left = MathF.Tan(view.Fov.AngleLeft) * near;
+                var right = MathF.Tan(view.Fov.AngleRight) * near;
+                var down = MathF.Tan(view.Fov.AngleDown) * near;
+                var up = MathF.Tan(view.Fov.AngleUp) * near;
+
+
+                var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
                 var viewProj = Matrix4X4.Multiply(viewInverted, proj);
 
                 RenderCube(viewProj);
