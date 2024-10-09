@@ -17,18 +17,18 @@ public unsafe class VRSession : IDisposable
     private Resources resources;
     private VRSwapchains swapchains;
 
-    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
-        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, deviceContext) { }
-    public VRSession(XR xr, Logger logger, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device)
+        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device) { }
+    public VRSession(XR xr, Logger logger, ID3D11Device* device)
     {
         this.xr = xr;
         vrSystem = new VRSystem(xr, device, logger);
         this.logger = logger;
         State = new VRState();
         swapchains = new VRSwapchains(xr, vrSystem, logger, device);
-        resources = new Resources(device, deviceContext);
-        vrShaders = new VRShaders(device, logger, deviceContext);
-        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, deviceContext, resources, vrShaders);
+        resources = new Resources(device);
+        vrShaders = new VRShaders(device, logger);
+        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders);
         eventHandler = new EventHandler(xr, vrSystem, logger, State);
     }
 
@@ -50,12 +50,12 @@ public unsafe class VRSession : IDisposable
         vrSystem.Dispose();
     }
 
-    public void Update()
+    public void Update(ID3D11DeviceContext* context)
     {
         this.eventHandler.PollEvents();
         if (State.SessionRunning)
         {
-            this.renderer.Render();
+            this.renderer.Render(context);
         }
     }
 }

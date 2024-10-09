@@ -13,19 +13,17 @@ namespace FfxivVR
         private VRState vrState;
         private Logger logger;
         private readonly VRSwapchains swapchains;
-        private readonly ID3D11DeviceContext* deviceContext;
         private readonly Resources resources;
         private readonly VRShaders shaders;
         private Space localSpace = new Space();
 
-        internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, ID3D11DeviceContext* deviceContext, Resources resources, VRShaders shaders)
+        internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders)
         {
             this.xr = xr;
             this.system = system;
             this.vrState = vrState;
             this.logger = logger;
             this.swapchains = swapchains;
-            this.deviceContext = deviceContext;
             this.resources = resources;
             this.shaders = shaders;
         }
@@ -44,7 +42,7 @@ namespace FfxivVR
             xr.CreateReferenceSpace(system.Session, ref referenceSpace, ref localSpace).CheckResult("CreateReferenceSpace");
         }
 
-        internal void Render()
+        internal void Render(ID3D11DeviceContext* context)
         {
             var frameWaitInfo = new FrameWaitInfo(next: null);
             var frameState = new FrameState(next: null);
@@ -55,7 +53,7 @@ namespace FfxivVR
             CompositionLayerProjectionView[] compositionLayers = Array.Empty<CompositionLayerProjectionView>();
             if (vrState.IsActive() && frameState.ShouldRender != 0)
             {
-                compositionLayers = InnerRender(frameState.PredictedDisplayTime);
+                compositionLayers = InnerRender(context, frameState.PredictedDisplayTime);
             }
             if (compositionLayers.Length > 0)
             {
@@ -90,7 +88,7 @@ namespace FfxivVR
             }
         }
 
-        private CompositionLayerProjectionView[] InnerRender(long predictedDisplayTime)
+        private CompositionLayerProjectionView[] InnerRender(ID3D11DeviceContext* context, long predictedDisplayTime)
         {
             var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
             var viewState = new ViewState(next: null);
@@ -146,13 +144,13 @@ namespace FfxivVR
                 );
                 fixed (float* ptr = new Span<float>([0.17f, 0.17f, 0.17f, 1]))
                 {
-                    deviceContext->ClearRenderTargetView(currentColorSwapchainImage, ptr);
+                    context->ClearRenderTargetView(currentColorSwapchainImage, ptr);
                 }
-                deviceContext->ClearDepthStencilView(currentDepthSwapchainImage, (uint)ClearFlag.Depth, 1.0f, 0);
+                context->ClearDepthStencilView(currentDepthSwapchainImage, (uint)ClearFlag.Depth, 1.0f, 0);
 
-                resources.SetDepthStencilState();
-                resources.SetBlendState();
-                deviceContext->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
+                resources.SetDepthStencilState(context);
+                resources.SetBlendState(context);
+                context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
                 Viewport viewport = new Viewport(
                     topLeftX: 0f,
                     topLeftY: 0f,
@@ -160,12 +158,12 @@ namespace FfxivVR
                     height: height,
                     minDepth: 0f,
                     maxDepth: 1f);
-                deviceContext->RSSetViewports(1, &viewport);
+                context->RSSetViewports(1, &viewport);
                 Box2D<int> scissor = new Box2D<int>(
                     new Vector2D<int>(0, 0),
                     new Vector2D<int>(width, height)
                 );
-                deviceContext->RSSetScissorRects(1, &scissor);
+                context->RSSetScissorRects(1, &scissor);
 
                 var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
                 var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
@@ -182,8 +180,8 @@ namespace FfxivVR
                 var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
                 var viewProj = Matrix4X4.Multiply(viewInverted, proj);
 
-                shaders.SetShaders();
-                RenderCube(viewProj);
+                shaders.SetShaders(context);
+                RenderCube(context, viewProj);
 
                 var releaseInfo = new SwapchainImageReleaseInfo(next: null);
                 xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
@@ -191,20 +189,20 @@ namespace FfxivVR
             }
             return layers;
         }
-        private void RenderCube(Matrix4X4<float> viewProjection)
+        private void RenderCube(ID3D11DeviceContext* context, Matrix4X4<float> viewProjection)
         {
             var translation = Matrix4X4.CreateTranslation(new Vector3D<float>(0.3f, 0.3f, -0.5f));
             var modelViewProjection = Matrix4X4.Multiply(translation, viewProjection);
-            resources.UpdateCamera(new CameraConstants(
+            resources.UpdateCamera(context, new CameraConstants(
                 modelViewProjection: modelViewProjection
             ));
-            resources.Draw();
+            resources.Draw(context);
             translation = Matrix4X4.CreateTranslation(new Vector3D<float>(-0.3f, -0.3f, -1f));
             modelViewProjection = Matrix4X4.Multiply(translation, viewProjection);
-            resources.UpdateCamera(new CameraConstants(
+            resources.UpdateCamera(context, new CameraConstants(
                 modelViewProjection: modelViewProjection
             ));
-            resources.Draw();
+            resources.Draw(context);
         }
 
 

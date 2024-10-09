@@ -21,16 +21,14 @@ unsafe public class Resources : IDisposable
     private D3DBuffer cameraBuffer;
     private D3DBuffer vertexBuffer;
     private readonly ID3D11Device* device;
-    private readonly ID3D11DeviceContext* context;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
     private ID3D11DepthStencilState* depthStencilStateOff = null;
     private ID3D11BlendState* blendState = null;
     private ID3D11RasterizerState* rasterizerState = null;
 
-    public Resources(ID3D11Device* device, ID3D11DeviceContext* context)
+    public Resources(ID3D11Device* device)
     {
         this.device = device;
-        this.context = context;
     }
 
     public struct Vertex
@@ -180,7 +178,7 @@ unsafe public class Resources : IDisposable
         }
     }
 
-    private void SetBufferData(Span<byte> bytes, D3DBuffer buffer)
+    private void SetBufferData(ID3D11DeviceContext* context, Span<byte> bytes, D3DBuffer buffer)
     {
         if (bytes.Length != buffer.Length)
         {
@@ -195,17 +193,17 @@ unsafe public class Resources : IDisposable
         context->Unmap((ID3D11Resource*)buffer.Handle, 0);
     }
 
-    public void UpdateCamera(CameraConstants camera)
+    public void UpdateCamera(ID3D11DeviceContext* context, CameraConstants camera)
     {
         var cameraSpan = new Span<CameraConstants>(ref camera);
-        SetBufferData(MemoryMarshal.AsBytes(cameraSpan), this.cameraBuffer);
+        SetBufferData(context, MemoryMarshal.AsBytes(cameraSpan), this.cameraBuffer);
 
         context->VSSetConstantBuffers(0, 1, ref cameraBuffer.Handle);
 
         context->RSSetState(rasterizerState);
     }
 
-    public void Draw()
+    public void Draw(ID3D11DeviceContext* context)
     {
         fixed (ID3D11Buffer** pHandle = &vertexBuffer.Handle)
         {
@@ -223,12 +221,12 @@ unsafe public class Resources : IDisposable
         this.vertexBuffer.Dispose();
     }
 
-    internal void SetDepthStencilState()
+    internal void SetDepthStencilState(ID3D11DeviceContext* context)
     {
         context->OMSetDepthStencilState(depthStencilStateOff, 0);
     }
 
-    internal void SetBlendState()
+    internal void SetBlendState(ID3D11DeviceContext* context)
     {
         fixed (float* ptr = new Span<float>([0, 0, 0, 0]))
         {

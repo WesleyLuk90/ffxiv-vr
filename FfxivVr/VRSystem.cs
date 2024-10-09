@@ -55,7 +55,6 @@ public unsafe class VRSystem : IDisposable
         }
         result.CheckResult("GetSystem");
 
-
         PfnVoidFunction function = new PfnVoidFunction();
         xr.GetInstanceProcAddr(Instance, "xrGetD3D11GraphicsRequirementsKHR", &function).CheckResult("GetInstanceProcAddr");
         var getRequirements = (delegate* unmanaged[Cdecl]<Instance, ulong, GraphicsRequirementsD3D11KHR*, Result>)function.Handle;

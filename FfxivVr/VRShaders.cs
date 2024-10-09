@@ -8,7 +8,6 @@ unsafe public class VRShaders
 {
     private readonly ID3D11Device* device;
     private readonly Logger logger;
-    private readonly ID3D11DeviceContext* context;
     private ID3D11PixelShader* pixelShader;
     private ID3D11VertexShader* vertexShader;
     private byte[] vertexShaderBinary;
@@ -46,13 +45,12 @@ unsafe public class VRShaders
         }
     }
 
-    public VRShaders(ID3D11Device* device, Logger logger, ID3D11DeviceContext* context)
+    public VRShaders(ID3D11Device* device, Logger logger)
     {
         vertexShaderBinary = LoadVertexShader();
         pixelShaderBinary = LoadPixelShader();
         this.device = device;
         this.logger = logger;
-        this.context = context;
     }
 
     public void Initialize()
@@ -113,7 +111,7 @@ unsafe public class VRShaders
         });
     }
 
-    public void SetShaders()
+    public void SetShaders(ID3D11DeviceContext* context)
     {
         context->IASetInputLayout(inputLayout);
         context->VSSetShader(vertexShader, null, 0);

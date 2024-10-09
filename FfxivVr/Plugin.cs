@@ -1,8 +1,10 @@
 using Dalamud.Game.Command;
+using Dalamud.Hooking;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FfxivVR.Windows;
 using Silk.NET.Direct3D11;
@@ -19,6 +21,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
+    [PluginService] internal static IGameInteropProvider Interop { get; private set; } = null!;
 
     private const string CommandName = "/vr";
 
@@ -35,8 +38,6 @@ public sealed class Plugin : IDalamudPlugin
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-
-        Framework.Update += Update;
 
         // you might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
@@ -62,14 +63,23 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
         ChatGui.Print("Loaded VR Plugin");
+
+        Interop.InitializeFromAttributes(this);
+        DXGIPresentHook?.Enable();
     }
 
     private Dictionary<string, int> exceptionCount = new Dictionary<string, int>();
-    private void Update(IFramework framework)
+
+    private delegate void DXGIPresentDg(UInt64 a, UInt64 b);
+    [Signature(Signatures.DXGIPresent, DetourName = nameof(DXGIPresentFn))]
+    private Hook<DXGIPresentDg>? DXGIPresentHook = null;
+    private unsafe void DXGIPresentFn(UInt64 a, UInt64 b)
     {
+        DXGIPresentHook?.Original(a, b);
         try
         {
-            vRSession?.Update();
+            ID3D11DeviceContext* d11DeviceContext = (ID3D11DeviceContext*)Device.Instance()->D3D11DeviceContext;
+            vRSession?.Update(d11DeviceContext);
         }
         catch (Exception ex)
         {
@@ -88,7 +98,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
-        Framework.Update -= Update;
+        DXGIPresentHook?.Dispose();
         WindowSystem.RemoveAllWindows();
 
         ConfigWindow.Dispose();
@@ -141,12 +151,11 @@ public sealed class Plugin : IDalamudPlugin
         var dir = PluginInterface.AssemblyLocation.Directory ?? throw new NullReferenceException("Assembly Location missing");
         var device = Device.Instance();
         ID3D11Device* d11Device = (ID3D11Device*)device->D3D11Forwarder;
-        ID3D11DeviceContext* d11DeviceContext = (ID3D11DeviceContext*)device->D3D11DeviceContext;
+        // TODO device context is not thread safe
         vRSession = new VRSession(
             Path.Combine(dir.ToString(), "openxr_loader.dll"),
             logger,
-            device: d11Device,
-            deviceContext: d11DeviceContext
+            device: d11Device
         );
         try
         {
