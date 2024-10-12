@@ -52,10 +52,52 @@ public unsafe class VRSession : IDisposable
 
     public void Update(ID3D11DeviceContext* context)
     {
-        this.eventHandler.PollEvents();
         if (State.SessionRunning)
         {
             this.renderer.Render(context);
+        }
+    }
+
+    public abstract record FrameState
+    {
+        public record Ready() : FrameState;
+        public record Started() : FrameState;
+        public record Skipped() : FrameState;
+    }
+
+    private FrameState frameState = new FrameState.Ready();
+
+    internal void StartFrame()
+    {
+        if (frameState is FrameState.Ready)
+        {
+            logger.Error($"Frame state was not Ready but was {frameState}");
+        }
+
+        if (State.SessionRunning)
+        {
+            renderer.StartFrame();
+            frameState = new FrameState.Started();
+        }
+        else
+        {
+            frameState = new FrameState.Skipped();
+        }
+    }
+
+    internal void EndFrame()
+    {
+        switch (frameState)
+        {
+            case FrameState.Started:
+                renderer.EndFrame();
+                break;
+
+            case FrameState.Skipped:
+                break;
+            default:
+                logger.Error($"Unexpected frame state at end {frameState}");
+                break;
         }
     }
 }

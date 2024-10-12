@@ -1,27 +1,21 @@
 using Dalamud.Game.Command;
-using Dalamud.Hooking;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FfxivVR.Windows;
-using Silk.NET.Direct3D11;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace FfxivVR;
 
-public sealed class Plugin : IDalamudPlugin
+public unsafe sealed class Plugin : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
-    [PluginService] internal static IGameInteropProvider Interop { get; private set; } = null!;
+    [PluginService] internal static IGameInteropProvider GameHookService { get; private set; } = null!;
 
     private const string CommandName = "/vr";
 
@@ -34,6 +28,9 @@ public sealed class Plugin : IDalamudPlugin
 
     private Logger logger { get; init; }
 
+    private readonly ExceptionHandler exceptionHandler;
+    private readonly VRLifecycle vrLifecycle;
+    private readonly GameHooks gameHooks;
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -64,41 +61,20 @@ public sealed class Plugin : IDalamudPlugin
 
         ChatGui.Print("Loaded VR Plugin");
 
-        Interop.InitializeFromAttributes(this);
-        DXGIPresentHook?.Enable();
-    }
+        var dir = PluginInterface.AssemblyLocation.Directory ?? throw new NullReferenceException("Assembly Location missing");
+        var dllPath = Path.Combine(dir.ToString(), "openxr_loader.dll");
 
-    private Dictionary<string, int> exceptionCount = new Dictionary<string, int>();
+        exceptionHandler = new ExceptionHandler(logger);
+        vrLifecycle = new VRLifecycle(logger, dllPath);
+        gameHooks = new GameHooks(vrLifecycle, exceptionHandler);
 
-    private delegate void DXGIPresentDg(UInt64 a, UInt64 b);
-    [Signature(Signatures.DXGIPresent, DetourName = nameof(DXGIPresentFn))]
-    private Hook<DXGIPresentDg>? DXGIPresentHook = null;
-    private unsafe void DXGIPresentFn(UInt64 a, UInt64 b)
-    {
-        DXGIPresentHook?.Original(a, b);
-        try
-        {
-            ID3D11DeviceContext* d11DeviceContext = (ID3D11DeviceContext*)Device.Instance()->D3D11DeviceContext;
-            vRSession?.Update(d11DeviceContext);
-        }
-        catch (Exception ex)
-        {
-            var currentCount = exceptionCount.GetValueOrDefault(ex.Message) + 1;
-            exceptionCount[ex.Message] = currentCount;
-            if (currentCount == 5)
-            {
-                logger.Error($"Got same error 5 times ({ex.Message}), surpressing");
-            }
-            else if (currentCount < 5)
-            {
-                throw;
-            }
-        }
+        GameHookService.InitializeFromAttributes(gameHooks);
+        gameHooks.Initialize();
     }
 
     public void Dispose()
     {
-        DXGIPresentHook?.Dispose();
+        gameHooks.Dispose();
         WindowSystem.RemoveAllWindows();
 
         ConfigWindow.Dispose();
@@ -121,66 +97,17 @@ public sealed class Plugin : IDalamudPlugin
                 case "stop":
                     StopVR();
                     break;
-                case "debug":
-                    Device* device = Device.Instance();
-                    SwapChain* swapchain = null;
-                    Texture* backbuffer = null;
-                    IntPtr dxTexture = 0;
-                    if (device != null)
-                    {
-                        swapchain = device->SwapChain;
-                        if (swapchain != null)
-                        {
-                            backbuffer = swapchain->BackBuffer;
-                            if (backbuffer != null)
-                            {
-                                dxTexture = (IntPtr)backbuffer->D3D11Texture2D;
-                            }
-                        }
-                    }
-                    logger.Info($"Device:{(IntPtr)device} SwapChain:{(IntPtr)swapchain} Texture:{(IntPtr)backbuffer} DXTexture:{dxTexture}");
-                    break;
             }
         }
     }
 
     public unsafe void StartVR()
     {
-        logger.Info("Starting VR");
-        vRSession?.Dispose();
-        var dir = PluginInterface.AssemblyLocation.Directory ?? throw new NullReferenceException("Assembly Location missing");
-        var device = Device.Instance();
-        ID3D11Device* d11Device = (ID3D11Device*)device->D3D11Forwarder;
-        // TODO device context is not thread safe
-        vRSession = new VRSession(
-            Path.Combine(dir.ToString(), "openxr_loader.dll"),
-            logger,
-            device: d11Device
-        );
-        try
-        {
-            vRSession.Initialize();
-        }
-        catch (Exception ex)
-        {
-            logger.Error("VR Session failed to load");
-            try
-            {
-                vRSession.Dispose();
-            }
-            catch (Exception e)
-            {
-                logger.Error($"Got error when disposing session {e}");
-            }
-            vRSession = null;
-            throw new Exception("Failed to start VR", ex);
-        }
+        vrLifecycle.EnableVR();
     }
     private unsafe void StopVR()
     {
-        logger.Info("Stopping VR");
-        vRSession?.Dispose();
-        vRSession = null;
+        vrLifecycle.DisableVR();
     }
 
     private void DrawUI() => WindowSystem.Draw();
