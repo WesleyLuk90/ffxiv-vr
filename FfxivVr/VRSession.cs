@@ -50,54 +50,61 @@ public unsafe class VRSession : IDisposable
         vrSystem.Dispose();
     }
 
-    public void Update(ID3D11DeviceContext* context)
+
+    public abstract record RenderState
     {
-        if (State.SessionRunning)
-        {
-            this.renderer.Render(context);
-        }
+        public record Ready() : RenderState;
+        public record SkipRender(FrameState frameState) : RenderState;
+        public record Rendering(FrameState frameState) : RenderState;
+
+        public record Skipped() : RenderState;
     }
 
-    public abstract record FrameState
-    {
-        public record Ready() : FrameState;
-        public record Started() : FrameState;
-        public record Skipped() : FrameState;
-    }
+    private RenderState renderState = new RenderState.Ready();
 
-    private FrameState frameState = new FrameState.Ready();
-
-    internal void StartFrame()
+    public void StartFrame(ID3D11DeviceContext* context)
     {
-        if (frameState is FrameState.Ready)
+        eventHandler.PollEvents();
+        if (renderState is not RenderState.Ready)
         {
-            logger.Error($"Frame state was not Ready but was {frameState}");
+            logger.Error($"Frame state was not Ready but was {renderState}");
         }
 
         if (State.SessionRunning)
         {
-            renderer.StartFrame();
-            frameState = new FrameState.Started();
+            var frameState = renderer.StartFrame(context);
+            if (State.IsActive() && frameState.ShouldRender != 0)
+            {
+                //var matrices = renderer.GetProjectionMatrixes(frameState.PredictedDisplayPeriod);
+                renderState = new RenderState.Rendering(frameState);
+            }
+            else
+            {
+                renderState = new RenderState.SkipRender(frameState);
+            }
         }
         else
         {
-            frameState = new FrameState.Skipped();
+            renderState = new RenderState.Skipped();
         }
     }
 
-    internal void EndFrame()
+    public void EndFrame(ID3D11DeviceContext* context)
     {
-        switch (frameState)
+        switch (renderState)
         {
-            case FrameState.Started:
-                renderer.EndFrame();
+            case RenderState.SkipRender skip:
+                renderer.SkipFrame(skip.frameState);
                 break;
-
-            case FrameState.Skipped:
+            case RenderState.Rendering rendering:
+                renderer.EndFrame(context, rendering.frameState);
+                break;
+            case RenderState.Skipped:
                 break;
             default:
-                logger.Error($"Unexpected frame state at end {frameState}");
+                //logger.Error($"Unexpected frame state at end {renderState}");
                 break;
         }
+        renderState = new RenderState.Ready();
     }
 }

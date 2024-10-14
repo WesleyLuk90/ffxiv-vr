@@ -3,6 +3,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FfxivVR.Windows;
 using System;
 using System.IO;
@@ -66,7 +67,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         exceptionHandler = new ExceptionHandler(logger);
         vrLifecycle = new VRLifecycle(logger, dllPath);
-        gameHooks = new GameHooks(vrLifecycle, exceptionHandler);
+        gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger);
 
         GameHookService.InitializeFromAttributes(gameHooks);
         gameHooks.Initialize();
@@ -82,9 +83,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         CommandManager.RemoveHandler(CommandName);
 
-        vRSession?.Dispose();
+        vrLifecycle.Dispose();
     }
-    private VRSession? vRSession;
     private unsafe void OnCommand(string command, string args)
     {
         if (command == CommandName)
@@ -96,6 +96,12 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "stop":
                     StopVR();
+                    break;
+                case "debug":
+                    var renderTargetManager = RenderTargetManager.Instance();
+                    var depthTexture = renderTargetManager->RenderTargets[10];
+                    var renderTexture = renderTargetManager->RenderTargets2[33];
+                    logger.Info($"Found render targets render:{renderTexture.Value->ActualWidth}x{renderTexture.Value->ActualHeight} depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight}");
                     break;
             }
         }

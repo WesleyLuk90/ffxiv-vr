@@ -26,11 +26,12 @@ unsafe internal static class Program
         var featureLevel = D3DFeatureLevel.Level110;
         dx.CreateDevice(adapter, D3DDriverType.Unknown, 0, (uint)CreateDeviceFlag.Debug, &featureLevel, 1, D3D11.SdkVersion, &device, null, &deviceContext).D3D11Check("CreateDevice");
         var logger = new Logger();
-        var session = new VRSession(XR.GetApi(), logger, device, deviceContext);
+        var session = new VRSession(XR.GetApi(), logger, device);
         session.Initialize();
         while (!session.State.Exiting)
         {
-            session.Update();
+            session.StartFrame(deviceContext);
+            session.EndFrame(deviceContext);
         }
         session.Dispose();
     }

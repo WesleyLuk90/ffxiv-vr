@@ -11,7 +11,7 @@ struct VertexShaderOutput
 struct VertexShaderInput
 {
     float4 position : POSITION;
-    float4 color : COLOR;
+    float2 texcoord : TEXCOORD;
 };
 
 VertexShaderOutput main(VertexShaderInput input)
@@ -19,7 +19,7 @@ VertexShaderOutput main(VertexShaderInput input)
     VertexShaderOutput output;
 
     output.position = mul(modelViewProjection, input.position);
-    output.color = input.color;
+    output.color = float4(input.texcoord, 0, 1);
 
     return output;
 }

@@ -19,6 +19,7 @@ unsafe public class Resources : IDisposable
     }
 
     private D3DBuffer cameraBuffer;
+    private Vertex[] vertices;
     private D3DBuffer vertexBuffer;
     private readonly ID3D11Device* device;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
@@ -34,23 +35,30 @@ unsafe public class Resources : IDisposable
     public struct Vertex
     {
         Vector3f position;
-        Vector4f color;
-        public Vertex(Vector3f position, Vector4f color)
+        Vector2f uv;
+        public Vertex(Vector3f position, Vector2f uv)
         {
             this.position = position;
-            this.color = color;
+            this.uv = uv;
         }
     }
 
     public void Initialize()
     {
         this.cameraBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
-        this.vertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(
-        [
-            new Vertex(new Vector3f(0, 0.5f, 0), new Vector4f(1, 0, 0, 1)),
-            new Vertex(new Vector3f(0.45f, -0.5f, 0), new Vector4f(0, 1, 0, 1)),
-            new Vertex(new Vector3f(-0.45f, -0.5f, 0), new Vector4f(0, 0, 1, 1)),
-        ])), BindFlag.VertexBuffer);
+        var tr = new Vertex(new Vector3f(1, 1, 0), new Vector2f(1, 0));
+        var tl = new Vertex(new Vector3f(-1, 1, 0), new Vector2f(0, 0));
+        var bl = new Vertex(new Vector3f(-1, -1, 0), new Vector2f(0, 1));
+        var br = new Vertex(new Vector3f(1, -1, 0), new Vector2f(1, 1));
+        this.vertices = [
+            tr,
+            tl,
+            bl,
+            tr,
+            bl,
+            br,
+        ];
+        this.vertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(this.vertices)), BindFlag.VertexBuffer);
 
         var depthStencilOn = new DepthStencilDesc(
             depthEnable: true,
@@ -103,10 +111,10 @@ unsafe public class Resources : IDisposable
         var blendStateDesc = new BlendDesc(
             alphaToCoverageEnable: false,
             independentBlendEnable: false
-            );
+        );
         blendStateDesc.RenderTarget[0].BlendEnable = true;
         blendStateDesc.RenderTarget[0].SrcBlend = Blend.SrcColor;
-        blendStateDesc.RenderTarget[0].DestBlend = Blend.SrcAlpha;
+        blendStateDesc.RenderTarget[0].DestBlend = Blend.InvSrcAlpha;
         blendStateDesc.RenderTarget[0].BlendOp = BlendOp.Add;
         blendStateDesc.RenderTarget[0].SrcBlendAlpha = Blend.One;
         blendStateDesc.RenderTarget[0].DestBlendAlpha = Blend.Zero;
@@ -211,7 +219,7 @@ unsafe public class Resources : IDisposable
             uint offsets = 0;
             context->IASetVertexBuffers(0, 1, pHandle, &stride, &offsets);
             context->IASetPrimitiveTopology(Silk.NET.Core.Native.D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
-            context->Draw(3, 0);
+            context->Draw((uint)this.vertices.Length, 0);
         }
     }
 

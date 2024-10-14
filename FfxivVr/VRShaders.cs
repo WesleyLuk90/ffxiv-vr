@@ -1,4 +1,5 @@
 using Silk.NET.Direct3D11;
+using Silk.NET.OpenXR;
 using System;
 using System.IO;
 
@@ -73,7 +74,7 @@ unsafe public class VRShaders
 
         Native.WithStringPointer("POSITION", (positionStr) =>
         {
-            Native.WithStringPointer("COLOR", (colorStr) =>
+            Native.WithStringPointer("TEXCOORD", (colorStr) =>
             {
                 InputElementDesc[] inputElementDesc = [
                     new InputElementDesc(
@@ -88,9 +89,9 @@ unsafe public class VRShaders
                     new InputElementDesc(
                         semanticName: (byte*)colorStr,
                         semanticIndex: 0,
-                        format: Silk.NET.DXGI.Format.FormatR32G32B32A32Float,
+                        format: Silk.NET.DXGI.Format.FormatR32G32Float,
                         inputSlot: 0,
-                        alignedByteOffset: 12,
+                        alignedByteOffset: (uint)sizeof(Vector3f),
                         inputSlotClass: InputClassification.PerVertexData,
                         instanceDataStepRate: 0
                     )
