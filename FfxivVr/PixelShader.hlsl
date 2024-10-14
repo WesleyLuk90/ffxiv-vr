@@ -9,5 +9,7 @@ SamplerState tex_sampler;
 
 float4 main(VertexShaderOutput vertexShaderOutput) : SV_TARGET
 {
-    return tex.Sample(tex_sampler, vertexShaderOutput.texcoord);
+    float4 color = tex.Sample(tex_sampler, vertexShaderOutput.texcoord);
+    color.a = 1;
+    return color;
 }
