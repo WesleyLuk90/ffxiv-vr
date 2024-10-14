@@ -1,3 +1,4 @@
+using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
@@ -26,7 +27,7 @@ public unsafe class VRSession : IDisposable
         this.logger = logger;
         State = new VRState();
         swapchains = new VRSwapchains(xr, vrSystem, logger, device);
-        resources = new Resources(device);
+        resources = new Resources(device, logger);
         vrShaders = new VRShaders(device, logger);
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders);
         eventHandler = new EventHandler(xr, vrSystem, logger, State);
@@ -97,7 +98,8 @@ public unsafe class VRSession : IDisposable
                 renderer.SkipFrame(skip.frameState);
                 break;
             case RenderState.Rendering rendering:
-                renderer.EndFrame(context, rendering.frameState);
+                var manager = RenderTargetManager.Instance();
+                renderer.EndFrame(context, rendering.frameState, manager->RenderTargets2[33]);
                 break;
             case RenderState.Skipped:
                 break;

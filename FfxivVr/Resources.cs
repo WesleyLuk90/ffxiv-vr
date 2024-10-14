@@ -1,4 +1,5 @@
-﻿using Silk.NET.Direct3D11;
+﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
@@ -22,14 +23,17 @@ unsafe public class Resources : IDisposable
     private Vertex[] vertices;
     private D3DBuffer vertexBuffer;
     private readonly ID3D11Device* device;
+    private readonly Logger logger;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
     private ID3D11DepthStencilState* depthStencilStateOff = null;
     private ID3D11BlendState* blendState = null;
     private ID3D11RasterizerState* rasterizerState = null;
+    private ID3D11SamplerState* samplerState = null;
 
-    public Resources(ID3D11Device* device)
+    public Resources(ID3D11Device* device, Logger logger)
     {
         this.device = device;
+        this.logger = logger;
     }
 
     public struct Vertex
@@ -45,6 +49,30 @@ unsafe public class Resources : IDisposable
 
     public void Initialize()
     {
+        CreateBuffers();
+        CreateSampler();
+        CreateStencilState();
+        CreateBlendState();
+        CreateRasterizerState();
+    }
+
+    private void CreateSampler()
+    {
+        var samplerDesc = new SamplerDesc(
+            filter: Filter.MinMagMipLinear,
+            addressU: TextureAddressMode.Wrap,
+            addressV: TextureAddressMode.Wrap,
+            addressW: TextureAddressMode.Wrap,
+            comparisonFunc: ComparisonFunc.Never,
+            minLOD: 0,
+            maxLOD: float.MaxValue
+        );
+
+        device->CreateSamplerState(ref samplerDesc, ref samplerState).D3D11Check("CreateSamplerState"); ;
+    }
+
+    private void CreateBuffers()
+    {
         this.cameraBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
         var tr = new Vertex(new Vector3f(1, 1, 0), new Vector2f(1, 0));
         var tl = new Vertex(new Vector3f(-1, 1, 0), new Vector2f(0, 0));
@@ -59,7 +87,10 @@ unsafe public class Resources : IDisposable
             br,
         ];
         this.vertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(this.vertices)), BindFlag.VertexBuffer);
+    }
 
+    private void CreateStencilState()
+    {
         var depthStencilOn = new DepthStencilDesc(
             depthEnable: true,
             depthWriteMask: DepthWriteMask.All,
@@ -108,22 +139,10 @@ unsafe public class Resources : IDisposable
         {
             device->CreateDepthStencilState(ref depthStencilOff, ptr).D3D11Check("CreateDepthStencilState");
         }
-        var blendStateDesc = new BlendDesc(
-            alphaToCoverageEnable: false,
-            independentBlendEnable: false
-        );
-        blendStateDesc.RenderTarget[0].BlendEnable = true;
-        blendStateDesc.RenderTarget[0].SrcBlend = Blend.SrcColor;
-        blendStateDesc.RenderTarget[0].DestBlend = Blend.InvSrcAlpha;
-        blendStateDesc.RenderTarget[0].BlendOp = BlendOp.Add;
-        blendStateDesc.RenderTarget[0].SrcBlendAlpha = Blend.One;
-        blendStateDesc.RenderTarget[0].DestBlendAlpha = Blend.Zero;
-        blendStateDesc.RenderTarget[0].BlendOpAlpha = BlendOp.Add;
-        blendStateDesc.RenderTarget[0].RenderTargetWriteMask = (byte)ColorWriteEnable.All;
-        fixed (ID3D11BlendState** ptr = &blendState)
-        {
-            device->CreateBlendState(ref blendStateDesc, ptr).D3D11Check("CreateBlendState");
-        }
+    }
+
+    private void CreateRasterizerState()
+    {
         var rasterizerDesc = new RasterizerDesc(
             fillMode: FillMode.Solid,
             cullMode: CullMode.None,
@@ -139,6 +158,26 @@ unsafe public class Resources : IDisposable
         fixed (ID3D11RasterizerState** ptr = &rasterizerState)
         {
             device->CreateRasterizerState(ref rasterizerDesc, ptr).D3D11Check("CreateRasterizerState");
+        }
+    }
+
+    private void CreateBlendState()
+    {
+        var blendStateDesc = new BlendDesc(
+            alphaToCoverageEnable: false,
+            independentBlendEnable: false
+        );
+        blendStateDesc.RenderTarget[0].BlendEnable = true;
+        blendStateDesc.RenderTarget[0].SrcBlend = Blend.SrcColor;
+        blendStateDesc.RenderTarget[0].DestBlend = Blend.InvSrcAlpha;
+        blendStateDesc.RenderTarget[0].BlendOp = BlendOp.Add;
+        blendStateDesc.RenderTarget[0].SrcBlendAlpha = Blend.One;
+        blendStateDesc.RenderTarget[0].DestBlendAlpha = Blend.Zero;
+        blendStateDesc.RenderTarget[0].BlendOpAlpha = BlendOp.Add;
+        blendStateDesc.RenderTarget[0].RenderTargetWriteMask = (byte)ColorWriteEnable.All;
+        fixed (ID3D11BlendState** ptr = &blendState)
+        {
+            device->CreateBlendState(ref blendStateDesc, ptr).D3D11Check("CreateBlendState");
         }
     }
 
@@ -209,6 +248,14 @@ unsafe public class Resources : IDisposable
         context->VSSetConstantBuffers(0, 1, ref cameraBuffer.Handle);
 
         context->RSSetState(rasterizerState);
+    }
+
+    public void SetSampler(ID3D11DeviceContext* context, Texture* texture)
+    {
+        var resource = (ID3D11ShaderResourceView*)texture->D3D11ShaderResourceView;
+        ID3D11ShaderResourceView** ptr = &resource;
+        context->PSSetShaderResources(0, 1, ptr);
+        context->PSSetSamplers(0, 1, ref samplerState);
     }
 
     public void Draw(ID3D11DeviceContext* context)

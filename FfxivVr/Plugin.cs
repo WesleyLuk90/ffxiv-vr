@@ -101,7 +101,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     var renderTargetManager = RenderTargetManager.Instance();
                     var depthTexture = renderTargetManager->RenderTargets[10];
                     var renderTexture = renderTargetManager->RenderTargets2[33];
-                    logger.Info($"Found render targets render:{renderTexture.Value->ActualWidth}x{renderTexture.Value->ActualHeight} depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight}");
+                    logger.Info($"Render target:{renderTexture.Value->ActualWidth}x{renderTexture.Value->ActualHeight} format ${renderTexture.Value->TextureFormat}");
+                    logger.Info($"depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight} format ${depthTexture.Value->TextureFormat}");
                     break;
             }
         }

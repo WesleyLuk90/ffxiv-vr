@@ -1,3 +1,4 @@
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
@@ -79,13 +80,14 @@ unsafe internal class Renderer : IDisposable
         return matrices;
     }
 
-    private void RenderCube(ID3D11DeviceContext* context, Matrix4X4<float> viewProjection)
+    private void RenderCube(ID3D11DeviceContext* context, Texture* texture, Matrix4X4<float> viewProjection)
     {
         var translation = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -0.5f));
         var modelViewProjection = Matrix4X4.Multiply(translation, viewProjection);
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection
         ));
+        resources.SetSampler(context, texture);
         resources.Draw(context);
     }
 
@@ -106,7 +108,7 @@ unsafe internal class Renderer : IDisposable
         xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
     }
 
-    internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState)
+    internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, Texture* texture)
     {
         var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
         var viewState = new ViewState(next: null);
@@ -199,7 +201,7 @@ unsafe internal class Renderer : IDisposable
             var viewProj = Matrix4X4.Multiply(viewInverted, proj);
 
             shaders.SetShaders(context);
-            RenderCube(context, viewProj);
+            RenderCube(context, texture, viewProj);
 
             //var swapchainTexture = swapchainView.ColorSwapchainInfo.Textures[colorImageIndex];
             //var box = new Box(0,

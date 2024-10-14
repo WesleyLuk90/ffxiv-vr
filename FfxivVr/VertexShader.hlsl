@@ -5,7 +5,7 @@ cbuffer Camera
 struct VertexShaderOutput
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR;
+    float2 texcoord : TEXCOORD;
 };
 
 struct VertexShaderInput
@@ -19,7 +19,7 @@ VertexShaderOutput main(VertexShaderInput input)
     VertexShaderOutput output;
 
     output.position = mul(modelViewProjection, input.position);
-    output.color = float4(input.texcoord, 0, 1);
+    output.texcoord = float4(input.texcoord, 0, 1);
 
     return output;
 }
