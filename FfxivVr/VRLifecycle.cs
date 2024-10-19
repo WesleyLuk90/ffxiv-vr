@@ -2,7 +2,6 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using Silk.NET.Direct3D11;
 using System;
-using System.Numerics;
 
 namespace FfxivVR;
 public unsafe class VRLifecycle : IDisposable
@@ -86,12 +85,7 @@ public unsafe class VRLifecycle : IDisposable
         DisableVR();
     }
 
-    internal void UpdateViewMatrix(Matrix4x4* viewMatrix)
-    {
-        vrSession?.UpdateViewMatrix(viewMatrix);
-    }
-
-    internal void UpdateCamera(Camera* camera)
+    internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
         vrSession?.UpdateCamera(camera);
     }

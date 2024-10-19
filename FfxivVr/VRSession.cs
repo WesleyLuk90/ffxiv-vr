@@ -1,9 +1,9 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
-using System.Numerics;
 
 namespace FfxivVR;
 
@@ -116,15 +116,7 @@ public unsafe class VRSession : IDisposable
         return false;
     }
 
-    internal void UpdateViewMatrix(Matrix4x4* viewMatrix)
-    {
-        if (renderState is RenderState.Rendering rendering)
-        {
-            //*viewMatrix = renderer.ComputeViewMatrix(rendering.views).ToMatrix4x4();
-        }
-    }
-
-    internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Render.Camera* camera)
+    internal void UpdateCamera(Camera* camera)
     {
         if (renderState is RenderState.Rendering rendering)
         {
@@ -140,10 +132,12 @@ public unsafe class VRSession : IDisposable
             // Overwrite these for FFXIV
             proj.M33 = 0;
             proj.M43 = near;
-            logger.Debug($"Matrix is {proj}");
+            //logger.Debug($"Matrix is {proj}");
 
-            camera->ProjectionMatrix = proj.ToMatrix4x4();
-            camera->ProjectionMatrix2 = proj.ToMatrix4x4();
+            camera->RenderCamera->ProjectionMatrix = proj.ToMatrix4x4();
+            camera->RenderCamera->ProjectionMatrix2 = proj.ToMatrix4x4();
+
+            camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(rendering.views, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
         }
     }
 }

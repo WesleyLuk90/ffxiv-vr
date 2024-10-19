@@ -4,7 +4,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
@@ -39,8 +38,8 @@ unsafe internal class GameHooks : IDisposable
         FrameworkTickHook?.Dispose();
         DXGIPresentHook?.Disable();
         DXGIPresentHook?.Dispose();
-        CalculateViewMatrix2Hook?.Disable();
-        CalculateViewMatrix2Hook?.Dispose();
+        //CalculateViewMatrix2Hook?.Disable();
+        //CalculateViewMatrix2Hook?.Dispose();
         SetMatricesHook?.Disable();
         SetMatricesHook?.Dispose();
     }
@@ -49,7 +48,7 @@ unsafe internal class GameHooks : IDisposable
     {
         FrameworkTickHook!.Enable();
         DXGIPresentHook!.Enable();
-        CalculateViewMatrix2Hook!.Enable();
+        //CalculateViewMatrix2Hook!.Enable();
         SetMatricesHook!.Enable();
     }
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
@@ -98,17 +97,18 @@ unsafe internal class GameHooks : IDisposable
     }
 
 
-    private delegate void CalculateViewMatrixDg(Matrix4x4* viewMatrix, Vector4 position, Vector4 lookAt, Vector4 d);
-    [Signature(Signatures.CalculateViewMatrix, DetourName = nameof(CalculateViewMatrixFn))]
-    private Hook<CalculateViewMatrixDg>? CalculateViewMatrix2Hook = null;
-    private void CalculateViewMatrixFn(Matrix4x4* viewMatrix, Vector4 position, Vector4 lookAt, Vector4 d)
-    {
-        CalculateViewMatrix2Hook!.Original(viewMatrix, position, lookAt, d);
-        exceptionHandler.FaultBarrier(() =>
-        {
-            vrLifecycle.UpdateViewMatrix(viewMatrix);
-        });
-    }
+    //private delegate void CalculateViewMatrixDg(Matrix4x4* viewMatrix, Vector4 position, Vector4 lookAt, Vector4 d);
+    //[Signature(Signatures.CalculateViewMatrix, DetourName = nameof(CalculateViewMatrixFn))]
+    //private Hook<CalculateViewMatrixDg>? CalculateViewMatrix2Hook = null;
+    //private void CalculateViewMatrixFn(Matrix4x4* viewMatrix, Vector4 position, Vector4 lookAt, Vector4 d)
+    //{
+    //    CalculateViewMatrix2Hook!.Original(viewMatrix, position, lookAt, d);
+    //    exceptionHandler.FaultBarrier(() =>
+    //    {
+    //        vrLifecycle.UpdateViewMatrix(viewMatrix, position, lookAt);
+    //    });
+    //}
+
     private delegate void SetMatricesDelegate(Camera* camera, IntPtr ptr);
     [Signature(Signatures.SetMatrices, DetourName = nameof(SetMatricesFn))]
     private Hook<SetMatricesDelegate>? SetMatricesHook = null;
@@ -133,7 +133,7 @@ unsafe internal class GameHooks : IDisposable
         {
             if (camera == CameraManager.Instance()->GetActiveCamera()->SceneCamera.RenderCamera)
             {
-                vrLifecycle.UpdateCamera(camera);
+                vrLifecycle.UpdateCamera(&CameraManager.Instance()->GetActiveCamera()->SceneCamera);
             }
         });
     }

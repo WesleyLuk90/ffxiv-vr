@@ -245,11 +245,18 @@ unsafe internal class Renderer : IDisposable
         return frameState;
     }
 
-    internal Matrix4X4<float> ComputeViewMatrix(View[] views)
+    internal Matrix4X4<float> ComputeViewMatrix(View[] views, Vector3D<float> position, Vector3D<float> lookAt)
     {
         var view = views[0];
-        var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
-        var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
-        return Matrix4X4.Multiply(rotation, translation);
+        var newPosition = position + view.Pose.Position.ToVector3D();
+        var newRotation = view.Pose.Orientation.ToQuaternion();//rotation *
+        logger.Debug($"camera {position} {lookAt}");
+        var rotationMatrix = Matrix4X4.CreateFromQuaternion<float>(newRotation);
+        var translationMatrix = Matrix4X4.CreateTranslation<float>(newPosition);
+        var viewMatrix = Matrix4X4.Multiply(rotationMatrix, translationMatrix);
+
+        var invertedViewMatrix = Matrix4X4<float>.Identity;
+        Matrix4X4.Invert(viewMatrix, out invertedViewMatrix);
+        return invertedViewMatrix;
     }
 }
