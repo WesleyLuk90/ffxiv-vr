@@ -2,6 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using Silk.NET.Direct3D11;
 using System;
+using System.Numerics;
 
 namespace FfxivVR;
 public unsafe class VRLifecycle : IDisposable
@@ -25,13 +26,26 @@ public unsafe class VRLifecycle : IDisposable
             logger,
             device: GetDevice()
         );
-        vrSession.Initialize();
+        try
+        {
+            vrSession.Initialize();
+        }
+        catch (Exception)
+        {
+            logger.Info("Failed to start VR");
+            vrSession.Dispose();
+            vrSession = null;
+            throw;
+        }
     }
     public void DisableVR()
     {
-        logger.Info("Stopping VR");
-        vrSession?.Dispose();
-        vrSession = null;
+        if (vrSession != null)
+        {
+            logger.Info("Stopping VR");
+            vrSession?.Dispose();
+            vrSession = null;
+        }
     }
 
     private static ID3D11Device* GetDevice()
@@ -50,15 +64,35 @@ public unsafe class VRLifecycle : IDisposable
         vrSession?.StartFrame(GetContext());
     }
 
+    public bool SecondRender()
+    {
+        return vrSession?.SecondRender(GetContext()) ?? false;
+    }
+
     public void EndFrame()
     {
         var renderTargetManager = RenderTargetManager.Instance();
-        Texture* texture = renderTargetManager->RenderTargets2[33];
-        vrSession?.EndFrame(GetContext());//, (ID3D11Texture2D*)texture->D3D11Texture2D);
+        Texture* texture = GetGameRenderTexture(renderTargetManager);
+        vrSession?.EndFrame(GetContext(), texture);
+    }
+
+    private static FFXIVClientStructs.Interop.Pointer<Texture> GetGameRenderTexture(RenderTargetManager* renderTargetManager)
+    {
+        return renderTargetManager->RenderTargets2[33];
     }
 
     public void Dispose()
     {
         DisableVR();
+    }
+
+    internal void UpdateViewMatrix(Matrix4x4* viewMatrix)
+    {
+        vrSession?.UpdateViewMatrix(viewMatrix);
+    }
+
+    internal void UpdateCamera(Camera* camera)
+    {
+        vrSession?.UpdateCamera(camera);
     }
 }

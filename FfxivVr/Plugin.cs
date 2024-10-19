@@ -3,10 +3,13 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FfxivVR.Windows;
+using Silk.NET.Maths;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace FfxivVR;
 
@@ -73,6 +76,13 @@ public unsafe sealed class Plugin : IDalamudPlugin
         gameHooks.Initialize();
     }
 
+    private void Framework_Update(IFramework framework)
+    {
+        var camera2 = CameraManager.Instance()->GetActiveCamera();
+        Control.Instance()->ViewProjectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView(45f / 180 * MathF.PI, 1f, 0.05f, 100f).ToMatrix4x4();
+        //camera2->SceneCamera.RenderCamera->ProjectionMatrix = 
+    }
+
     public void Dispose()
     {
         gameHooks.Dispose();
@@ -87,9 +97,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
     }
     private unsafe void OnCommand(string command, string args)
     {
+        var arguments = args.Split(" ");
         if (command == CommandName)
         {
-            switch (args)
+            switch (arguments.FirstOrDefault())
             {
                 case "start":
                     StartVR();
@@ -103,6 +114,22 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     var renderTexture = renderTargetManager->RenderTargets2[33];
                     logger.Info($"Render target:{renderTexture.Value->ActualWidth}x{renderTexture.Value->ActualHeight} format ${renderTexture.Value->TextureFormat}");
                     logger.Info($"depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight} format ${depthTexture.Value->TextureFormat}");
+                    break;
+                case "setfov":
+                    var camera = CameraManager.Instance()->GetActiveCamera();
+
+                    logger.Info($"fov: {camera->FoV} distance: {camera->Distance}");
+                    var newFov = camera->FoV;
+                    var first = arguments.ElementAtOrDefault(1);
+                    if (float.TryParse(first, out newFov))
+                    {
+                        camera->FoV = newFov;
+                        logger.Info($"set fov {newFov}");
+                    }
+                    break;
+                case "changeperspective":
+
+                    logger.Info($"Changed perspective camera");
                     break;
             }
         }

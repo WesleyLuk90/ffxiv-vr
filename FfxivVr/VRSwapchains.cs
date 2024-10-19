@@ -33,6 +33,10 @@ unsafe internal class VRSwapchains : IDisposable
     public void Initialize()
     {
         var viewConfigurationViews = xr.GetViewConfigurationViews(system.Instance, system.SystemId, ViewConfigType);
+        if (viewConfigurationViews.Count != 2)
+        {
+            throw new Exception($"Invalid number of views, expected 2");
+        }
         logger.Debug($"Got {viewConfigurationViews.Count} ViewConfigurationViews");
 
         var formats = xr.GetSwapchainFormats(system.Session);

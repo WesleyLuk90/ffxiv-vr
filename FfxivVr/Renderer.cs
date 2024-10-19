@@ -3,7 +3,6 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
-using System.Collections.Generic;
 using static FfxivVR.Resources;
 
 namespace FfxivVR;
@@ -44,48 +43,48 @@ unsafe internal class Renderer : IDisposable
         xr.CreateReferenceSpace(system.Session, ref referenceSpace, ref localSpace).CheckResult("CreateReferenceSpace");
     }
 
-    public List<Matrix4X4<float>> GetProjectionMatrixes(long predictedDisplayTime)
+    //public List<Matrix4X4<float>> GetProjectionMatrixes(long predictedDisplayTime)
+    //{
+    //    var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
+    //    var viewState = new ViewState(next: null);
+    //    var viewLocateInfo = new ViewLocateInfo(
+    //        viewConfigurationType: ViewConfigurationType.PrimaryStereo,
+    //        displayTime: predictedDisplayTime,
+    //        space: localSpace
+    //    );
+    //    uint viewCount = 0;
+    //    xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
+
+    //    List<Matrix4X4<float>> matrices = new List<Matrix4X4<float>>();
+    //    for (int viewIndex = 0; viewIndex < viewCount; viewIndex++)
+    //    {
+    //        var view = views[viewIndex];
+
+    //        var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
+    //        var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
+    //        var toView = Matrix4X4.Multiply(rotation, translation);
+    //        var viewInverted = new Matrix4X4<float>();
+    //        Matrix4X4.Invert(toView, out viewInverted);
+
+    //        var near = 0.05f;
+    //        var left = MathF.Tan(view.Fov.AngleLeft) * near;
+    //        var right = MathF.Tan(view.Fov.AngleRight) * near;
+    //        var down = MathF.Tan(view.Fov.AngleDown) * near;
+    //        var up = MathF.Tan(view.Fov.AngleUp) * near;
+
+    //        var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
+    //        var viewProj = Matrix4X4.Multiply(viewInverted, proj);
+    //        matrices.Add(viewProj);
+    //    }
+    //    return matrices;
+    //}
+
+    private void RenderViewport(ID3D11DeviceContext* context, Texture* texture, Matrix4X4<float> viewProjection)
     {
-        var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
-        var viewState = new ViewState(next: null);
-        var viewLocateInfo = new ViewLocateInfo(
-            viewConfigurationType: ViewConfigurationType.PrimaryStereo,
-            displayTime: predictedDisplayTime,
-            space: localSpace
-        );
-        uint viewCount = 0;
-        xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
-
-        List<Matrix4X4<float>> matrices = new List<Matrix4X4<float>>();
-        for (int viewIndex = 0; viewIndex < viewCount; viewIndex++)
-        {
-            var view = views[viewIndex];
-
-            var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
-            var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
-            var toView = Matrix4X4.Multiply(rotation, translation);
-            var viewInverted = new Matrix4X4<float>();
-            Matrix4X4.Invert(toView, out viewInverted);
-
-            var near = 0.05f;
-            var left = MathF.Tan(view.Fov.AngleLeft) * near;
-            var right = MathF.Tan(view.Fov.AngleRight) * near;
-            var down = MathF.Tan(view.Fov.AngleDown) * near;
-            var up = MathF.Tan(view.Fov.AngleUp) * near;
-
-            var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
-            var viewProj = Matrix4X4.Multiply(viewInverted, proj);
-            matrices.Add(viewProj);
-        }
-        return matrices;
-    }
-
-    private void RenderCube(ID3D11DeviceContext* context, Texture* texture, Matrix4X4<float> viewProjection)
-    {
-        var translation = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -0.5f));
+        var translation = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, 0.0f));
         var modelViewProjection = Matrix4X4.Multiply(translation, viewProjection);
         resources.UpdateCamera(context, new CameraConstants(
-            modelViewProjection: modelViewProjection
+            modelViewProjection: translation
         ));
         resources.SetSampler(context, texture);
         resources.Draw(context);
@@ -108,7 +107,8 @@ unsafe internal class Renderer : IDisposable
         xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
     }
 
-    internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, Texture* texture)
+    // Can't be called from the FrameworkTickFn
+    internal View[] LocateView(FrameState frameState)
     {
         var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
         var viewState = new ViewState(next: null);
@@ -119,13 +119,16 @@ unsafe internal class Renderer : IDisposable
         );
         uint viewCount = 0;
         xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
-
-        if (viewCount != swapchains.Views.Count)
+        if (viewCount != 2)
         {
-            throw new Exception($"Unexpected view count, got {viewCount} but expected {swapchains.Views.Count}");
+            throw new Exception($"LocateView returned an unexpected number of views, got {viewCount}");
         }
+        return views;
+    }
 
-        CompositionLayerProjectionView[] layers = new CompositionLayerProjectionView[viewCount];
+    internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, Texture* texture, View[] views)
+    {
+        CompositionLayerProjectionView[] layers = new CompositionLayerProjectionView[swapchains.Views.Count];
         for (int viewIndex = 0; viewIndex < swapchains.Views.Count; viewIndex++)
         {
             var swapchainView = swapchains.Views[viewIndex];
@@ -201,7 +204,7 @@ unsafe internal class Renderer : IDisposable
             var viewProj = Matrix4X4.Multiply(viewInverted, proj);
 
             shaders.SetShaders(context);
-            RenderCube(context, texture, viewProj);
+            RenderViewport(context, texture, viewProj);
 
             //var swapchainTexture = swapchainView.ColorSwapchainInfo.Textures[colorImageIndex];
             //var box = new Box(0,
@@ -240,5 +243,13 @@ unsafe internal class Renderer : IDisposable
         var beginFrameInfo = new FrameBeginInfo(next: null);
         xr.BeginFrame(system.Session, ref beginFrameInfo).CheckResult("BeginFrame");
         return frameState;
+    }
+
+    internal Matrix4X4<float> ComputeViewMatrix(View[] views)
+    {
+        var view = views[0];
+        var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
+        var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
+        return Matrix4X4.Multiply(rotation, translation);
     }
 }

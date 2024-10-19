@@ -19,9 +19,9 @@ unsafe public class Resources : IDisposable
         }
     }
 
-    private D3DBuffer cameraBuffer;
-    private Vertex[] vertices;
-    private D3DBuffer vertexBuffer;
+    private D3DBuffer? cameraBuffer;
+    private Vertex[]? vertices;
+    private D3DBuffer? vertexBuffer;
     private readonly ID3D11Device* device;
     private readonly Logger logger;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
@@ -272,8 +272,8 @@ unsafe public class Resources : IDisposable
 
     public void Dispose()
     {
-        this.cameraBuffer.Dispose();
-        this.vertexBuffer.Dispose();
+        this.cameraBuffer?.Dispose();
+        this.vertexBuffer?.Dispose();
     }
 
     internal void SetDepthStencilState(ID3D11DeviceContext* context)

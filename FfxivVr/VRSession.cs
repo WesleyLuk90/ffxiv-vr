@@ -1,7 +1,9 @@
-using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using Silk.NET.Direct3D11;
+using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.Numerics;
 
 namespace FfxivVR;
 
@@ -56,12 +58,12 @@ public unsafe class VRSession : IDisposable
     {
         public record Ready() : RenderState;
         public record SkipRender(FrameState frameState) : RenderState;
-        public record Rendering(FrameState frameState) : RenderState;
+        public record Rendering(FrameState frameState, View[] views) : RenderState;
 
         public record Skipped() : RenderState;
     }
 
-    private RenderState renderState = new RenderState.Ready();
+    private RenderState renderState = new RenderState.Skipped();
 
     public void StartFrame(ID3D11DeviceContext* context)
     {
@@ -76,8 +78,8 @@ public unsafe class VRSession : IDisposable
             var frameState = renderer.StartFrame(context);
             if (State.IsActive() && frameState.ShouldRender != 0)
             {
-                //var matrices = renderer.GetProjectionMatrixes(frameState.PredictedDisplayPeriod);
-                renderState = new RenderState.Rendering(frameState);
+                var views = renderer.LocateView(frameState);
+                renderState = new RenderState.Rendering(frameState, views);
             }
             else
             {
@@ -90,7 +92,7 @@ public unsafe class VRSession : IDisposable
         }
     }
 
-    public void EndFrame(ID3D11DeviceContext* context)
+    public void EndFrame(ID3D11DeviceContext* context, Texture* gameRenderTexture)
     {
         switch (renderState)
         {
@@ -98,15 +100,50 @@ public unsafe class VRSession : IDisposable
                 renderer.SkipFrame(skip.frameState);
                 break;
             case RenderState.Rendering rendering:
-                var manager = RenderTargetManager.Instance();
-                renderer.EndFrame(context, rendering.frameState, manager->RenderTargets2[33]);
+                renderer.EndFrame(context, rendering.frameState, gameRenderTexture, rendering.views);
                 break;
             case RenderState.Skipped:
                 break;
             default:
-                //logger.Error($"Unexpected frame state at end {renderState}");
+                logger.Error($"Unexpected frame state at end {renderState}");
                 break;
         }
         renderState = new RenderState.Ready();
+    }
+
+    internal bool SecondRender(ID3D11DeviceContext* context)
+    {
+        return false;
+    }
+
+    internal void UpdateViewMatrix(Matrix4x4* viewMatrix)
+    {
+        if (renderState is RenderState.Rendering rendering)
+        {
+            //*viewMatrix = renderer.ComputeViewMatrix(rendering.views).ToMatrix4x4();
+        }
+    }
+
+    internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Render.Camera* camera)
+    {
+        if (renderState is RenderState.Rendering rendering)
+        {
+            var view = rendering.views[0];
+            var near = 0.1f;
+            var left = MathF.Tan(view.Fov.AngleLeft) * near;
+            var right = MathF.Tan(view.Fov.AngleRight) * near;
+            var down = MathF.Tan(view.Fov.AngleDown) * near;
+            var up = MathF.Tan(view.Fov.AngleUp) * near;
+
+            var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
+
+            // Overwrite these for FFXIV
+            proj.M33 = 0;
+            proj.M43 = near;
+            logger.Debug($"Matrix is {proj}");
+
+            camera->ProjectionMatrix = proj.ToMatrix4x4();
+            camera->ProjectionMatrix2 = proj.ToMatrix4x4();
+        }
     }
 }
