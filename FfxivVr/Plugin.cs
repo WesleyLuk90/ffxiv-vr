@@ -3,10 +3,9 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FfxivVR.Windows;
-using Silk.NET.Maths;
 using System;
 using System.IO;
 using System.Linq;
@@ -19,6 +18,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
+    [PluginService] internal static IClientState ClientState { get; private set; } = null!;
     [PluginService] internal static IGameInteropProvider GameHookService { get; private set; } = null!;
 
     private const string CommandName = "/vr";
@@ -74,17 +74,27 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         GameHookService.InitializeFromAttributes(gameHooks);
         gameHooks.Initialize();
+        Framework.Update += Framework_Update;
     }
 
+    private CameraMode? lastCameraMode = null;
     private void Framework_Update(IFramework framework)
     {
-        var camera2 = CameraManager.Instance()->GetActiveCamera();
-        Control.Instance()->ViewProjectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView(45f / 180 * MathF.PI, 1f, 0.05f, 100f).ToMatrix4x4();
-        //camera2->SceneCamera.RenderCamera->ProjectionMatrix = 
+        var nextMode = SceneCameraExtensions.GetCameraMode();
+        if (lastCameraMode != null && lastCameraMode != nextMode)
+        {
+            exceptionHandler.FaultBarrier(() =>
+            {
+                vrLifecycle.RecenterCamera();
+            });
+        }
+        lastCameraMode = nextMode;
+        vrLifecycle.UpdateModelVisibility();
     }
 
     public void Dispose()
     {
+        Framework.Update -= Framework_Update;
         gameHooks.Dispose();
         WindowSystem.RemoveAllWindows();
 
@@ -108,33 +118,41 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 case "stop":
                     StopVR();
                     break;
-                case "debug":
+                case "printtextures":
                     var renderTargetManager = RenderTargetManager.Instance();
                     var depthTexture = renderTargetManager->RenderTargets[10];
                     var renderTexture = renderTargetManager->RenderTargets2[33];
                     logger.Info($"Render target:{renderTexture.Value->ActualWidth}x{renderTexture.Value->ActualHeight} format ${renderTexture.Value->TextureFormat}");
                     logger.Info($"depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight} format ${depthTexture.Value->TextureFormat}");
                     break;
-                case "setfov":
-                    var camera = CameraManager.Instance()->GetActiveCamera();
-
-                    logger.Info($"fov: {camera->FoV} distance: {camera->Distance}");
-                    var newFov = camera->FoV;
-                    var first = arguments.ElementAtOrDefault(1);
-                    if (float.TryParse(first, out newFov))
-                    {
-                        camera->FoV = newFov;
-                        logger.Info($"set fov {newFov}");
-                    }
+                case "printcamera":
+                    logger.Info($"Camera mode {SceneCameraExtensions.GetCameraMode()}");
                     break;
-                case "changeperspective":
-
-                    logger.Info($"Changed perspective camera");
+                case "player":
+                    var player = ClientState.LocalPlayer;
+                    if (player == null)
+                    {
+                        logger.Info($"No player");
+                        break;
+                    }
+                    var character = (Character*)player!.Address;
+                    logger.Info($"flags {character->GameObject.DrawObject->Flags}");
+                    character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+                    break;
+                default:
+                    logger.Error($"Unknown command {arguments.FirstOrDefault()}");
                     break;
             }
         }
     }
 
+    public enum ModelCullTypes : byte
+    {
+        None = 0,
+        InsideCamera = 0x42,
+        OutsideCullCone = 0x43,
+        Visible = 0x4B
+    }
     public unsafe void StartVR()
     {
         vrLifecycle.EnableVR();

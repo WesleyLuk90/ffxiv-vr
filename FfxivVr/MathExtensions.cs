@@ -11,6 +11,11 @@ public static class MathExtensions
         return new Vector3D<float>(vec.X, vec.Y, vec.Z);
     }
 
+    public static Vector3f ToVector3f(this Vector3D<float> vec)
+    {
+        return new Vector3f(vec.X, vec.Y, vec.Z);
+    }
+
     public static Vector3D<float> ToVector3D(this Vector3 vec)
     {
         return new Vector3D<float>(vec.X, vec.Y, vec.Z);
@@ -19,6 +24,10 @@ public static class MathExtensions
     public static Quaternion<float> ToQuaternion(this Quaternionf quat)
     {
         return new Quaternion<float>(quat.X, quat.Y, quat.Z, quat.W);
+    }
+    public static Quaternionf ToQuaternionf(this Quaternion<float> quat)
+    {
+        return new Quaternionf(quat.X, quat.Y, quat.Z, quat.W);
     }
 
     public static Matrix4x4 ToMatrix4x4(this Matrix4X4<float> m)

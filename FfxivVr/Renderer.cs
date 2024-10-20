@@ -17,6 +17,7 @@ unsafe internal class Renderer : IDisposable
     private readonly Resources resources;
     private readonly VRShaders shaders;
     private Space localSpace = new Space();
+    private Space viewSpace = new Space();
 
     internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders)
     {
@@ -34,13 +35,19 @@ unsafe internal class Renderer : IDisposable
         CreateReferenceSpace();
     }
 
-
+    private Posef currentSpacePose = new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0));
     private void CreateReferenceSpace()
     {
-        var referenceSpace = new ReferenceSpaceCreateInfo(
+        var localSpaceCreateInfo = new ReferenceSpaceCreateInfo(
             referenceSpaceType: ReferenceSpaceType.Local,
-            poseInReferenceSpace: new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0)));
-        xr.CreateReferenceSpace(system.Session, ref referenceSpace, ref localSpace).CheckResult("CreateReferenceSpace");
+            poseInReferenceSpace: currentSpacePose
+        );
+        xr.CreateReferenceSpace(system.Session, ref localSpaceCreateInfo, ref localSpace).CheckResult("CreateReferenceSpace");
+        var viewSpaceCreateInfo = new ReferenceSpaceCreateInfo(
+            referenceSpaceType: ReferenceSpaceType.View,
+            poseInReferenceSpace: new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0))
+        );
+        xr.CreateReferenceSpace(system.Session, ref viewSpaceCreateInfo, ref viewSpace).CheckResult("CreateReferenceSpace");
     }
 
     private void RenderViewport(ID3D11DeviceContext* context, Texture* texture, Matrix4X4<float> viewProjection)
@@ -58,6 +65,7 @@ unsafe internal class Renderer : IDisposable
     public void Dispose()
     {
         xr.DestroySpace(localSpace).LogResult("DestroySpace", logger);
+        xr.DestroySpace(viewSpace).LogResult("DestroySpace", logger);
     }
 
     internal void SkipFrame(FrameState frameState)
@@ -199,6 +207,7 @@ unsafe internal class Renderer : IDisposable
         }
     }
 
+    private long lastTime = 0;
     internal FrameState StartFrame(ID3D11DeviceContext* context)
     {
         var frameWaitInfo = new FrameWaitInfo(next: null);
@@ -207,6 +216,7 @@ unsafe internal class Renderer : IDisposable
 
         var beginFrameInfo = new FrameBeginInfo(next: null);
         xr.BeginFrame(system.Session, ref beginFrameInfo).CheckResult("BeginFrame");
+        lastTime = frameState.PredictedDisplayTime;
         return frameState;
     }
 
@@ -222,5 +232,34 @@ unsafe internal class Renderer : IDisposable
         var invertedViewMatrix = Matrix4X4<float>.Identity;
         Matrix4X4.Invert(viewMatrix, out invertedViewMatrix);
         return invertedViewMatrix;
+    }
+    internal void ResetCamera()
+    {
+        logger.Info("Resetting camera");
+        var oldSpace = localSpace;
+        currentSpacePose = new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0));
+        localSpace = new Space();
+        var localSpaceCreateInfo = new ReferenceSpaceCreateInfo(
+            referenceSpaceType: ReferenceSpaceType.Local,
+            poseInReferenceSpace: currentSpacePose
+        );
+        xr.CreateReferenceSpace(system.Session, ref localSpaceCreateInfo, ref localSpace).CheckResult("CreateReferenceSpace");
+        xr.DestroySpace(oldSpace).CheckResult("DestroySpace");
+    }
+
+    internal void RecenterCamera()
+    {
+        logger.Info("Recentering camera");
+        var spaceLocation = new SpaceLocation(next: null);
+        xr.LocateSpace(viewSpace, localSpace, lastTime, ref spaceLocation).CheckResult("LocateSpace");
+        var oldSpace = localSpace;
+        currentSpacePose.Position = (currentSpacePose.Position.ToVector3D() + spaceLocation.Pose.Position.ToVector3D()).ToVector3f();
+        localSpace = new Space();
+        var localSpaceCreateInfo = new ReferenceSpaceCreateInfo(
+            referenceSpaceType: ReferenceSpaceType.Local,
+            poseInReferenceSpace: currentSpacePose
+        );
+        xr.CreateReferenceSpace(system.Session, ref localSpaceCreateInfo, ref localSpace).CheckResult("CreateReferenceSpace");
+        xr.DestroySpace(oldSpace).CheckResult("DestroySpace");
     }
 }

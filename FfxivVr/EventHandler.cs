@@ -9,13 +9,15 @@ namespace FfxivVR
         private VRSystem vrSystem;
         private Logger logger;
         private VRState vrState;
+        private readonly Renderer renderer;
 
-        internal EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState)
+        internal EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState, Renderer renderer)
         {
             this.xr = xr;
             this.vrSystem = vrSystem;
             this.logger = logger;
             this.vrState = vrState;
+            this.renderer = renderer;
         }
         internal unsafe void PollEvents()
         {
@@ -51,7 +53,7 @@ namespace FfxivVR
                     case StructureType.EventDataReferenceSpaceChangePending:
                         {
                             var spaceChangePending = Unsafe.As<EventDataBuffer, EventDataReferenceSpaceChangePending>(ref eventDataBuffer);
-                            logger.Debug($"Space change: {spaceChangePending.Session}");
+                            renderer.ResetCamera();
                             break;
                         }
                     case StructureType.EventDataSessionStateChanged:

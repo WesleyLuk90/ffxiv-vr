@@ -1,9 +1,11 @@
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using static FfxivVR.Plugin;
 
 namespace FfxivVR;
 
@@ -32,7 +34,7 @@ public unsafe class VRSession : IDisposable
         resources = new Resources(device, logger);
         vrShaders = new VRShaders(device, logger);
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders);
-        eventHandler = new EventHandler(xr, vrSystem, logger, State);
+        eventHandler = new EventHandler(xr, vrSystem, logger, State, renderer);
     }
 
     public void Initialize()
@@ -155,5 +157,25 @@ public unsafe class VRSession : IDisposable
         camera->RenderCamera->ProjectionMatrix2 = proj.ToMatrix4x4();
 
         camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
+    }
+
+    internal void RecenterCamera()
+    {
+        renderer.RecenterCamera();
+    }
+
+    internal void UpdateModelVisibility()
+    {
+        var player = ClientState.LocalPlayer;
+        if (player == null)
+        {
+            return;
+        }
+        var character = (Character*)player!.Address;
+        if (character == null)
+        {
+            return;
+        }
+        character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
     }
 }
