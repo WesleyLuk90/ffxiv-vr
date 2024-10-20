@@ -12,15 +12,16 @@ namespace FfxivVR;
 public unsafe class VRSession : IDisposable
 {
 
-    private XR xr;
-    private VRSystem vrSystem;
-    private Logger logger;
+    private readonly XR xr;
+    private readonly VRSystem vrSystem;
+    private readonly Logger logger;
     public VRState State;
-    private Renderer renderer;
-    private EventHandler eventHandler;
-    private VRShaders vrShaders;
-    private Resources resources;
-    private VRSwapchains swapchains;
+    private readonly Renderer renderer;
+    private readonly VRSpace vrSpace;
+    private readonly EventHandler eventHandler;
+    private readonly VRShaders vrShaders;
+    private readonly Resources resources;
+    private readonly VRSwapchains swapchains;
 
     public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device)
         : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device) { }
@@ -33,8 +34,9 @@ public unsafe class VRSession : IDisposable
         swapchains = new VRSwapchains(xr, vrSystem, logger, device);
         resources = new Resources(device, logger);
         vrShaders = new VRShaders(device, logger);
-        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders);
-        eventHandler = new EventHandler(xr, vrSystem, logger, State, renderer);
+        vrSpace = new VRSpace(xr, logger, vrSystem);
+        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace);
+        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
     }
 
     public void Initialize()
@@ -43,12 +45,12 @@ public unsafe class VRSession : IDisposable
         vrShaders.Initialize();
         swapchains.Initialize();
         resources.Initialize();
-        renderer.Initialize();
+        vrSpace.Initialize();
     }
 
     public void Dispose()
     {
-        renderer.Dispose();
+        vrSpace.Dispose();
         vrShaders.Dispose();
         swapchains.Dispose();
         resources.Dispose();
@@ -161,7 +163,7 @@ public unsafe class VRSession : IDisposable
 
     internal void RecenterCamera()
     {
-        renderer.RecenterCamera();
+        vrSpace.RecenterCamera(renderer.LastTime);
     }
 
     internal void UpdateModelVisibility()

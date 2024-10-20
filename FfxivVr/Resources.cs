@@ -243,9 +243,9 @@ unsafe public class Resources : IDisposable
     public void UpdateCamera(ID3D11DeviceContext* context, CameraConstants camera)
     {
         var cameraSpan = new Span<CameraConstants>(ref camera);
-        SetBufferData(context, MemoryMarshal.AsBytes(cameraSpan), this.cameraBuffer);
+        SetBufferData(context, MemoryMarshal.AsBytes(cameraSpan), this.cameraBuffer!);
 
-        context->VSSetConstantBuffers(0, 1, ref cameraBuffer.Handle);
+        context->VSSetConstantBuffers(0, 1, ref cameraBuffer!.Handle);
 
         context->RSSetState(rasterizerState);
     }
@@ -260,13 +260,13 @@ unsafe public class Resources : IDisposable
 
     public void Draw(ID3D11DeviceContext* context)
     {
-        fixed (ID3D11Buffer** pHandle = &vertexBuffer.Handle)
+        fixed (ID3D11Buffer** pHandle = &vertexBuffer!.Handle)
         {
             uint stride = (uint)sizeof(Vertex);
             uint offsets = 0;
             context->IASetVertexBuffers(0, 1, pHandle, &stride, &offsets);
             context->IASetPrimitiveTopology(Silk.NET.Core.Native.D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
-            context->Draw((uint)this.vertices.Length, 0);
+            context->Draw((uint)this.vertices!.Length, 0);
         }
     }
 

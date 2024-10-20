@@ -7,19 +7,18 @@ using static FfxivVR.Resources;
 
 namespace FfxivVR;
 
-unsafe internal class Renderer : IDisposable
+unsafe internal class Renderer
 {
-    private XR xr;
-    private VRSystem system;
-    private VRState vrState;
-    private Logger logger;
+    private readonly XR xr;
+    private readonly VRSystem system;
+    private readonly VRState vrState;
+    private readonly Logger logger;
     private readonly VRSwapchains swapchains;
     private readonly Resources resources;
     private readonly VRShaders shaders;
-    private Space localSpace = new Space();
-    private Space viewSpace = new Space();
+    private readonly VRSpace vrSpace;
 
-    internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders)
+    internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders, VRSpace vrSpace)
     {
         this.xr = xr;
         this.system = system;
@@ -28,27 +27,9 @@ unsafe internal class Renderer : IDisposable
         this.swapchains = swapchains;
         this.resources = resources;
         this.shaders = shaders;
+        this.vrSpace = vrSpace;
     }
 
-    internal void Initialize()
-    {
-        CreateReferenceSpace();
-    }
-
-    private Matrix4X4<float> currentSpaceTransform = Matrix4X4<float>.Identity;
-    private void CreateReferenceSpace()
-    {
-        var localSpaceCreateInfo = new ReferenceSpaceCreateInfo(
-            referenceSpaceType: ReferenceSpaceType.Local,
-            poseInReferenceSpace: GetCurrentPose()
-        );
-        xr.CreateReferenceSpace(system.Session, ref localSpaceCreateInfo, ref localSpace).CheckResult("CreateReferenceSpace");
-        var viewSpaceCreateInfo = new ReferenceSpaceCreateInfo(
-            referenceSpaceType: ReferenceSpaceType.View,
-            poseInReferenceSpace: new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0))
-        );
-        xr.CreateReferenceSpace(system.Session, ref viewSpaceCreateInfo, ref viewSpace).CheckResult("CreateReferenceSpace");
-    }
 
     private void RenderViewport(ID3D11DeviceContext* context, Texture* texture, Matrix4X4<float> viewProjection)
     {
@@ -61,12 +42,6 @@ unsafe internal class Renderer : IDisposable
         resources.Draw(context);
     }
 
-
-    public void Dispose()
-    {
-        xr.DestroySpace(localSpace).LogResult("DestroySpace", logger);
-        xr.DestroySpace(viewSpace).LogResult("DestroySpace", logger);
-    }
 
     internal void SkipFrame(FrameState frameState)
     {
@@ -87,7 +62,7 @@ unsafe internal class Renderer : IDisposable
         var viewLocateInfo = new ViewLocateInfo(
             viewConfigurationType: ViewConfigurationType.PrimaryStereo,
             displayTime: frameState.PredictedDisplayTime,
-            space: localSpace
+            space: vrSpace.LocalSpace
         );
         uint viewCount = 0;
         xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
@@ -192,7 +167,7 @@ unsafe internal class Renderer : IDisposable
         {
             var layerProjection = new CompositionLayerProjection(
                 layerFlags: CompositionLayerFlags.BlendTextureSourceAlphaBit | CompositionLayerFlags.CorrectChromaticAberrationBit,
-                space: localSpace,
+                space: vrSpace.LocalSpace,
                 viewCount: (uint)compositionLayerSpan.Length,
                 views: ptr
             );
@@ -207,7 +182,7 @@ unsafe internal class Renderer : IDisposable
         }
     }
 
-    private long lastTime = 0;
+    public long LastTime = 0;
     internal FrameState StartFrame(ID3D11DeviceContext* context)
     {
         var frameWaitInfo = new FrameWaitInfo(next: null);
@@ -216,7 +191,7 @@ unsafe internal class Renderer : IDisposable
 
         var beginFrameInfo = new FrameBeginInfo(next: null);
         xr.BeginFrame(system.Session, ref beginFrameInfo).CheckResult("BeginFrame");
-        lastTime = frameState.PredictedDisplayTime;
+        LastTime = frameState.PredictedDisplayTime;
         return frameState;
     }
 
@@ -232,58 +207,5 @@ unsafe internal class Renderer : IDisposable
         var invertedViewMatrix = Matrix4X4<float>.Identity;
         Matrix4X4.Invert(viewMatrix, out invertedViewMatrix);
         return invertedViewMatrix;
-    }
-    internal void ResetCamera()
-    {
-        logger.Info("Resetting camera");
-        var oldSpace = localSpace;
-        currentSpaceTransform = Matrix4X4<float>.Identity;
-        Posef pose = GetCurrentPose();
-        localSpace = new Space();
-        var localSpaceCreateInfo = new ReferenceSpaceCreateInfo(
-            referenceSpaceType: ReferenceSpaceType.Local,
-            poseInReferenceSpace: pose
-        );
-        xr.CreateReferenceSpace(system.Session, ref localSpaceCreateInfo, ref localSpace).CheckResult("CreateReferenceSpace");
-        xr.DestroySpace(oldSpace).CheckResult("DestroySpace");
-    }
-
-    private Posef GetCurrentPose()
-    {
-        Vector3D<float> scale;
-        Vector3D<float> translation;
-        Quaternion<float> rotation;
-        Matrix4X4.Decompose(currentSpaceTransform, out scale, out rotation, out translation);
-
-        var pose = new Posef(
-            orientation: rotation.ToQuaternionf(),
-            position: translation.ToVector3f()
-        );
-        return pose;
-    }
-
-    internal void RecenterCamera()
-    {
-        logger.Info("Recentering camera");
-        var spaceLocation = new SpaceLocation(next: null);
-        xr.LocateSpace(viewSpace, localSpace, lastTime, ref spaceLocation).CheckResult("LocateSpace");
-        var oldSpace = localSpace;
-        var pose = spaceLocation.Pose;
-        var positionMatrix = Matrix4X4.CreateTranslation(pose.Position.ToVector3D());
-        var newRotation = pose.Orientation.ToQuaternion();
-        newRotation.X = 0;
-        newRotation.Z = 0;
-        newRotation = Quaternion<float>.Normalize(newRotation);
-        var rotationMatrix = Matrix4X4.CreateFromQuaternion(newRotation);
-
-        currentSpaceTransform = rotationMatrix * positionMatrix * currentSpaceTransform;
-
-        localSpace = new Space();
-        var localSpaceCreateInfo = new ReferenceSpaceCreateInfo(
-            referenceSpaceType: ReferenceSpaceType.Local,
-            poseInReferenceSpace: GetCurrentPose()
-        );
-        xr.CreateReferenceSpace(system.Session, ref localSpaceCreateInfo, ref localSpace).CheckResult("CreateReferenceSpace");
-        xr.DestroySpace(oldSpace).CheckResult("DestroySpace");
     }
 }

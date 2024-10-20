@@ -19,7 +19,7 @@ VertexShaderOutput main(VertexShaderInput input)
     VertexShaderOutput output;
 
     output.position = mul(modelViewProjection, input.position);
-    output.texcoord = float4(input.texcoord, 0, 1);
+    output.texcoord = input.texcoord;
 
     return output;
 }
