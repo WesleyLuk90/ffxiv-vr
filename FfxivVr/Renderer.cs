@@ -248,9 +248,12 @@ unsafe internal class Renderer : IDisposable
     internal Matrix4X4<float> ComputeViewMatrix(View[] views, Vector3D<float> position, Vector3D<float> lookAt)
     {
         var view = views[0];
+        var forwardVector = lookAt - position;
+        var yAngle = MathF.Atan2(forwardVector.Z, forwardVector.X);
+        var gameCameraRotation = Quaternion<float>.CreateFromAxisAngle(Vector3D<float>.UnitY, -MathF.PI / 2 - yAngle);
+
         var newPosition = position + view.Pose.Position.ToVector3D();
-        var newRotation = view.Pose.Orientation.ToQuaternion();//rotation *
-        logger.Debug($"camera {position} {lookAt}");
+        var newRotation = Quaternion<float>.Concatenate(view.Pose.Orientation.ToQuaternion(), gameCameraRotation);
         var rotationMatrix = Matrix4X4.CreateFromQuaternion<float>(newRotation);
         var translationMatrix = Matrix4X4.CreateTranslation<float>(newPosition);
         var viewMatrix = Matrix4X4.Multiply(rotationMatrix, translationMatrix);
