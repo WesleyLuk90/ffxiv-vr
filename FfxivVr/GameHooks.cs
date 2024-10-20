@@ -1,7 +1,5 @@
 ﻿using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
 
@@ -35,6 +33,8 @@ unsafe internal class GameHooks : IDisposable
         DXGIPresentHook?.Dispose();
         SetMatricesHook?.Disable();
         SetMatricesHook?.Dispose();
+        RunGameTasksHook?.Disable();
+        RunGameTasksHook?.Dispose();
     }
 
     public void Initialize()
@@ -42,6 +42,7 @@ unsafe internal class GameHooks : IDisposable
         FrameworkTickHook!.Enable();
         DXGIPresentHook!.Enable();
         SetMatricesHook!.Enable();
+        RunGameTasksHook!.Enable();
     }
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
     [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]
@@ -95,27 +96,44 @@ unsafe internal class GameHooks : IDisposable
     }
 
 
-    private delegate void SetMatricesDelegate(Camera* camera, IntPtr ptr);
+    private delegate void SetMatricesDelegate(FFXIVClientStructs.FFXIV.Client.Game.Camera* camera, IntPtr ptr);
     [Signature(Signatures.SetMatrices, DetourName = nameof(SetMatricesFn))]
     private Hook<SetMatricesDelegate>? SetMatricesHook = null;
 
-    private void SetMatricesFn(Camera* camera, IntPtr ptr)
+    private void SetMatricesFn(FFXIVClientStructs.FFXIV.Client.Game.Camera* camera, IntPtr ptr)
     {
-        if (debugHooks)
-        {
-            logger.Debug("SetMatricesFn start");
-        }
         SetMatricesHook!.Original(camera, ptr);
         exceptionHandler.FaultBarrier(() =>
         {
-            if (camera == CameraManager.Instance()->GetActiveCamera()->SceneCamera.RenderCamera)
+            if (camera == FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance()->GetActiveCamera()->SceneCamera.RenderCamera)
             {
-                vrLifecycle.UpdateCamera(&CameraManager.Instance()->GetActiveCamera()->SceneCamera);
+                if (debugHooks)
+                {
+                    logger.Debug("SetMatricesFn start");
+                }
+                vrLifecycle.UpdateCamera(&FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance()->GetActiveCamera()->SceneCamera);
+                if (debugHooks)
+                {
+                    logger.Debug("SetMatricesFn start");
+                }
             }
         });
+    }
+
+    delegate void RunGameTasksDg(TaskManager* taskManager, float* frameTiming);
+    [Signature(Signatures.RunGameTasks, DetourName = nameof(RunGameTasksFn))]
+    private Hook<RunGameTasksDg>? RunGameTasksHook = null;
+
+    public void RunGameTasksFn(TaskManager* taskManager, float* frameTiming)
+    {
         if (debugHooks)
         {
-            logger.Debug("SetMatricesFn start");
+            logger.Debug("RunGameTasksFn start");
+        }
+        RunGameTasksHook!.Original(taskManager, frameTiming);
+        if (debugHooks)
+        {
+            logger.Debug("RunGameTasksFn end");
         }
     }
 

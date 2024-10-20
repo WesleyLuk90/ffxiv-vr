@@ -159,6 +159,7 @@ public unsafe class VRSession : IDisposable
         camera->RenderCamera->ProjectionMatrix2 = proj.ToMatrix4x4();
 
         camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
+        camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
     }
 
     internal void RecenterCamera()
