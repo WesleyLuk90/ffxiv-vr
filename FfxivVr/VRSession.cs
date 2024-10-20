@@ -58,86 +58,103 @@ public unsafe class VRSession : IDisposable
     {
         public record Ready() : RenderState;
         public record SkipRender(FrameState frameState) : RenderState;
-        public record Rendering(FrameState frameState, View[] views) : RenderState;
+        public record RenderingLeft(FrameState frameState, View[] views) : RenderState;
+        public record RenderingRight(FrameState frameState, View[] views, CompositionLayerProjectionView leftLayer) : RenderState;
 
         public record Skipped() : RenderState;
     }
 
     private RenderState renderState = new RenderState.Skipped();
 
-    public void StartFrame(ID3D11DeviceContext* context)
+    public void PostPresent(ID3D11DeviceContext* context)
     {
         eventHandler.PollEvents();
-        if (renderState is not RenderState.Ready)
-        {
-            logger.Error($"Frame state was not Ready but was {renderState}");
-        }
 
-        if (State.SessionRunning)
+        if (renderState is RenderState.Ready)
         {
-            var frameState = renderer.StartFrame(context);
-            if (State.IsActive() && frameState.ShouldRender != 0)
+            if (State.SessionRunning)
             {
-                var views = renderer.LocateView(frameState);
-                renderState = new RenderState.Rendering(frameState, views);
+                var frameState = renderer.StartFrame(context);
+                if (State.IsActive() && frameState.ShouldRender != 0)
+                {
+                    var views = renderer.LocateView(frameState);
+                    renderState = new RenderState.RenderingLeft(frameState, views);
+                }
+                else
+                {
+                    renderState = new RenderState.SkipRender(frameState);
+                }
             }
             else
             {
-                renderState = new RenderState.SkipRender(frameState);
+                renderState = new RenderState.Skipped();
             }
-        }
-        else
-        {
-            renderState = new RenderState.Skipped();
         }
     }
 
-    public void EndFrame(ID3D11DeviceContext* context, Texture* gameRenderTexture)
+    public void PrePresent(ID3D11DeviceContext* context, Texture* gameRenderTexture)
     {
         switch (renderState)
         {
             case RenderState.SkipRender skip:
                 renderer.SkipFrame(skip.frameState);
+                renderState = new RenderState.Ready();
                 break;
-            case RenderState.Rendering rendering:
-                renderer.EndFrame(context, rendering.frameState, gameRenderTexture, rendering.views);
+            case RenderState.RenderingLeft rendering:
+                var leftLayer = renderer.RenderEye(context, rendering.frameState, gameRenderTexture, rendering.views, Eye.Left);
+                renderState = new RenderState.RenderingRight(rendering.frameState, rendering.views, leftLayer);
+                break;
+            case RenderState.RenderingRight rendering:
+                var rightLayer = renderer.RenderEye(context, rendering.frameState, gameRenderTexture, rendering.views, Eye.Right);
+                renderer.EndFrame(context, rendering.frameState, gameRenderTexture, rendering.views, [rendering.leftLayer, rightLayer]);
+                renderState = new RenderState.Ready();
                 break;
             case RenderState.Skipped:
+                renderState = new RenderState.Ready();
                 break;
             default:
                 logger.Error($"Unexpected frame state at end {renderState}");
                 break;
         }
-        renderState = new RenderState.Ready();
     }
 
     internal bool SecondRender(ID3D11DeviceContext* context)
     {
-        return false;
+        return renderState is RenderState.RenderingRight;
     }
 
     internal void UpdateCamera(Camera* camera)
     {
-        if (renderState is RenderState.Rendering rendering)
+        View view;
+        // Not sure why these are swapped, I think the update camera call is one step behind the render state so these end up swapped
+        if (renderState is RenderState.RenderingLeft renderingLeft)
         {
-            var view = rendering.views[0];
-            var near = 0.1f;
-            var left = MathF.Tan(view.Fov.AngleLeft) * near;
-            var right = MathF.Tan(view.Fov.AngleRight) * near;
-            var down = MathF.Tan(view.Fov.AngleDown) * near;
-            var up = MathF.Tan(view.Fov.AngleUp) * near;
-
-            var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
-
-            // Overwrite these for FFXIV
-            proj.M33 = 0;
-            proj.M43 = near;
-            //logger.Debug($"Matrix is {proj}");
-
-            camera->RenderCamera->ProjectionMatrix = proj.ToMatrix4x4();
-            camera->RenderCamera->ProjectionMatrix2 = proj.ToMatrix4x4();
-
-            camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(rendering.views, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
+            view = renderingLeft.views[Eye.Right.ToIndex()];
         }
+        else if (renderState is RenderState.RenderingRight renderingRight)
+        {
+            view = renderingRight.views[Eye.Left.ToIndex()];
+        }
+        else
+        {
+            return;
+        }
+        var near = 0.1f;
+        var left = MathF.Tan(view.Fov.AngleLeft) * near;
+        var right = MathF.Tan(view.Fov.AngleRight) * near;
+        var down = MathF.Tan(view.Fov.AngleDown) * near;
+        var up = MathF.Tan(view.Fov.AngleUp) * near;
+
+        var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
+
+        // Overwrite these for FFXIV
+        proj.M33 = 0;
+        proj.M43 = near;
+        //logger.Debug($"Matrix is {proj}");
+
+        camera->RenderCamera->ProjectionMatrix = proj.ToMatrix4x4();
+        camera->RenderCamera->ProjectionMatrix2 = proj.ToMatrix4x4();
+
+        camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
     }
 }

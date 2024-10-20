@@ -30,7 +30,7 @@ unsafe internal static class Program
         session.Initialize();
         while (!session.State.Exiting)
         {
-            session.StartFrame(deviceContext);
+            session.PostPresent(deviceContext);
             session.EndFrame(deviceContext);
         }
         session.Dispose();

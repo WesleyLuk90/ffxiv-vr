@@ -58,9 +58,9 @@ public unsafe class VRLifecycle : IDisposable
     }
 
 
-    public void StartFrame()
+    public void PostPresent()
     {
-        vrSession?.StartFrame(GetContext());
+        vrSession?.PostPresent(GetContext());
     }
 
     public bool SecondRender()
@@ -68,11 +68,11 @@ public unsafe class VRLifecycle : IDisposable
         return vrSession?.SecondRender(GetContext()) ?? false;
     }
 
-    public void EndFrame()
+    public void PrePresent()
     {
         var renderTargetManager = RenderTargetManager.Instance();
         Texture* texture = GetGameRenderTexture(renderTargetManager);
-        vrSession?.EndFrame(GetContext(), texture);
+        vrSession?.PrePresent(GetContext(), texture);
     }
 
     private static FFXIVClientStructs.Interop.Pointer<Texture> GetGameRenderTexture(RenderTargetManager* renderTargetManager)

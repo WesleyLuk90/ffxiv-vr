@@ -43,42 +43,6 @@ unsafe internal class Renderer : IDisposable
         xr.CreateReferenceSpace(system.Session, ref referenceSpace, ref localSpace).CheckResult("CreateReferenceSpace");
     }
 
-    //public List<Matrix4X4<float>> GetProjectionMatrixes(long predictedDisplayTime)
-    //{
-    //    var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
-    //    var viewState = new ViewState(next: null);
-    //    var viewLocateInfo = new ViewLocateInfo(
-    //        viewConfigurationType: ViewConfigurationType.PrimaryStereo,
-    //        displayTime: predictedDisplayTime,
-    //        space: localSpace
-    //    );
-    //    uint viewCount = 0;
-    //    xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
-
-    //    List<Matrix4X4<float>> matrices = new List<Matrix4X4<float>>();
-    //    for (int viewIndex = 0; viewIndex < viewCount; viewIndex++)
-    //    {
-    //        var view = views[viewIndex];
-
-    //        var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
-    //        var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
-    //        var toView = Matrix4X4.Multiply(rotation, translation);
-    //        var viewInverted = new Matrix4X4<float>();
-    //        Matrix4X4.Invert(toView, out viewInverted);
-
-    //        var near = 0.05f;
-    //        var left = MathF.Tan(view.Fov.AngleLeft) * near;
-    //        var right = MathF.Tan(view.Fov.AngleRight) * near;
-    //        var down = MathF.Tan(view.Fov.AngleDown) * near;
-    //        var up = MathF.Tan(view.Fov.AngleUp) * near;
-
-    //        var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
-    //        var viewProj = Matrix4X4.Multiply(viewInverted, proj);
-    //        matrices.Add(viewProj);
-    //    }
-    //    return matrices;
-    //}
-
     private void RenderViewport(ID3D11DeviceContext* context, Texture* texture, Matrix4X4<float> viewProjection)
     {
         var translation = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, 0.0f));
@@ -123,98 +87,100 @@ unsafe internal class Renderer : IDisposable
         {
             throw new Exception($"LocateView returned an unexpected number of views, got {viewCount}");
         }
+        logger.Debug($"Views {views[0].Pose.Position.ToVector3D()} {views[1].Pose.Position.ToVector3D()}");
         return views;
     }
 
-    internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, Texture* texture, View[] views)
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, FrameState frameState, Texture* texture, View[] views, Eye eye)
     {
-        CompositionLayerProjectionView[] layers = new CompositionLayerProjectionView[swapchains.Views.Count];
-        for (int viewIndex = 0; viewIndex < swapchains.Views.Count; viewIndex++)
-        {
-            var swapchainView = swapchains.Views[viewIndex];
-            var view = views[viewIndex];
-            uint colorImageIndex = 0;
-            xr.AcquireSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null, ref colorImageIndex).CheckResult("AcquireSwapchainImage");
-            var currentColorSwapchainImage = swapchainView.ColorSwapchainInfo.Views[colorImageIndex];
-            uint depthSwapchainIndex = 0;
-            xr.AcquireSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null, ref depthSwapchainIndex).CheckResult("AcquireSwapchainImage");
-            var currentDepthSwapchainImage = swapchainView.DepthSwapchainInfo.Views[depthSwapchainIndex];
-            var waitInfo = new SwapchainImageWaitInfo(next: null);
-            waitInfo.Timeout = 1000000000L;
-            xr.WaitSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref waitInfo).CheckResult("WaitSwapchainImage");
-            xr.WaitSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref waitInfo).CheckResult("WaitSwapchainImage");
+        var swapchainView = swapchains.Views[eye.ToIndex()];
+        var view = views[eye.ToIndex()];
+        uint colorImageIndex = 0;
+        xr.AcquireSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null, ref colorImageIndex).CheckResult("AcquireSwapchainImage");
+        var currentColorSwapchainImage = swapchainView.ColorSwapchainInfo.Views[colorImageIndex];
+        uint depthSwapchainIndex = 0;
+        xr.AcquireSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null, ref depthSwapchainIndex).CheckResult("AcquireSwapchainImage");
+        var currentDepthSwapchainImage = swapchainView.DepthSwapchainInfo.Views[depthSwapchainIndex];
+        var waitInfo = new SwapchainImageWaitInfo(next: null);
+        waitInfo.Timeout = 1000000000L;
+        xr.WaitSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref waitInfo).CheckResult("WaitSwapchainImage");
+        xr.WaitSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref waitInfo).CheckResult("WaitSwapchainImage");
 
-            var width = (int)swapchainView.ViewConfigurationView.RecommendedImageRectWidth;
-            var height = (int)swapchainView.ViewConfigurationView.RecommendedImageRectHeight;
+        var width = (int)swapchainView.ViewConfigurationView.RecommendedImageRectWidth;
+        var height = (int)swapchainView.ViewConfigurationView.RecommendedImageRectHeight;
 
-            layers[viewIndex] = new CompositionLayerProjectionView(
-                pose: view.Pose,
-                fov: view.Fov,
-                subImage: new SwapchainSubImage(
-                    swapchain: swapchainView.ColorSwapchainInfo.Swapchain,
-                    imageRect: new Rect2Di(
-                        offset: new Offset2Di(
-                            x: 0,
-                            y: 0
-                        ),
-                        extent: new Extent2Di(
-                            width: width,
-                            height: height
-                        )
+        var compositionLayerProjectionView = new CompositionLayerProjectionView(
+            pose: view.Pose,
+            fov: view.Fov,
+            subImage: new SwapchainSubImage(
+                swapchain: swapchainView.ColorSwapchainInfo.Swapchain,
+                imageRect: new Rect2Di(
+                    offset: new Offset2Di(
+                        x: 0,
+                        y: 0
                     ),
-                    imageArrayIndex: 0
-                )
-            );
-            fixed (float* ptr = new Span<float>([0.17f, 0.17f, 0.17f, 1]))
-            {
-                context->ClearRenderTargetView(currentColorSwapchainImage, ptr);
-            }
-            context->ClearDepthStencilView(currentDepthSwapchainImage, (uint)ClearFlag.Depth, 1.0f, 0);
-
-            resources.SetDepthStencilState(context);
-            resources.SetBlendState(context);
-            context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
-            Viewport viewport = new Viewport(
-                topLeftX: 0f,
-                topLeftY: 0f,
-                width: width,
-                height: height,
-                minDepth: 0f,
-                maxDepth: 1f);
-            context->RSSetViewports(1, &viewport);
-            Box2D<int> scissor = new Box2D<int>(
-                new Vector2D<int>(0, 0),
-                new Vector2D<int>(width, height)
-            );
-            context->RSSetScissorRects(1, &scissor);
-
-            var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
-            var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
-            var toView = Matrix4X4.Multiply(rotation, translation);
-            var viewInverted = new Matrix4X4<float>();
-            Matrix4X4.Invert(toView, out viewInverted);
-
-            var near = 0.05f;
-            var left = MathF.Tan(view.Fov.AngleLeft) * near;
-            var right = MathF.Tan(view.Fov.AngleRight) * near;
-            var down = MathF.Tan(view.Fov.AngleDown) * near;
-            var up = MathF.Tan(view.Fov.AngleUp) * near;
-
-            var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
-            var viewProj = Matrix4X4.Multiply(viewInverted, proj);
-
-            shaders.SetShaders(context);
-            RenderViewport(context, texture, viewProj);
-
-            //var swapchainTexture = swapchainView.ColorSwapchainInfo.Textures[colorImageIndex];
-            //var box = new Box(0,
-            //    0, 0, 500, 500, 1);
-            //context->CopySubresourceRegion((ID3D11Resource*)swapchainTexture, 0, 0, 0, 0, (ID3D11Resource*)texture, 0, &box);
-            var releaseInfo = new SwapchainImageReleaseInfo(next: null);
-            xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
-            xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
+                    extent: new Extent2Di(
+                        width: width,
+                        height: height
+                    )
+                ),
+                imageArrayIndex: 0
+            )
+        );
+        fixed (float* ptr = new Span<float>([0.17f, 0.17f, 0.17f, 1]))
+        {
+            context->ClearRenderTargetView(currentColorSwapchainImage, ptr);
         }
-        var compositionLayerSpan = new Span<CompositionLayerProjectionView>(layers);
+        context->ClearDepthStencilView(currentDepthSwapchainImage, (uint)ClearFlag.Depth, 1.0f, 0);
+
+        resources.SetDepthStencilState(context);
+        resources.SetBlendState(context);
+        context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
+        Viewport viewport = new Viewport(
+            topLeftX: 0f,
+            topLeftY: 0f,
+            width: width,
+            height: height,
+            minDepth: 0f,
+            maxDepth: 1f);
+        context->RSSetViewports(1, &viewport);
+        Box2D<int> scissor = new Box2D<int>(
+            new Vector2D<int>(0, 0),
+            new Vector2D<int>(width, height)
+        );
+        context->RSSetScissorRects(1, &scissor);
+
+        var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
+        var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
+        var toView = Matrix4X4.Multiply(rotation, translation);
+        var viewInverted = new Matrix4X4<float>();
+        Matrix4X4.Invert(toView, out viewInverted);
+
+        var near = 0.05f;
+        var left = MathF.Tan(view.Fov.AngleLeft) * near;
+        var right = MathF.Tan(view.Fov.AngleRight) * near;
+        var down = MathF.Tan(view.Fov.AngleDown) * near;
+        var up = MathF.Tan(view.Fov.AngleUp) * near;
+
+        var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
+        var viewProj = Matrix4X4.Multiply(viewInverted, proj);
+
+        shaders.SetShaders(context);
+        RenderViewport(context, texture, viewProj);
+
+        //var swapchainTexture = swapchainView.ColorSwapchainInfo.Textures[colorImageIndex];
+        //var box = new Box(0,
+        //    0, 0, 500, 500, 1);
+        //context->CopySubresourceRegion((ID3D11Resource*)swapchainTexture, 0, 0, 0, 0, (ID3D11Resource*)texture, 0, &box);
+        var releaseInfo = new SwapchainImageReleaseInfo(next: null);
+        xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
+        xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
+        return compositionLayerProjectionView;
+    }
+
+    internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, Texture* texture, View[] views, CompositionLayerProjectionView[] compositionLayerProjectionViews)
+    {
+        var compositionLayerSpan = new Span<CompositionLayerProjectionView>(compositionLayerProjectionViews);
         fixed (CompositionLayerProjectionView* ptr = compositionLayerSpan)
         {
             var layerProjection = new CompositionLayerProjection(
@@ -245,19 +211,15 @@ unsafe internal class Renderer : IDisposable
         return frameState;
     }
 
-    internal Matrix4X4<float> ComputeViewMatrix(View[] views, Vector3D<float> position, Vector3D<float> lookAt)
+    internal Matrix4X4<float> ComputeViewMatrix(View view, Vector3D<float> position, Vector3D<float> lookAt)
     {
-        var view = views[0];
         var forwardVector = lookAt - position;
-        var yAngle = MathF.Atan2(forwardVector.Z, forwardVector.X);
-        var gameCameraRotation = Quaternion<float>.CreateFromAxisAngle(Vector3D<float>.UnitY, -MathF.PI / 2 - yAngle);
+        var yAngle = -MathF.PI / 2 - MathF.Atan2(forwardVector.Z, forwardVector.X);
 
-        var newPosition = position + view.Pose.Position.ToVector3D();
-        var newRotation = Quaternion<float>.Concatenate(view.Pose.Orientation.ToQuaternion(), gameCameraRotation);
-        var rotationMatrix = Matrix4X4.CreateFromQuaternion<float>(newRotation);
-        var translationMatrix = Matrix4X4.CreateTranslation<float>(newPosition);
-        var viewMatrix = Matrix4X4.Multiply(rotationMatrix, translationMatrix);
+        var gameViewMatrix = Matrix4X4.Multiply(Matrix4X4.CreateRotationY<float>(yAngle), Matrix4X4.CreateTranslation<float>(position));
+        var vrViewMatrix = Matrix4X4.Multiply(Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion()), Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D()));
 
+        var viewMatrix = Matrix4X4.Multiply(vrViewMatrix, gameViewMatrix);
         var invertedViewMatrix = Matrix4X4<float>.Identity;
         Matrix4X4.Invert(viewMatrix, out invertedViewMatrix);
         return invertedViewMatrix;
