@@ -16,7 +16,10 @@ unsafe internal class GameVisibility
         {
             return;
         }
-        character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+        if (character->GameObject.DrawObject != null)
+        {
+            character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+        }
 
         if (character->Mount.MountObject != null)
         {

@@ -1,7 +1,6 @@
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
-using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 
@@ -143,20 +142,9 @@ public unsafe class VRSession : IDisposable
         {
             return;
         }
-        var near = 0.1f;
-        var left = MathF.Tan(view.Fov.AngleLeft) * near;
-        var right = MathF.Tan(view.Fov.AngleRight) * near;
-        var down = MathF.Tan(view.Fov.AngleDown) * near;
-        var up = MathF.Tan(view.Fov.AngleUp) * near;
 
-        var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
-
-        // Overwrite these for FFXIV's weird projection matrix
-        proj.M33 = 0;
-        proj.M43 = near;
-
-        camera->RenderCamera->ProjectionMatrix = proj.ToMatrix4x4();
-        camera->RenderCamera->ProjectionMatrix2 = proj.ToMatrix4x4();
+        camera->RenderCamera->ProjectionMatrix = renderer.ComputeProjectionMatrix(view);
+        camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
 
         camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
         camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
