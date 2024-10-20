@@ -168,6 +168,9 @@ public unsafe class VRSession : IDisposable
 
     internal void UpdateModelVisibility()
     {
-        gameVisibility.UpdateVisibility();
+        if (State.SessionRunning)
+        {
+            gameVisibility.UpdateVisibility();
+        }
     }
 }

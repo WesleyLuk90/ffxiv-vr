@@ -200,7 +200,7 @@ unsafe internal class Renderer
         var forwardVector = lookAt - position;
         var yAngle = -MathF.PI / 2 - MathF.Atan2(forwardVector.Z, forwardVector.X);
 
-        var gameViewMatrix = Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(position);
+        var gameViewMatrix = Matrix4X4.CreateScale(0.5f) * Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(position);
         var vrViewMatrix = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
 
         var viewMatrix = vrViewMatrix * gameViewMatrix;
