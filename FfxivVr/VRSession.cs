@@ -126,7 +126,7 @@ public unsafe class VRSession : IDisposable
     internal void UpdateCamera(Camera* camera)
     {
         View view;
-        // Not sure why these are swapped, I think the update camera call is one step behind the render state so these end up swapped
+        // These seem to be swapped because the render step is out of sync with the update camera call
         if (renderState is RenderState.RenderingLeft renderingLeft)
         {
             view = renderingLeft.views[Eye.Right.ToIndex()];
@@ -147,10 +147,9 @@ public unsafe class VRSession : IDisposable
 
         var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
 
-        // Overwrite these for FFXIV
+        // Overwrite these for FFXIV's weird projection matrix
         proj.M33 = 0;
         proj.M43 = near;
-        //logger.Debug($"Matrix is {proj}");
 
         camera->RenderCamera->ProjectionMatrix = proj.ToMatrix4x4();
         camera->RenderCamera->ProjectionMatrix2 = proj.ToMatrix4x4();

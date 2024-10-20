@@ -87,7 +87,6 @@ unsafe internal class Renderer : IDisposable
         {
             throw new Exception($"LocateView returned an unexpected number of views, got {viewCount}");
         }
-        logger.Debug($"Views {views[0].Pose.Position.ToVector3D()} {views[1].Pose.Position.ToVector3D()}");
         return views;
     }
 
@@ -216,10 +215,10 @@ unsafe internal class Renderer : IDisposable
         var forwardVector = lookAt - position;
         var yAngle = -MathF.PI / 2 - MathF.Atan2(forwardVector.Z, forwardVector.X);
 
-        var gameViewMatrix = Matrix4X4.Multiply(Matrix4X4.CreateRotationY<float>(yAngle), Matrix4X4.CreateTranslation<float>(position));
-        var vrViewMatrix = Matrix4X4.Multiply(Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion()), Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D()));
+        var gameViewMatrix = Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(position);
+        var vrViewMatrix = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
 
-        var viewMatrix = Matrix4X4.Multiply(vrViewMatrix, gameViewMatrix);
+        var viewMatrix = vrViewMatrix * gameViewMatrix;
         var invertedViewMatrix = Matrix4X4<float>.Identity;
         Matrix4X4.Invert(viewMatrix, out invertedViewMatrix);
         return invertedViewMatrix;
