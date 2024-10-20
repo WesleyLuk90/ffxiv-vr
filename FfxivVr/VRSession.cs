@@ -1,11 +1,9 @@
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
-using static FfxivVR.Plugin;
 
 namespace FfxivVR;
 
@@ -17,6 +15,7 @@ public unsafe class VRSession : IDisposable
     private readonly Logger logger;
     public VRState State;
     private readonly Renderer renderer;
+    private readonly GameVisibility gameVisibility;
     private readonly VRSpace vrSpace;
     private readonly EventHandler eventHandler;
     private readonly VRShaders vrShaders;
@@ -36,6 +35,7 @@ public unsafe class VRSession : IDisposable
         vrShaders = new VRShaders(device, logger);
         vrSpace = new VRSpace(xr, logger, vrSystem);
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace);
+        gameVisibility = new GameVisibility();
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
     }
 
@@ -168,16 +168,6 @@ public unsafe class VRSession : IDisposable
 
     internal void UpdateModelVisibility()
     {
-        var player = ClientState.LocalPlayer;
-        if (player == null)
-        {
-            return;
-        }
-        var character = (Character*)player!.Address;
-        if (character == null)
-        {
-            return;
-        }
-        character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+        gameVisibility.UpdateVisibility();
     }
 }

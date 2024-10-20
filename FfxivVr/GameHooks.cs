@@ -20,6 +20,7 @@ unsafe internal class GameHooks : IDisposable
     private readonly VRLifecycle vrLifecycle;
     private readonly ExceptionHandler exceptionHandler;
     private readonly Logger logger;
+    private readonly bool debugHooks = false;
     public GameHooks(VRLifecycle vrLifecycle, ExceptionHandler exceptionHandler, Logger logger)
     {
         this.vrLifecycle = vrLifecycle;
@@ -48,7 +49,10 @@ unsafe internal class GameHooks : IDisposable
 
     private UInt64 FrameworkTickFn(Framework* FrameworkInstance)
     {
-        //logger.Debug("Framework start");
+        if (debugHooks)
+        {
+            logger.Debug("FrameworkTickFn start");
+        }
         var returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         var shouldSecondRender = false;
         exceptionHandler.FaultBarrier(() =>
@@ -59,7 +63,10 @@ unsafe internal class GameHooks : IDisposable
         {
             returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         }
-        //logger.Debug("Framework end");
+        if (debugHooks)
+        {
+            logger.Debug("FrameworkTickFn end");
+        }
         return returnValue;
     }
 
@@ -68,7 +75,10 @@ unsafe internal class GameHooks : IDisposable
     private Hook<DXGIPresentDg>? DXGIPresentHook = null;
     private void DXGIPresentFn(UInt64 a, UInt64 b)
     {
-        //logger.Debug("Present start");
+        if (debugHooks)
+        {
+            logger.Debug("DXGIPresentFn start");
+        }
         exceptionHandler.FaultBarrier(() =>
         {
             vrLifecycle.PrePresent();
@@ -78,7 +88,10 @@ unsafe internal class GameHooks : IDisposable
         {
             vrLifecycle.PostPresent();
         });
-        //logger.Debug("Present end");
+        if (debugHooks)
+        {
+            logger.Debug("DXGIPresentFn start");
+        }
     }
 
 
@@ -88,6 +101,10 @@ unsafe internal class GameHooks : IDisposable
 
     private void SetMatricesFn(Camera* camera, IntPtr ptr)
     {
+        if (debugHooks)
+        {
+            logger.Debug("SetMatricesFn start");
+        }
         SetMatricesHook!.Original(camera, ptr);
         exceptionHandler.FaultBarrier(() =>
         {
@@ -96,6 +113,10 @@ unsafe internal class GameHooks : IDisposable
                 vrLifecycle.UpdateCamera(&CameraManager.Instance()->GetActiveCamera()->SceneCamera);
             }
         });
+        if (debugHooks)
+        {
+            logger.Debug("SetMatricesFn start");
+        }
     }
 
 }
