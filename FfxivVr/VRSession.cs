@@ -38,7 +38,7 @@ public unsafe class VRSession : IDisposable
         vrSpace = new VRSpace(xr, logger, vrSystem);
         this.settings = settings;
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, settings);
-        gameVisibility = new GameVisibility();
+        gameVisibility = new GameVisibility(logger);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
     }
 

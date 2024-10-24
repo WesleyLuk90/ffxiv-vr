@@ -26,6 +26,7 @@ unsafe internal class GameHooks : IDisposable
         this.vrLifecycle = vrLifecycle;
         this.exceptionHandler = exceptionHandler;
         this.logger = logger;
+        this.vis = new GameVisibility(logger);
     }
     public void Dispose()
     {
@@ -39,6 +40,8 @@ unsafe internal class GameHooks : IDisposable
         RunGameTasksHook?.Dispose();
         RenderThreadSetRenderTargetHook?.Disable();
         RenderThreadSetRenderTargetHook?.Dispose();
+        RenderSkeletonListHook?.Disable();
+        RenderSkeletonListHook?.Dispose();
     }
 
     public void Initialize()
@@ -48,6 +51,7 @@ unsafe internal class GameHooks : IDisposable
         SetMatricesHook!.Enable();
         RunGameTasksHook!.Enable();
         RenderThreadSetRenderTargetHook!.Enable();
+        RenderSkeletonListHook?.Enable();
     }
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
     [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]
@@ -174,4 +178,17 @@ unsafe internal class GameHooks : IDisposable
         }
     }
 
+    private GameVisibility vis;
+    private delegate void RenderSkeletonListDg(UInt64 RenderSkeletonLinkedList, float frameTiming);
+    [Signature(Signatures.RenderSkeletonList, DetourName = nameof(RenderSkeletonListFn))]
+    private Hook<RenderSkeletonListDg>? RenderSkeletonListHook = null;
+
+    private unsafe void RenderSkeletonListFn(UInt64 RenderSkeletonLinkedList, float frameTiming)
+    {
+        RenderSkeletonListHook!.Original(RenderSkeletonLinkedList, frameTiming);
+        exceptionHandler.FaultBarrier(() =>
+        {
+            vis.HideHeadMesh();
+        });
+    }
 }
