@@ -54,6 +54,33 @@ unsafe public class Resources : IDisposable
         CreateStencilState();
         CreateBlendState();
         CreateRasterizerState();
+        CreateUIRenderTarget();
+    }
+
+    private ID3D11Texture2D* uiRenderTexture = null;
+    private ID3D11RenderTargetView* uiRenderTargetView = null;
+    private void CreateUIRenderTarget()
+    {
+        var textureDescription = new Texture2DDesc(
+            format: Silk.NET.DXGI.Format.FormatR32G32B32A32Float,
+            width: 1920,
+            height: 1080,
+            mipLevels: 1,
+            sampleDesc: new Silk.NET.DXGI.SampleDesc(count: 1, quality: 0),
+            usage: Usage.Default,
+            cPUAccessFlags: 0,
+            arraySize: 1,
+            bindFlags: (uint)(BindFlag.ShaderResource | BindFlag.RenderTarget)
+        );
+        device->CreateTexture2D(ref textureDescription, null, ref uiRenderTexture).D3D11Check("CreateTexture2D");
+        var renderTargetViewDescription = new RenderTargetViewDesc(
+            format: Silk.NET.DXGI.Format.FormatR32G32B32A32Float,
+            viewDimension: RtvDimension.Texture2D,
+            texture2D: new Tex2DRtv(
+                mipSlice: 0
+            )
+        );
+        device->CreateRenderTargetView((ID3D11Resource*)uiRenderTexture, ref renderTargetViewDescription, ref uiRenderTargetView);
     }
 
     private void CreateSampler()
@@ -272,8 +299,16 @@ unsafe public class Resources : IDisposable
 
     public void Dispose()
     {
-        this.cameraBuffer?.Dispose();
-        this.vertexBuffer?.Dispose();
+        cameraBuffer?.Dispose();
+        vertexBuffer?.Dispose();
+        if (uiRenderTargetView != null)
+        {
+            uiRenderTargetView->Release();
+        }
+        if (uiRenderTexture != null)
+        {
+            uiRenderTexture->Release();
+        }
     }
 
     internal void SetDepthStencilState(ID3D11DeviceContext* context)
@@ -287,5 +322,10 @@ unsafe public class Resources : IDisposable
         {
             context->OMSetBlendState(blendState, ptr, 1);
         }
+    }
+
+    internal void BindUIRenderTarget(ID3D11DeviceContext* context)
+    {
+        context->OMSetRenderTargets(1, ref uiRenderTargetView, null);
     }
 }

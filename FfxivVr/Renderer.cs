@@ -18,8 +18,9 @@ unsafe internal class Renderer
     private readonly Resources resources;
     private readonly VRShaders shaders;
     private readonly VRSpace vrSpace;
+    private readonly VRSettings settings;
 
-    internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders, VRSpace vrSpace)
+    internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders, VRSpace vrSpace, VRSettings settings)
     {
         this.xr = xr;
         this.system = system;
@@ -29,6 +30,7 @@ unsafe internal class Renderer
         this.resources = resources;
         this.shaders = shaders;
         this.vrSpace = vrSpace;
+        this.settings = settings;
     }
 
 
@@ -216,7 +218,7 @@ unsafe internal class Renderer
         var forwardVector = lookAt - position;
         var yAngle = -MathF.PI / 2 - MathF.Atan2(forwardVector.Z, forwardVector.X);
 
-        var gameViewMatrix = Matrix4X4.CreateScale(0.5f) * Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(position);
+        var gameViewMatrix = Matrix4X4.CreateScale(1f / settings.Scale) * Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(position);
         var vrViewMatrix = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
 
         var viewMatrix = vrViewMatrix * gameViewMatrix;

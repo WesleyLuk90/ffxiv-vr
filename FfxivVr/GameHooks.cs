@@ -1,7 +1,9 @@
 ﻿using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
+using static FFXIVClientStructs.FFXIV.Client.System.Framework.TaskManager;
 
 namespace FfxivVR;
 unsafe internal class GameHooks : IDisposable
@@ -35,6 +37,8 @@ unsafe internal class GameHooks : IDisposable
         SetMatricesHook?.Dispose();
         RunGameTasksHook?.Disable();
         RunGameTasksHook?.Dispose();
+        RenderThreadSetRenderTargetHook?.Disable();
+        RenderThreadSetRenderTargetHook?.Dispose();
     }
 
     public void Initialize()
@@ -43,6 +47,7 @@ unsafe internal class GameHooks : IDisposable
         DXGIPresentHook!.Enable();
         SetMatricesHook!.Enable();
         RunGameTasksHook!.Enable();
+        RenderThreadSetRenderTargetHook!.Enable();
     }
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
     [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]
@@ -120,20 +125,52 @@ unsafe internal class GameHooks : IDisposable
         });
     }
 
-    delegate void RunGameTasksDg(TaskManager* taskManager, float* frameTiming);
+    delegate void RunGameTasksDg(TaskManager* taskManager, IntPtr frameTiming);
     [Signature(Signatures.RunGameTasks, DetourName = nameof(RunGameTasksFn))]
     private Hook<RunGameTasksDg>? RunGameTasksHook = null;
 
-    public void RunGameTasksFn(TaskManager* taskManager, float* frameTiming)
+    public void RunGameTasksFn(TaskManager* taskManager, IntPtr frameTiming)
     {
         if (debugHooks)
         {
             logger.Debug("RunGameTasksFn start");
         }
-        RunGameTasksHook!.Original(taskManager, frameTiming);
+        var tasks = new Span<RootTask>(taskManager->TaskList, (int)taskManager->TaskCount);
+
+        for (int i = 0; i < taskManager->TaskCount; i++)
+        {
+            //if (i == taskManager->TaskCount - 1)
+            //{
+            //    var context = (ID3D11DeviceContext*)Device.Instance()->D3D11DeviceContext;
+            //    ID3D11RenderTargetView* viewPointer = null;
+            //    context->OMGetRenderTargets(1, &viewPointer, null);
+            //    fixed (float* ptr = new Span<float>([0.17f, 0.17f, 0.17f, 1]))
+            //    {
+            //        context->ClearRenderTargetView(viewPointer, ptr);
+            //    }
+            //}
+            tasks[i].Execute((void*)frameTiming);
+        }
+        //RunGameTasksHook!.Original(taskManager, frameTiming);
         if (debugHooks)
         {
             logger.Debug("RunGameTasksFn end");
+        }
+    }
+    private delegate void RenderThreadSetRenderTargetDg(Device* deviceInstance, IntPtr command);
+    [Signature(Signatures.RenderThreadSetRenderTarget, DetourName = nameof(RenderThreadSetRenderTargetFn))]
+    private Hook<RenderThreadSetRenderTargetDg>? RenderThreadSetRenderTargetHook = null;
+
+    private void RenderThreadSetRenderTargetFn(Device* deviceInstance, IntPtr command)
+    {
+        if (debugHooks)
+        {
+            logger.Debug("RenderThreadSetRenderTargetFn start");
+        }
+        RenderThreadSetRenderTargetHook!.Original(deviceInstance, command);
+        if (debugHooks)
+        {
+            logger.Debug("RenderThreadSetRenderTargetFn end");
         }
     }
 

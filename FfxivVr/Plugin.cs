@@ -35,6 +35,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly ExceptionHandler exceptionHandler;
     private readonly VRLifecycle vrLifecycle;
     private readonly GameHooks gameHooks;
+    private readonly VRSettings settings = new VRSettings();
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -69,7 +70,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         var dllPath = Path.Combine(dir.ToString(), "openxr_loader.dll");
 
         exceptionHandler = new ExceptionHandler(logger);
-        vrLifecycle = new VRLifecycle(logger, dllPath);
+        vrLifecycle = new VRLifecycle(logger, dllPath, settings);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger);
 
         GameHookService.InitializeFromAttributes(gameHooks);
@@ -117,6 +118,19 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "stop":
                     StopVR();
+                    break;
+                case "scale":
+                    var scaleString = arguments.ElementAtOrDefault(1);
+                    float scale;
+                    if (float.TryParse(scaleString, out scale) && scale < 10 && scale > 0.1)
+                    {
+                        logger.Info($"Setting world scale to {scale}");
+                        settings.Scale = scale;
+                    }
+                    else
+                    {
+                        logger.Info($"Invalid scale {scaleString}, must be between 0.1 and 10");
+                    }
                     break;
                 case "printtextures":
                     var renderTargetManager = RenderTargetManager.Instance();

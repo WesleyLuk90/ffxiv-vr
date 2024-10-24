@@ -43,6 +43,10 @@ unsafe internal class VRSwapchains : IDisposable
         var colorFormat = formats.Where(f => ColorFormats.Contains((Format)f)).First();
         var depthFormat = formats.Where(f => DepthFormats.Contains((Format)f)).First();
 
+        var width = viewConfigurationViews[0].RecommendedImageRectWidth;
+        var height = viewConfigurationViews[0].RecommendedImageRectHeight;
+        ResolutionManager.ChangeResolution(width, height);
+
         Views = viewConfigurationViews.ConvertAll(viewConfigurationView =>
         {
             logger.Debug($"View has resolution {viewConfigurationView.RecommendedImageRectWidth}x{viewConfigurationView.RecommendedImageRectHeight}");

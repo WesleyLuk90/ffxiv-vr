@@ -20,10 +20,13 @@ public unsafe class VRSession : IDisposable
     private readonly VRShaders vrShaders;
     private readonly Resources resources;
     private readonly VRSwapchains swapchains;
+    private readonly VRSettings settings;
 
-    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device)
-        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device) { }
-    public VRSession(XR xr, Logger logger, ID3D11Device* device)
+    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings)
+        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, settings)
+    {
+    }
+    public VRSession(XR xr, Logger logger, ID3D11Device* device, VRSettings settings)
     {
         this.xr = xr;
         vrSystem = new VRSystem(xr, device, logger);
@@ -33,7 +36,8 @@ public unsafe class VRSession : IDisposable
         resources = new Resources(device, logger);
         vrShaders = new VRShaders(device, logger);
         vrSpace = new VRSpace(xr, logger, vrSystem);
-        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace);
+        this.settings = settings;
+        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, settings);
         gameVisibility = new GameVisibility();
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
     }
@@ -160,6 +164,14 @@ public unsafe class VRSession : IDisposable
         if (State.SessionRunning)
         {
             gameVisibility.UpdateVisibility();
+        }
+    }
+
+    internal void ConfigureUIRender(ID3D11DeviceContext* context)
+    {
+        if (State.SessionRunning)
+        {
+            resources.BindUIRenderTarget(context);
         }
     }
 }
