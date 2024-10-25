@@ -12,4 +12,5 @@ public class VRState
     {
         return State == SessionState.Synchronized || State == SessionState.Visible || State == SessionState.Focused;
     }
+
 }

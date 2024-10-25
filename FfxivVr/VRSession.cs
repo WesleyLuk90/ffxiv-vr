@@ -21,12 +21,13 @@ public unsafe class VRSession : IDisposable
     private readonly Resources resources;
     private readonly VRSwapchains swapchains;
     private readonly VRSettings settings;
+    private readonly GameState gameState;
 
-    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings)
-        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, settings)
+    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState)
+        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, settings, gameState)
     {
     }
-    public VRSession(XR xr, Logger logger, ID3D11Device* device, VRSettings settings)
+    public VRSession(XR xr, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState)
     {
         this.xr = xr;
         vrSystem = new VRSystem(xr, device, logger);
@@ -37,6 +38,7 @@ public unsafe class VRSession : IDisposable
         vrShaders = new VRShaders(device, logger);
         vrSpace = new VRSpace(xr, logger, vrSystem);
         this.settings = settings;
+        this.gameState = gameState;
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, settings);
         gameVisibility = new GameVisibility(logger);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
@@ -161,9 +163,9 @@ public unsafe class VRSession : IDisposable
 
     internal void UpdateModelVisibility()
     {
-        if (State.SessionRunning)
+        if (State.SessionRunning && gameState.IsFirstPerson())
         {
-            gameVisibility.UpdateVisibility();
+            gameVisibility.ForceFirstPersonBodyVisible();
         }
     }
 
@@ -172,6 +174,14 @@ public unsafe class VRSession : IDisposable
         if (State.SessionRunning)
         {
             resources.BindUIRenderTarget(context);
+        }
+    }
+
+    internal void UpdateCharacterMesh()
+    {
+        if (State.SessionRunning && gameState.IsFirstPerson())
+        {
+            gameVisibility.HideHeadMesh();
         }
     }
 }

@@ -23,6 +23,7 @@ unsafe internal class VRSwapchains : IDisposable
     private readonly ID3D11Device* d11Device;
     public const ViewConfigurationType ViewConfigType = ViewConfigurationType.PrimaryStereo;
     public List<SwapchainView> Views = null!;
+    private readonly ResolutionManager resolutionManager = new ResolutionManager();
     public VRSwapchains(XR xr, VRSystem system, Logger logger, ID3D11Device* d11Device)
     {
         this.xr = xr;
@@ -45,8 +46,7 @@ unsafe internal class VRSwapchains : IDisposable
 
         var width = viewConfigurationViews[0].RecommendedImageRectWidth;
         var height = viewConfigurationViews[0].RecommendedImageRectHeight;
-        ResolutionManager.ChangeResolution(width, height);
-
+        resolutionManager.ChangeResolution(width, height);
         Views = viewConfigurationViews.ConvertAll(viewConfigurationView =>
         {
             logger.Debug($"View has resolution {viewConfigurationView.RecommendedImageRectWidth}x{viewConfigurationView.RecommendedImageRectHeight}");
@@ -143,6 +143,7 @@ unsafe internal class VRSwapchains : IDisposable
     }
     public void Dispose()
     {
+        resolutionManager.RevertResolution();
         Views?.ForEach(view =>
         {
             foreach (var v in view.ColorSwapchainInfo.Views)

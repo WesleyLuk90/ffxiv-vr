@@ -12,7 +12,7 @@ unsafe internal class GameVisibility
     {
         this.logger = logger;
     }
-    public void UpdateVisibility()
+    public void ForceFirstPersonBodyVisible()
     {
         Character* character = getCharacter();
         if (character == null)
@@ -37,6 +37,13 @@ unsafe internal class GameVisibility
                     character->OrnamentData.OrnamentObject->DrawObject->Flags = (byte)ModelCullTypes.Visible;
                 }
             }
+            //character->DrawData.HideWeapons(false);
+            //var mhWeapon = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.MainHand);
+            //mhWeapon.IsHidden = false;
+            //if (mhWeapon.DrawObject != null)
+            //{
+            //    mhWeapon.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+            //}
         }
     }
 

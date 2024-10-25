@@ -9,12 +9,14 @@ public unsafe class VRLifecycle : IDisposable
     private Logger logger;
     private readonly string openxrDllPath;
     private readonly VRSettings settings;
+    private readonly GameState gameState;
 
-    public VRLifecycle(Logger logger, String openxrDllPath, VRSettings settings)
+    public VRLifecycle(Logger logger, String openxrDllPath, VRSettings settings, GameState gameState)
     {
         this.logger = logger;
         this.openxrDllPath = openxrDllPath;
         this.settings = settings;
+        this.gameState = gameState;
     }
 
     private VRSession? vrSession;
@@ -26,7 +28,8 @@ public unsafe class VRLifecycle : IDisposable
             this.openxrDllPath,
             logger,
             device: GetDevice(),
-            settings: settings
+            settings: settings,
+            gameState: gameState
         );
         try
         {
@@ -106,5 +109,10 @@ public unsafe class VRLifecycle : IDisposable
     internal void ConfigureUIRender()
     {
         vrSession?.ConfigureUIRender(GetContext());
+    }
+
+    internal void UpdateCharacterMesh()
+    {
+        vrSession?.UpdateCharacterMesh();
     }
 }

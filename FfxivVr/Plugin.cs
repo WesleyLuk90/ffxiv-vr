@@ -36,6 +36,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly VRLifecycle vrLifecycle;
     private readonly GameHooks gameHooks;
     private readonly VRSettings settings = new VRSettings();
+    private readonly GameState gameState = new GameState();
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -70,32 +71,32 @@ public unsafe sealed class Plugin : IDalamudPlugin
         var dllPath = Path.Combine(dir.ToString(), "openxr_loader.dll");
 
         exceptionHandler = new ExceptionHandler(logger);
-        vrLifecycle = new VRLifecycle(logger, dllPath, settings);
+        vrLifecycle = new VRLifecycle(logger, dllPath, settings, gameState);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger);
 
         GameHookService.InitializeFromAttributes(gameHooks);
         gameHooks.Initialize();
-        Framework.Update += Framework_Update;
+        Framework.Update += FrameworkUpdate;
     }
 
-    private CameraMode? lastCameraMode = null;
-    private void Framework_Update(IFramework framework)
+    private bool? isFirstPerson = null;
+    private void FrameworkUpdate(IFramework framework)
     {
-        var nextMode = SceneCameraExtensions.GetCameraMode();
-        if (lastCameraMode != null && lastCameraMode != nextMode)
+        exceptionHandler.FaultBarrier(() =>
         {
-            exceptionHandler.FaultBarrier(() =>
+            var isFirstPersonNow = gameState.IsFirstPerson();
+            if (isFirstPerson != null && isFirstPerson != isFirstPersonNow)
             {
                 vrLifecycle.RecenterCamera();
-            });
-        }
-        lastCameraMode = nextMode;
-        vrLifecycle.UpdateModelVisibility();
+            }
+            isFirstPerson = isFirstPersonNow;
+            vrLifecycle.UpdateModelVisibility();
+        });
     }
 
     public void Dispose()
     {
-        Framework.Update -= Framework_Update;
+        Framework.Update -= FrameworkUpdate;
         gameHooks.Dispose();
         WindowSystem.RemoveAllWindows();
 
