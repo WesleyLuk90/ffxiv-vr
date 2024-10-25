@@ -100,19 +100,13 @@ public unsafe class VRLifecycle : IDisposable
     {
         vrSession?.RecenterCamera();
     }
-
-    internal void UpdateModelVisibility()
-    {
-        vrSession?.UpdateModelVisibility();
-    }
-
     internal void ConfigureUIRender()
     {
         vrSession?.ConfigureUIRender(GetContext());
     }
 
-    internal void UpdateCharacterMesh()
+    internal void UpdateVisibility()
     {
-        vrSession?.UpdateCharacterMesh();
+        vrSession?.UpdateVisibility();
     }
 }

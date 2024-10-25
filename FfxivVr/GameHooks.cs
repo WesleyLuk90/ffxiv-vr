@@ -186,7 +186,7 @@ unsafe internal class GameHooks : IDisposable
         RenderSkeletonListHook!.Original(RenderSkeletonLinkedList, frameTiming);
         exceptionHandler.FaultBarrier(() =>
         {
-            vrLifecycle.UpdateCharacterMesh();
+            vrLifecycle.UpdateVisibility();
         });
     }
 }

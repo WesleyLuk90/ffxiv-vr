@@ -8,6 +8,13 @@ unsafe internal class GameVisibility
 {
     private readonly Logger logger;
 
+    public enum ModelCullTypes : byte
+    {
+        None = 0,
+        InsideCamera = 66,
+        OutsideCullCone = 67,
+        Visible = 75
+    }
     public GameVisibility(Logger logger)
     {
         this.logger = logger;
@@ -37,13 +44,21 @@ unsafe internal class GameVisibility
                     character->OrnamentData.OrnamentObject->DrawObject->Flags = (byte)ModelCullTypes.Visible;
                 }
             }
-            //character->DrawData.HideWeapons(false);
-            //var mhWeapon = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.MainHand);
-            //mhWeapon.IsHidden = false;
-            //if (mhWeapon.DrawObject != null)
-            //{
-            //    mhWeapon.DrawObject->Flags = (byte)ModelCullTypes.Visible;
-            //}
+            var mainHand = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.MainHand);
+            if (mainHand.DrawObject != null)
+            {
+                mainHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+            }
+            var offHand = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand);
+            if (offHand.DrawObject != null)
+            {
+                offHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+            }
+            var unknown = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.Unk);
+            if (unknown.DrawObject != null)
+            {
+                unknown.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+            }
         }
     }
 

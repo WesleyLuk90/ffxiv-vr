@@ -3,7 +3,6 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FfxivVR.Windows;
 using System;
@@ -90,7 +89,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 vrLifecycle.RecenterCamera();
             }
             isFirstPerson = isFirstPersonNow;
-            vrLifecycle.UpdateModelVisibility();
         });
     }
 
@@ -140,33 +138,15 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     logger.Info($"Render target:{renderTexture.Value->ActualWidth}x{renderTexture.Value->ActualHeight} format ${renderTexture.Value->TextureFormat}");
                     logger.Info($"depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight} format ${depthTexture.Value->TextureFormat}");
                     break;
-                case "printcamera":
-                    logger.Info($"Camera mode {SceneCameraExtensions.GetCameraMode()}");
-                    break;
-                case "player":
-                    var player = ClientState.LocalPlayer;
-                    if (player == null)
-                    {
-                        logger.Info($"No player");
-                        break;
-                    }
-                    var character = (Character*)player!.Address;
-                    logger.Info($"flags {character->GameObject.DrawObject->Flags}");
-                    character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+                case "forcevisible":
+                    var vis = new GameVisibility(logger);
+                    vis.ForceFirstPersonBodyVisible();
                     break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");
                     break;
             }
         }
-    }
-
-    public enum ModelCullTypes : byte
-    {
-        None = 0,
-        InsideCamera = 0x42,
-        OutsideCullCone = 0x43,
-        Visible = 0x4B
     }
     public unsafe void StartVR()
     {

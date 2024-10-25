@@ -161,14 +161,6 @@ public unsafe class VRSession : IDisposable
         vrSpace.RecenterCamera(renderer.LastTime);
     }
 
-    internal void UpdateModelVisibility()
-    {
-        if (State.SessionRunning && gameState.IsFirstPerson())
-        {
-            gameVisibility.ForceFirstPersonBodyVisible();
-        }
-    }
-
     internal void ConfigureUIRender(ID3D11DeviceContext* context)
     {
         if (State.SessionRunning)
@@ -177,10 +169,11 @@ public unsafe class VRSession : IDisposable
         }
     }
 
-    internal void UpdateCharacterMesh()
+    internal void UpdateVisibility()
     {
         if (State.SessionRunning && gameState.IsFirstPerson())
         {
+            gameVisibility.ForceFirstPersonBodyVisible();
             gameVisibility.HideHeadMesh();
         }
     }
