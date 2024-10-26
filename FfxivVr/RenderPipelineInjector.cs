@@ -67,8 +67,9 @@ public unsafe class RenderPipelineInjector : IDisposable
     [Signature(Signatures.SetRenderTarget, Fallibility = Fallibility.Fallible)]
     private SetRenderTargetDg? SetRenderTargetFn = null;
 
-    public static int MagicRenderTargetNumber = 101;
-    public void AddSetRenderTargetCommand()
+    public static int LeftEyeRenderTargetNumber = 101;
+    public static int RightEyeRenderTargetNumber = 102;
+    public void AddSetRenderTargetCommand(bool isLeft)
     {
         UInt64 threadedOffset = GetThreadedOffset();
         if (threadedOffset != 0)
@@ -78,7 +79,7 @@ public unsafe class RenderPipelineInjector : IDisposable
             {
                 *queueData = new SetRenderTargetCommand();
                 queueData->SwitchType = 0;
-                queueData->numRenderTargets = MagicRenderTargetNumber;
+                queueData->numRenderTargets = isLeft ? LeftEyeRenderTargetNumber : RightEyeRenderTargetNumber;
                 queueData->RenderTarget0 = null;
                 PushbackFn!(threadedOffset, (ulong)queueData);
             }
@@ -102,11 +103,8 @@ public unsafe class RenderPipelineInjector : IDisposable
         [FieldOffset(0x38)] public short unk6;
     };
 
-    Texture* uiTexturePointer = null;
     private readonly Logger logger;
-
-    int counter = 0;
-    internal void RedirectUIRender()
+    internal void RedirectUIRender(bool isLeft)
     {
         //if (texture == null || renderTargetView == null || uiShaderResourceView == null)
         //{
@@ -150,7 +148,7 @@ public unsafe class RenderPipelineInjector : IDisposable
         //{
         //    // this clears the game render texture then renders the UI? why?
         //    SetRenderTargetFn!(threadedOffset, 1, ptr, null, 0, 0, 0, 0);
-        AddSetRenderTargetCommand();
+        AddSetRenderTargetCommand(isLeft);
         AddcmdClear();
         //}
     }

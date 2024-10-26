@@ -167,11 +167,12 @@ unsafe internal class GameHooks : IDisposable
     int counter = 0;
     private void RenderThreadSetRenderTargetFn(Device* deviceInstance, SetRenderTargetCommand* command)
     {
-        if (command->numRenderTargets == RenderPipelineInjector.MagicRenderTargetNumber)
+        var renderTargets = command->numRenderTargets;
+        if (renderTargets == LeftEyeRenderTargetNumber || renderTargets == RightEyeRenderTargetNumber)
         {
             exceptionHandler.FaultBarrier(() =>
             {
-                vrLifecycle.DoCopyRenderTexture();
+                vrLifecycle.DoCopyRenderTexture(renderTargets == LeftEyeRenderTargetNumber);
             });
         }
         else

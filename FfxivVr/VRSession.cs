@@ -199,15 +199,27 @@ public unsafe class VRSession : IDisposable
     {
         if (State.SessionRunning)
         {
-            renderPipelineInjector.RedirectUIRender();
+            if (renderState is RenderState.RenderingLeft)
+            {
+                renderPipelineInjector.RedirectUIRender(true);
+            }
+            else if (renderState is RenderState.RenderingRight)
+            {
+                renderPipelineInjector.RedirectUIRender(false);
+            }
+            else if (renderState is RenderState.Skipped || renderState is RenderState.SkipRender) { }
+            else
+            {
+                logger.Debug($"Invalid render state ${renderState}");
+            }
         }
     }
 
-    internal void DoCopyRenderTexture(ID3D11DeviceContext* context)
+    internal void DoCopyRenderTexture(ID3D11DeviceContext* context, bool isLeft)
     {
         if (State.SessionRunning)
         {
-            renderer.CopyTexture(context);
+            renderer.CopyTexture(context, isLeft);
         }
     }
 }

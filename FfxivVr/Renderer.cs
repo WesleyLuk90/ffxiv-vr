@@ -152,11 +152,18 @@ unsafe internal class Renderer
         //var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[34].Value;
         //RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, viewProj);
 
-        if (resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
+        if (eye == Eye.Left && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
         {
-            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
-            var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
-            RenderViewport(context, leftRenderTarget.ShaderResourceView, modelViewProjection);
+            //var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
+            //var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+            RenderViewport(context, leftRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
+            //RenderViewport(context, resources.uiShaderResourceView, viewProj);
+        }
+        else if (eye == Eye.Right && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
+        {
+            //var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
+            //var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+            RenderViewport(context, rightRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
             //RenderViewport(context, resources.uiShaderResourceView, viewProj);
         }
 
@@ -244,12 +251,17 @@ unsafe internal class Renderer
         return invertedViewMatrix;
     }
 
-    internal void CopyTexture(ID3D11DeviceContext* context)
+    internal void CopyTexture(ID3D11DeviceContext* context, bool isLeft)
     {
-        if (resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
+        var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+        if (isLeft && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
         {
-            var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
-            context->CopyResource((ID3D11Resource*)resources.leftEyeRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
+            context->CopyResource((ID3D11Resource*)leftRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
+        }
+        else if (!isLeft && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
+        {
+            logger.Debug("Copy resource right right eye");
+            context->CopyResource((ID3D11Resource*)rightRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
         }
     }
 }
