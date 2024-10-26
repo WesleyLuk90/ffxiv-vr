@@ -1,6 +1,5 @@
 ﻿using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
 using static FFXIVClientStructs.FFXIV.Client.System.Framework.TaskManager;
@@ -20,12 +19,14 @@ unsafe internal class GameHooks : IDisposable
     private readonly VRLifecycle vrLifecycle;
     private readonly ExceptionHandler exceptionHandler;
     private readonly Logger logger;
+    private readonly RenderPipelineInjector renderPipelineInjector;
     private readonly bool debugHooks = false;
-    public GameHooks(VRLifecycle vrLifecycle, ExceptionHandler exceptionHandler, Logger logger)
+    public GameHooks(VRLifecycle vrLifecycle, ExceptionHandler exceptionHandler, Logger logger, RenderPipelineInjector renderPipelineInjector)
     {
         this.vrLifecycle = vrLifecycle;
         this.exceptionHandler = exceptionHandler;
         this.logger = logger;
+        this.renderPipelineInjector = renderPipelineInjector;
     }
     public void Dispose()
     {
@@ -37,10 +38,12 @@ unsafe internal class GameHooks : IDisposable
         SetMatricesHook?.Dispose();
         RunGameTasksHook?.Disable();
         RunGameTasksHook?.Dispose();
-        RenderThreadSetRenderTargetHook?.Disable();
-        RenderThreadSetRenderTargetHook?.Dispose();
+        //RenderThreadSetRenderTargetHook?.Disable();
+        //RenderThreadSetRenderTargetHook?.Dispose();
         RenderSkeletonListHook?.Disable();
         RenderSkeletonListHook?.Dispose();
+        PushbackUIHook?.Disable();
+        PushbackUIHook?.Dispose();
     }
 
     public void Initialize()
@@ -49,8 +52,9 @@ unsafe internal class GameHooks : IDisposable
         DXGIPresentHook!.Enable();
         SetMatricesHook!.Enable();
         RunGameTasksHook!.Enable();
-        RenderThreadSetRenderTargetHook!.Enable();
+        //RenderThreadSetRenderTargetHook!.Enable();
         RenderSkeletonListHook?.Enable();
+        PushbackUIHook?.Enable();
     }
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
     [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]
@@ -139,43 +143,44 @@ unsafe internal class GameHooks : IDisposable
             logger.Debug("RunGameTasksFn start");
         }
         var tasks = new Span<RootTask>(taskManager->TaskList, (int)taskManager->TaskCount);
-
         for (int i = 0; i < taskManager->TaskCount; i++)
         {
-            //if (i == taskManager->TaskCount - 1)
-            //{
-            //    var context = (ID3D11DeviceContext*)Device.Instance()->D3D11DeviceContext;
-            //    ID3D11RenderTargetView* viewPointer = null;
-            //    context->OMGetRenderTargets(1, &viewPointer, null);
-            //    fixed (float* ptr = new Span<float>([0.17f, 0.17f, 0.17f, 1]))
-            //    {
-            //        context->ClearRenderTargetView(viewPointer, ptr);
-            //    }
-            //}
+            if (i == taskManager->TaskCount - 1)
+            {
+                //renderPipelineInjector.AddSetRenderTargetCommand();
+            }
             tasks[i].Execute((void*)frameTiming);
         }
+        //logger.Debug($"Render calls {counter}");
         //RunGameTasksHook!.Original(taskManager, frameTiming);
         if (debugHooks)
         {
             logger.Debug("RunGameTasksFn end");
         }
     }
-    private delegate void RenderThreadSetRenderTargetDg(Device* deviceInstance, IntPtr command);
-    [Signature(Signatures.RenderThreadSetRenderTarget, DetourName = nameof(RenderThreadSetRenderTargetFn))]
-    private Hook<RenderThreadSetRenderTargetDg>? RenderThreadSetRenderTargetHook = null;
+    //private delegate void RenderThreadSetRenderTargetDg(Device* deviceInstance, SetRenderTargetCommand* command);
+    //[Signature(Signatures.RenderThreadSetRenderTarget, DetourName = nameof(RenderThreadSetRenderTargetFn))]
+    //private Hook<RenderThreadSetRenderTargetDg>? RenderThreadSetRenderTargetHook = null;
 
-    private void RenderThreadSetRenderTargetFn(Device* deviceInstance, IntPtr command)
-    {
-        if (debugHooks)
-        {
-            logger.Debug("RenderThreadSetRenderTargetFn start");
-        }
-        RenderThreadSetRenderTargetHook!.Original(deviceInstance, command);
-        if (debugHooks)
-        {
-            logger.Debug("RenderThreadSetRenderTargetFn end");
-        }
-    }
+    //int counter = 0;
+    //private void RenderThreadSetRenderTargetFn(Device* deviceInstance, SetRenderTargetCommand* command)
+    //{
+    //    if (command->numRenderTargets == MagicRenderTargetNumber)
+    //    {
+    //        logger.Debug("Got magic render target");
+    //        var device = (ID3D11DeviceContext*)Device.Instance()->D3D11DeviceContext;
+    //        ID3D11RenderTargetView* view = null;
+    //        device->OMGetRenderTargets(1, &view, null);
+    //        fixed (float* ptr = new Span<float>([0f, 0f, 0f, 0f]))
+    //        {
+    //            device->ClearRenderTargetView(view, ptr);
+    //        }
+    //    }
+    //    else
+    //    {
+    //        RenderThreadSetRenderTargetHook!.Original(deviceInstance, command);
+    //    }
+    //}
 
     private delegate void RenderSkeletonListDg(UInt64 RenderSkeletonLinkedList, float frameTiming);
     [Signature(Signatures.RenderSkeletonList, DetourName = nameof(RenderSkeletonListFn))]
@@ -188,5 +193,19 @@ unsafe internal class GameHooks : IDisposable
         {
             vrLifecycle.UpdateVisibility();
         });
+    }
+
+    private delegate void PushbackUIDg(UInt64 a, UInt64 b);
+    [Signature(Signatures.PushbackUI, DetourName = nameof(PushbackUIFn))]
+    private Hook<PushbackUIDg>? PushbackUIHook = null;
+
+    private void PushbackUIFn(UInt64 a, UInt64 b)
+    {
+
+        exceptionHandler.FaultBarrier(() =>
+        {
+            vrLifecycle.PreUIRender();
+        });
+        PushbackUIHook!.Original(a, b);
     }
 }

@@ -1,3 +1,4 @@
+using Dalamud.Game;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
@@ -19,6 +20,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
     [PluginService] internal static IGameInteropProvider GameHookService { get; private set; } = null!;
+    [PluginService] internal static ISigScanner SigScanner { get; private set; } = null!;
 
     private const string CommandName = "/vr";
 
@@ -70,8 +72,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
         var dllPath = Path.Combine(dir.ToString(), "openxr_loader.dll");
 
         exceptionHandler = new ExceptionHandler(logger);
-        vrLifecycle = new VRLifecycle(logger, dllPath, settings, gameState);
-        gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger);
+        var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
+        vrLifecycle = new VRLifecycle(logger, dllPath, settings, gameState, pipelineInjector);
+        GameHookService.InitializeFromAttributes(pipelineInjector);
+        gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector);
 
         GameHookService.InitializeFromAttributes(gameHooks);
         gameHooks.Initialize();
@@ -133,14 +137,21 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "printtextures":
                     var renderTargetManager = RenderTargetManager.Instance();
-                    var depthTexture = renderTargetManager->RenderTargets[10];
-                    var renderTexture = renderTargetManager->RenderTargets2[33];
-                    logger.Info($"Render target:{renderTexture.Value->ActualWidth}x{renderTexture.Value->ActualHeight} format ${renderTexture.Value->TextureFormat}");
-                    logger.Info($"depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight} format ${depthTexture.Value->TextureFormat}");
-                    break;
-                case "forcevisible":
-                    var vis = new GameVisibility(logger);
-                    vis.ForceFirstPersonBodyVisible();
+                    //var depthTexture = renderTargetManager->RenderTargets[10];
+                    //var renderTexture = renderTargetManager->RenderTargets2[33];
+                    for (int i = 0; i < renderTargetManager->RenderTargets2.Length; i++)
+                    {
+                        var tex = renderTargetManager->RenderTargets2[i].Value;
+                        if (tex != null)
+                        {
+                            logger.Info($"Render target {i}:{tex->ActualWidth}x{tex->ActualHeight} format ${tex->TextureFormat}");
+                        }
+                        else
+                        {
+                            logger.Info($"Render target null{i}");
+                        }
+                    }
+                    //logger.Info($"depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight} format ${depthTexture.Value->TextureFormat}");
                     break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");

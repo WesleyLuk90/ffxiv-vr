@@ -146,13 +146,3 @@ unsafe internal class GameVisibility
         }
     }
 }
-
-class Bone
-{
-    public List<Bone> Children;
-    public string name;
-    public Bone(string name)
-    {
-        this.name = name;
-    }
-}

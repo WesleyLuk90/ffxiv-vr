@@ -10,13 +10,15 @@ public unsafe class VRLifecycle : IDisposable
     private readonly string openxrDllPath;
     private readonly VRSettings settings;
     private readonly GameState gameState;
+    private readonly RenderPipelineInjector renderPipelineInjector;
 
-    public VRLifecycle(Logger logger, String openxrDllPath, VRSettings settings, GameState gameState)
+    public VRLifecycle(Logger logger, String openxrDllPath, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector)
     {
         this.logger = logger;
         this.openxrDllPath = openxrDllPath;
         this.settings = settings;
         this.gameState = gameState;
+        this.renderPipelineInjector = renderPipelineInjector;
     }
 
     private VRSession? vrSession;
@@ -29,7 +31,8 @@ public unsafe class VRLifecycle : IDisposable
             logger,
             device: GetDevice(),
             settings: settings,
-            gameState: gameState
+            gameState: gameState,
+            renderPipelineInjector: renderPipelineInjector
         );
         try
         {
@@ -108,5 +111,10 @@ public unsafe class VRLifecycle : IDisposable
     internal void UpdateVisibility()
     {
         vrSession?.UpdateVisibility();
+    }
+
+    internal void PreUIRender()
+    {
+        vrSession?.PreUIRender();
     }
 }

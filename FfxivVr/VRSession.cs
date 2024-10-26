@@ -12,7 +12,7 @@ public unsafe class VRSession : IDisposable
     private readonly XR xr;
     private readonly VRSystem vrSystem;
     private readonly Logger logger;
-    public VRState State;
+    public readonly VRState State;
     private readonly Renderer renderer;
     private readonly GameVisibility gameVisibility;
     private readonly VRSpace vrSpace;
@@ -22,12 +22,13 @@ public unsafe class VRSession : IDisposable
     private readonly VRSwapchains swapchains;
     private readonly VRSettings settings;
     private readonly GameState gameState;
+    private readonly RenderPipelineInjector renderPipelineInjector;
 
-    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState)
-        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, settings, gameState)
+    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector)
+        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, settings, gameState, renderPipelineInjector)
     {
     }
-    public VRSession(XR xr, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState)
+    public VRSession(XR xr, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector)
     {
         this.xr = xr;
         vrSystem = new VRSystem(xr, device, logger);
@@ -42,6 +43,7 @@ public unsafe class VRSession : IDisposable
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, settings);
         gameVisibility = new GameVisibility(logger);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
+        this.renderPipelineInjector = renderPipelineInjector;
     }
 
     public void Initialize()
@@ -83,15 +85,22 @@ public unsafe class VRSession : IDisposable
         {
             if (State.SessionRunning)
             {
-                var frameState = renderer.StartFrame(context);
-                if (State.IsActive() && frameState.ShouldRender != 0)
+                var maybeFrameState = renderer.StartFrame(context);
+                if (maybeFrameState is FrameState frameState)
                 {
-                    var views = renderer.LocateView(frameState);
-                    renderState = new RenderState.RenderingLeft(frameState, views);
+                    if (State.IsActive() && frameState.ShouldRender != 0)
+                    {
+                        var views = renderer.LocateView(frameState);
+                        renderState = new RenderState.RenderingLeft(frameState, views);
+                    }
+                    else
+                    {
+                        renderState = new RenderState.SkipRender(frameState);
+                    }
                 }
                 else
                 {
-                    renderState = new RenderState.SkipRender(frameState);
+                    renderState = new RenderState.Skipped();
                 }
             }
             else
@@ -176,5 +185,10 @@ public unsafe class VRSession : IDisposable
             gameVisibility.ForceFirstPersonBodyVisible();
             gameVisibility.HideHeadMesh();
         }
+    }
+
+    internal void PreUIRender()
+    {
+        renderPipelineInjector.RedirectUIRender(resources.uiRenderTexture, resources.uiRenderTargetView, resources.uiShaderResourceView);
     }
 }

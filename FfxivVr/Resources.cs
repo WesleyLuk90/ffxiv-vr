@@ -1,5 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using Silk.NET.Direct3D11;
+﻿using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
@@ -57,30 +56,50 @@ unsafe public class Resources : IDisposable
         CreateUIRenderTarget();
     }
 
-    private ID3D11Texture2D* uiRenderTexture = null;
-    private ID3D11RenderTargetView* uiRenderTargetView = null;
+    class RenderTexture
+    {
+        public RenderTexture(
+     ID3D11Texture2D* texture,
+         ID3D11RenderTargetView* renderTargetView,
+         ID3D11ShaderResourceView* shaderResourceView)
+        { }
+    }
+
+    public ID3D11Texture2D* uiRenderTexture = null;
+    public ID3D11RenderTargetView* uiRenderTargetView = null;
+    public ID3D11ShaderResourceView* uiShaderResourceView = null;
     private void CreateUIRenderTarget()
     {
         var textureDescription = new Texture2DDesc(
-            format: Silk.NET.DXGI.Format.FormatR32G32B32A32Float,
-            width: 1920,
-            height: 1080,
+            format: Silk.NET.DXGI.Format.FormatR8G8B8A8Unorm,
+            width: 2080,
+            height: 2096,
             mipLevels: 1,
             sampleDesc: new Silk.NET.DXGI.SampleDesc(count: 1, quality: 0),
             usage: Usage.Default,
             cPUAccessFlags: 0,
             arraySize: 1,
-            bindFlags: (uint)(BindFlag.ShaderResource | BindFlag.RenderTarget)
+            bindFlags: (uint)(BindFlag.ShaderResource | BindFlag.RenderTarget),
+            miscFlags: (uint)ResourceMiscFlag.Shared
         );
         device->CreateTexture2D(ref textureDescription, null, ref uiRenderTexture).D3D11Check("CreateTexture2D");
         var renderTargetViewDescription = new RenderTargetViewDesc(
-            format: Silk.NET.DXGI.Format.FormatR32G32B32A32Float,
+            format: Silk.NET.DXGI.Format.FormatR8G8B8A8Unorm,
             viewDimension: RtvDimension.Texture2D,
             texture2D: new Tex2DRtv(
                 mipSlice: 0
             )
         );
-        device->CreateRenderTargetView((ID3D11Resource*)uiRenderTexture, ref renderTargetViewDescription, ref uiRenderTargetView);
+        device->CreateRenderTargetView((ID3D11Resource*)uiRenderTexture, ref renderTargetViewDescription, ref uiRenderTargetView).D3D11Check("CreateRenderTargetView");
+        var shaderResourceViewDescription = new ShaderResourceViewDesc(
+            format: Silk.NET.DXGI.Format.FormatR8G8B8A8Unorm,
+            viewDimension: Silk.NET.Core.Native.D3DSrvDimension.D3DSrvDimensionTexture2D,
+            texture2D: new Tex2DSrv(
+                mostDetailedMip: 0,
+                mipLevels: 1
+            )
+        );
+        device->CreateShaderResourceView((ID3D11Resource*)uiRenderTexture, ref shaderResourceViewDescription, ref uiShaderResourceView).D3D11Check("CreateShaderResourceView");
     }
 
     private void CreateSampler()
@@ -194,14 +213,17 @@ unsafe public class Resources : IDisposable
             alphaToCoverageEnable: false,
             independentBlendEnable: false
         );
-        blendStateDesc.RenderTarget[0].BlendEnable = true;
-        blendStateDesc.RenderTarget[0].SrcBlend = Blend.SrcColor;
-        blendStateDesc.RenderTarget[0].DestBlend = Blend.InvSrcAlpha;
-        blendStateDesc.RenderTarget[0].BlendOp = BlendOp.Add;
-        blendStateDesc.RenderTarget[0].SrcBlendAlpha = Blend.One;
-        blendStateDesc.RenderTarget[0].DestBlendAlpha = Blend.Zero;
-        blendStateDesc.RenderTarget[0].BlendOpAlpha = BlendOp.Add;
-        blendStateDesc.RenderTarget[0].RenderTargetWriteMask = (byte)ColorWriteEnable.All;
+        // Seems like the UI always has alpha=1 so pick some hacky numbers to make this transparent
+        blendStateDesc.RenderTarget[0] = new RenderTargetBlendDesc(
+            blendEnable: true,
+            srcBlend: Blend.One,
+            destBlend: Blend.InvSrcColor,
+            blendOp: BlendOp.Add,
+            srcBlendAlpha: Blend.One,
+            destBlendAlpha: Blend.One,
+            blendOpAlpha: BlendOp.Add,
+            renderTargetWriteMask: (byte)ColorWriteEnable.All
+        );
         fixed (ID3D11BlendState** ptr = &blendState)
         {
             device->CreateBlendState(ref blendStateDesc, ptr).D3D11Check("CreateBlendState");
@@ -277,10 +299,9 @@ unsafe public class Resources : IDisposable
         context->RSSetState(rasterizerState);
     }
 
-    public void SetSampler(ID3D11DeviceContext* context, Texture* texture)
+    public void SetSampler(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView)
     {
-        var resource = (ID3D11ShaderResourceView*)texture->D3D11ShaderResourceView;
-        ID3D11ShaderResourceView** ptr = &resource;
+        ID3D11ShaderResourceView** ptr = &shaderResourceView;
         context->PSSetShaderResources(0, 1, ptr);
         context->PSSetSamplers(0, 1, ref samplerState);
     }

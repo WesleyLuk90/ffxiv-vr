@@ -34,14 +34,14 @@ unsafe internal class Renderer
     }
 
 
-    private void RenderViewport(ID3D11DeviceContext* context, Texture* texture, Matrix4X4<float> viewProjection)
+    private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> viewProjection)
     {
         var translation = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, 0.0f));
         var modelViewProjection = Matrix4X4.Multiply(translation, viewProjection);
         resources.UpdateCamera(context, new CameraConstants(
-            modelViewProjection: translation
+            modelViewProjection: modelViewProjection
         ));
-        resources.SetSampler(context, texture);
+        resources.SetSampler(context, shaderResourceView);
         resources.Draw(context);
     }
 
@@ -151,7 +151,11 @@ unsafe internal class Renderer
         var viewProj = Matrix4X4.Multiply(viewInverted, proj);
 
         shaders.SetShaders(context);
-        RenderViewport(context, texture, viewProj);
+        //var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[34].Value;
+        //RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, viewProj);
+        var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+        RenderViewport(context, (ID3D11ShaderResourceView*)renderTexture->D3D11ShaderResourceView, viewProj);
+        //RenderViewport(context, resources.uiShaderResourceView, viewProj);
 
         //var swapchainTexture = swapchainView.ColorSwapchainInfo.Textures[colorImageIndex];
         //var box = new Box(0,
@@ -181,19 +185,29 @@ unsafe internal class Renderer
                 layerCount: 1,
                 layers: (CompositionLayerBaseHeader**)&layerProjectionPointer
             );
-            xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
+            var result = xr.EndFrame(system.Session, ref endFrameInfo);
+            if (result == Result.ErrorSessionNotRunning)
+            {
+                return;
+            }
+            result.CheckResult("EndFrame");
         }
     }
 
     public long LastTime = 0;
-    internal FrameState StartFrame(ID3D11DeviceContext* context)
+    internal FrameState? StartFrame(ID3D11DeviceContext* context)
     {
         var frameWaitInfo = new FrameWaitInfo(next: null);
         var frameState = new FrameState(next: null);
         xr.WaitFrame(system.Session, ref frameWaitInfo, ref frameState).CheckResult("WaitFrame");
 
         var beginFrameInfo = new FrameBeginInfo(next: null);
-        xr.BeginFrame(system.Session, ref beginFrameInfo).CheckResult("BeginFrame");
+        var result = xr.BeginFrame(system.Session, ref beginFrameInfo);
+        if (result == Result.FrameDiscarded)
+        {
+            return null;
+        }
+        result.CheckResult("BeginFrame");
         LastTime = frameState.PredictedDisplayTime;
         return frameState;
     }
