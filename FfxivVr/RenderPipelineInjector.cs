@@ -67,40 +67,40 @@ public unsafe class RenderPipelineInjector : IDisposable
     [Signature(Signatures.SetRenderTarget, Fallibility = Fallibility.Fallible)]
     private SetRenderTargetDg? SetRenderTargetFn = null;
 
-    //public static int MagicRenderTargetNumber = 101;
-    //public void AddSetRenderTargetCommand()
-    //{
-    //    UInt64 threadedOffset = GetThreadedOffset();
-    //    if (threadedOffset != 0)
-    //    {
-    //        SetRenderTargetCommand* queueData = (SetRenderTargetCommand*)AllocateQueueMemmoryFn!(threadedOffset, (ulong)sizeof(SetRenderTargetCommand));
-    //        if (queueData != null)
-    //        {
-    //            *queueData = new SetRenderTargetCommand();
-    //            queueData->SwitchType = 0;
-    //            queueData->numRenderTargets = MagicRenderTargetNumber;
-    //            queueData->RenderTarget0 = null;
-    //            PushbackFn!(threadedOffset, (ulong)queueData);
-    //        }
-    //    }
-    //}
+    public static int MagicRenderTargetNumber = 101;
+    public void AddSetRenderTargetCommand()
+    {
+        UInt64 threadedOffset = GetThreadedOffset();
+        if (threadedOffset != 0)
+        {
+            SetRenderTargetCommand* queueData = (SetRenderTargetCommand*)AllocateQueueMemmoryFn!(threadedOffset, (ulong)sizeof(SetRenderTargetCommand));
+            if (queueData != null)
+            {
+                *queueData = new SetRenderTargetCommand();
+                queueData->SwitchType = 0;
+                queueData->numRenderTargets = MagicRenderTargetNumber;
+                queueData->RenderTarget0 = null;
+                PushbackFn!(threadedOffset, (ulong)queueData);
+            }
+        }
+    }
 
-    //[StructLayout(LayoutKind.Explicit)]
-    //public unsafe struct SetRenderTargetCommand
-    //{
-    //    [FieldOffset(0x00)] public int SwitchType;
-    //    [FieldOffset(0x04)] public int numRenderTargets;
-    //    [FieldOffset(0x08)] public Texture* RenderTarget0;
-    //    [FieldOffset(0x10)] public Texture* RenderTarget1;
-    //    [FieldOffset(0x18)] public Texture* RenderTarget2;
-    //    [FieldOffset(0x20)] public Texture* RenderTarget3;
-    //    [FieldOffset(0x28)] public Texture* RenderTarget4;
-    //    [FieldOffset(0x30)] public Texture* DepthBuffer;
-    //    [FieldOffset(0x38)] public short unk3;
-    //    [FieldOffset(0x38)] public short unk4;
-    //    [FieldOffset(0x38)] public short unk5;
-    //    [FieldOffset(0x38)] public short unk6;
-    //};
+    [StructLayout(LayoutKind.Explicit)]
+    public unsafe struct SetRenderTargetCommand
+    {
+        [FieldOffset(0x00)] public int SwitchType;
+        [FieldOffset(0x04)] public int numRenderTargets;
+        [FieldOffset(0x08)] public Texture* RenderTarget0;
+        [FieldOffset(0x10)] public Texture* RenderTarget1;
+        [FieldOffset(0x18)] public Texture* RenderTarget2;
+        [FieldOffset(0x20)] public Texture* RenderTarget3;
+        [FieldOffset(0x28)] public Texture* RenderTarget4;
+        [FieldOffset(0x30)] public Texture* DepthBuffer;
+        [FieldOffset(0x38)] public short unk3;
+        [FieldOffset(0x38)] public short unk4;
+        [FieldOffset(0x38)] public short unk5;
+        [FieldOffset(0x38)] public short unk6;
+    };
 
     Texture* uiTexturePointer = null;
     private readonly Logger logger;
@@ -139,20 +139,19 @@ public unsafe class RenderPipelineInjector : IDisposable
         // Clear only leads to UI on black background
 
         //UInt64 threadedOffset = GetThreadedOffset();
-        // Set to a different render t
         //var texturePointer = RenderTargetManager.Instance()->RenderTargets2[34].Value;
         //SetRenderTargetFn!(threadedOffset, 1, &texturePointer, null, 0, 0, 0, 0);
         //var gameRenderTarget = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
         //if (gameRenderTarget->ActualWidth == 2080 || gameRenderTarget->ActualHeight == 2096)
         //{
-        AddcmdClear();
+        //    AddcmdClear();
         //}
         //fixed (Texture** ptr = &uiTexturePointer)
         //{
         //    // this clears the game render texture then renders the UI? why?
         //    SetRenderTargetFn!(threadedOffset, 1, ptr, null, 0, 0, 0, 0);
-        //AddcmdClear();
-        //}
+        AddSetRenderTargetCommand();
+        AddcmdClear();
         //}
     }
 

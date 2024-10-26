@@ -202,4 +202,12 @@ public unsafe class VRSession : IDisposable
             renderPipelineInjector.RedirectUIRender();
         }
     }
+
+    internal void DoCopyRenderTexture(ID3D11DeviceContext* context)
+    {
+        if (State.SessionRunning)
+        {
+            renderer.CopyTexture(context);
+        }
+    }
 }

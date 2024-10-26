@@ -112,4 +112,9 @@ public unsafe class VRLifecycle : IDisposable
     {
         vrSession?.PreUIRender();
     }
+
+    internal void DoCopyRenderTexture()
+    {
+        vrSession?.DoCopyRenderTexture(GetContext());
+    }
 }

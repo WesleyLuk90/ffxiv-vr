@@ -1,8 +1,10 @@
 ﻿using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
 using static FFXIVClientStructs.FFXIV.Client.System.Framework.TaskManager;
+using static FfxivVR.RenderPipelineInjector;
 
 namespace FfxivVR;
 unsafe internal class GameHooks : IDisposable
@@ -38,8 +40,8 @@ unsafe internal class GameHooks : IDisposable
         SetMatricesHook?.Dispose();
         RunGameTasksHook?.Disable();
         RunGameTasksHook?.Dispose();
-        //RenderThreadSetRenderTargetHook?.Disable();
-        //RenderThreadSetRenderTargetHook?.Dispose();
+        RenderThreadSetRenderTargetHook?.Disable();
+        RenderThreadSetRenderTargetHook?.Dispose();
         RenderSkeletonListHook?.Disable();
         RenderSkeletonListHook?.Dispose();
         PushbackUIHook?.Disable();
@@ -52,7 +54,7 @@ unsafe internal class GameHooks : IDisposable
         DXGIPresentHook!.Enable();
         SetMatricesHook!.Enable();
         RunGameTasksHook!.Enable();
-        //RenderThreadSetRenderTargetHook!.Enable();
+        RenderThreadSetRenderTargetHook!.Enable();
         RenderSkeletonListHook?.Enable();
         PushbackUIHook?.Enable();
     }
@@ -158,29 +160,25 @@ unsafe internal class GameHooks : IDisposable
             logger.Debug("RunGameTasksFn end");
         }
     }
-    //private delegate void RenderThreadSetRenderTargetDg(Device* deviceInstance, SetRenderTargetCommand* command);
-    //[Signature(Signatures.RenderThreadSetRenderTarget, DetourName = nameof(RenderThreadSetRenderTargetFn))]
-    //private Hook<RenderThreadSetRenderTargetDg>? RenderThreadSetRenderTargetHook = null;
+    private delegate void RenderThreadSetRenderTargetDg(Device* deviceInstance, SetRenderTargetCommand* command);
+    [Signature(Signatures.RenderThreadSetRenderTarget, DetourName = nameof(RenderThreadSetRenderTargetFn))]
+    private Hook<RenderThreadSetRenderTargetDg>? RenderThreadSetRenderTargetHook = null;
 
-    //int counter = 0;
-    //private void RenderThreadSetRenderTargetFn(Device* deviceInstance, SetRenderTargetCommand* command)
-    //{
-    //    if (command->numRenderTargets == MagicRenderTargetNumber)
-    //    {
-    //        logger.Debug("Got magic render target");
-    //        var device = (ID3D11DeviceContext*)Device.Instance()->D3D11DeviceContext;
-    //        ID3D11RenderTargetView* view = null;
-    //        device->OMGetRenderTargets(1, &view, null);
-    //        fixed (float* ptr = new Span<float>([0f, 0f, 0f, 0f]))
-    //        {
-    //            device->ClearRenderTargetView(view, ptr);
-    //        }
-    //    }
-    //    else
-    //    {
-    //        RenderThreadSetRenderTargetHook!.Original(deviceInstance, command);
-    //    }
-    //}
+    int counter = 0;
+    private void RenderThreadSetRenderTargetFn(Device* deviceInstance, SetRenderTargetCommand* command)
+    {
+        if (command->numRenderTargets == RenderPipelineInjector.MagicRenderTargetNumber)
+        {
+            exceptionHandler.FaultBarrier(() =>
+            {
+                vrLifecycle.DoCopyRenderTexture();
+            });
+        }
+        else
+        {
+            RenderThreadSetRenderTargetHook!.Original(deviceInstance, command);
+        }
+    }
 
     private delegate void RenderSkeletonListDg(UInt64 RenderSkeletonLinkedList, float frameTiming);
     [Signature(Signatures.RenderSkeletonList, DetourName = nameof(RenderSkeletonListFn))]

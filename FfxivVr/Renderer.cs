@@ -151,11 +151,9 @@ unsafe internal class Renderer
         shaders.SetShaders(context);
         //var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[34].Value;
         //RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, viewProj);
-        var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
 
         if (resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
         {
-            context->CopyResource((ID3D11Resource*)resources.leftEyeRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
             var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
             var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
             RenderViewport(context, leftRenderTarget.ShaderResourceView, modelViewProjection);
@@ -244,5 +242,14 @@ unsafe internal class Renderer
         var invertedViewMatrix = Matrix4X4<float>.Identity;
         Matrix4X4.Invert(viewMatrix, out invertedViewMatrix);
         return invertedViewMatrix;
+    }
+
+    internal void CopyTexture(ID3D11DeviceContext* context)
+    {
+        if (resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
+        {
+            var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+            context->CopyResource((ID3D11Resource*)resources.leftEyeRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
+        }
     }
 }
