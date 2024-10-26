@@ -58,12 +58,19 @@ public unsafe class VRSession : IDisposable
 
     public void Dispose()
     {
+        logger.Debug("Revert resolution");
         resolutionManager.RevertResolution();
+        logger.Debug("vrSpace.Dispose");
         vrSpace.Dispose();
+        logger.Debug("vrShaders.Dispose");
         vrShaders.Dispose();
-        swapchains.Dispose();
+        logger.Debug("swapchains.Dispose");
+        swapchains.Dispose(); // Causes a crash?
+        logger.Debug("resources.Dispose");
         resources.Dispose();
+        logger.Debug("vrSystem.Dispose");
         vrSystem.Dispose();
+        logger.Debug("Disposee done");
     }
 
 

@@ -99,10 +99,19 @@ public unsafe class VRLifecycle : IDisposable
         }
     }
 
+    private int disposeTimer = -1;
     public void PrePresent()
     {
         lock (this)
         {
+            if (disposeTimer > 0)
+            {
+                disposeTimer--;
+                if (disposeTimer == 0)
+                {
+                    RealDisableVR();
+                }
+            }
             var renderTargetManager = RenderTargetManager.Instance();
             Texture* texture = GetGameRenderTexture(renderTargetManager);
             vrSession?.PrePresent(GetContext(), texture);
@@ -155,19 +164,6 @@ public unsafe class VRLifecycle : IDisposable
         lock (this)
         {
             vrSession?.DoCopyRenderTexture(GetContext(), isLeft);
-        }
-    }
-
-    private int disposeTimer = -1;
-    internal void FrameworkUpdate()
-    {
-        if (disposeTimer > 0)
-        {
-            disposeTimer--;
-            if (disposeTimer == 0)
-            {
-                RealDisableVR();
-            }
         }
     }
 }
