@@ -152,27 +152,17 @@ unsafe internal class Renderer
 
         if (eye != Eye.Left && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
         {
-            //var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
-            //var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
             RenderViewport(context, leftRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
-            //RenderViewport(context, resources.uiShaderResourceView, viewProj);
         }
         else if (eye != Eye.Right && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
         {
-            //var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
-            //var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
             RenderViewport(context, rightRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
-            //RenderViewport(context, resources.uiShaderResourceView, viewProj);
         }
         var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
         var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
         var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
         RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, modelViewProjection);
 
-        //var swapchainTexture = swapchainView.ColorSwapchainInfo.Textures[colorImageIndex];
-        //var box = new Box(0,
-        //    0, 0, 500, 500, 1);
-        //context->CopySubresourceRegion((ID3D11Resource*)swapchainTexture, 0, 0, 0, 0, (ID3D11Resource*)texture, 0, &box);
         var releaseInfo = new SwapchainImageReleaseInfo(next: null);
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
         xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");

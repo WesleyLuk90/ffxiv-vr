@@ -93,6 +93,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 vrLifecycle.RecenterCamera();
             }
             isFirstPerson = isFirstPersonNow;
+            vrLifecycle.FrameworkUpdate();
         });
     }
 

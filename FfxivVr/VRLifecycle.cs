@@ -24,8 +24,12 @@ public unsafe class VRLifecycle : IDisposable
     private VRSession? vrSession;
     public void EnableVR()
     {
+        if (vrSession != null)
+        {
+            logger.Error("VR is already running");
+            return;
+        }
         logger.Info("Starting VR");
-        DisableVR();
         vrSession = new VRSession(
             this.openxrDllPath,
             logger,
@@ -48,10 +52,22 @@ public unsafe class VRLifecycle : IDisposable
     }
     public void DisableVR()
     {
+        if (vrSession is VRSession session)
+        {
+            session.State.SessionRunning = false;
+            disposeTimer = 100;
+        }
+    }
+
+    private void RealDisableVR()
+    {
         if (vrSession != null)
         {
             logger.Info("Stopping VR");
-            vrSession?.Dispose();
+            lock (this)
+            {
+                vrSession?.Dispose();
+            }
             vrSession = null;
         }
     }
@@ -69,19 +85,28 @@ public unsafe class VRLifecycle : IDisposable
 
     public void PostPresent()
     {
-        vrSession?.PostPresent(GetContext());
+        lock (this)
+        {
+            vrSession?.PostPresent(GetContext());
+        }
     }
 
     public bool SecondRender()
     {
-        return vrSession?.SecondRender(GetContext()) ?? false;
+        lock (this)
+        {
+            return vrSession?.SecondRender(GetContext()) ?? false;
+        }
     }
 
     public void PrePresent()
     {
-        var renderTargetManager = RenderTargetManager.Instance();
-        Texture* texture = GetGameRenderTexture(renderTargetManager);
-        vrSession?.PrePresent(GetContext(), texture);
+        lock (this)
+        {
+            var renderTargetManager = RenderTargetManager.Instance();
+            Texture* texture = GetGameRenderTexture(renderTargetManager);
+            vrSession?.PrePresent(GetContext(), texture);
+        }
     }
 
     private static FFXIVClientStructs.Interop.Pointer<Texture> GetGameRenderTexture(RenderTargetManager* renderTargetManager)
@@ -91,30 +116,58 @@ public unsafe class VRLifecycle : IDisposable
 
     public void Dispose()
     {
-        DisableVR();
+        RealDisableVR();
     }
 
     internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
-        vrSession?.UpdateCamera(camera);
+        lock (this)
+        {
+            vrSession?.UpdateCamera(camera);
+        }
     }
 
     internal void RecenterCamera()
     {
-        vrSession?.RecenterCamera();
+        lock (this)
+        {
+            vrSession?.RecenterCamera();
+        }
     }
     internal void UpdateVisibility()
     {
-        vrSession?.UpdateVisibility();
+        lock (this)
+        {
+            vrSession?.UpdateVisibility();
+        }
     }
 
     internal void PreUIRender()
     {
-        vrSession?.PreUIRender();
+        lock (this)
+        {
+            vrSession?.PreUIRender();
+        }
     }
 
     internal void DoCopyRenderTexture(bool isLeft)
     {
-        vrSession?.DoCopyRenderTexture(GetContext(), isLeft);
+        lock (this)
+        {
+            vrSession?.DoCopyRenderTexture(GetContext(), isLeft);
+        }
+    }
+
+    private int disposeTimer = -1;
+    internal void FrameworkUpdate()
+    {
+        if (disposeTimer > 0)
+        {
+            disposeTimer--;
+            if (disposeTimer == 0)
+            {
+                RealDisableVR();
+            }
+        }
     }
 }
