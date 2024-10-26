@@ -34,10 +34,8 @@ unsafe internal class Renderer
     }
 
 
-    private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> viewProjection)
+    private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection)
     {
-        var translation = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, 0.0f));
-        var modelViewProjection = Matrix4X4.Multiply(translation, viewProjection);
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection
         ));
@@ -154,7 +152,10 @@ unsafe internal class Renderer
         //var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[34].Value;
         //RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, viewProj);
         var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
-        RenderViewport(context, (ID3D11ShaderResourceView*)renderTexture->D3D11ShaderResourceView, viewProj);
+
+        var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
+        var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+        RenderViewport(context, (ID3D11ShaderResourceView*)renderTexture->D3D11ShaderResourceView, modelViewProjection);
         //RenderViewport(context, resources.uiShaderResourceView, viewProj);
 
         //var swapchainTexture = swapchainView.ColorSwapchainInfo.Textures[colorImageIndex];

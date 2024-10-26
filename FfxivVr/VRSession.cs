@@ -23,7 +23,7 @@ public unsafe class VRSession : IDisposable
     private readonly VRSettings settings;
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
-
+    private readonly ResolutionManager resolutionManager = new ResolutionManager();
     public VRSession(string openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector)
         : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, settings, gameState, renderPipelineInjector)
     {
@@ -50,13 +50,15 @@ public unsafe class VRSession : IDisposable
     {
         vrSystem.Initialize();
         vrShaders.Initialize();
-        swapchains.Initialize();
-        resources.Initialize();
+        var size = swapchains.Initialize();
+        resolutionManager.ChangeResolution(size);
+        resources.Initialize(size);
         vrSpace.Initialize();
     }
 
     public void Dispose()
     {
+        resolutionManager.RevertResolution();
         vrSpace.Dispose();
         vrShaders.Dispose();
         swapchains.Dispose();
@@ -184,14 +186,6 @@ public unsafe class VRSession : IDisposable
         vrSpace.RecenterCamera(renderer.LastTime);
     }
 
-    internal void ConfigureUIRender(ID3D11DeviceContext* context)
-    {
-        if (State.SessionRunning)
-        {
-            resources.BindUIRenderTarget(context);
-        }
-    }
-
     internal void UpdateVisibility()
     {
         if (State.SessionRunning && gameState.IsFirstPerson())
@@ -203,6 +197,6 @@ public unsafe class VRSession : IDisposable
 
     internal void PreUIRender()
     {
-        renderPipelineInjector.RedirectUIRender(resources.uiRenderTexture, resources.uiRenderTargetView, resources.uiShaderResourceView);
+        renderPipelineInjector.RedirectUIRender();
     }
 }

@@ -1,5 +1,6 @@
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
+using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,6 @@ unsafe internal class VRSwapchains : IDisposable
     private readonly ID3D11Device* d11Device;
     public const ViewConfigurationType ViewConfigType = ViewConfigurationType.PrimaryStereo;
     public List<SwapchainView> Views = null!;
-    private readonly ResolutionManager resolutionManager = new ResolutionManager();
     public VRSwapchains(XR xr, VRSystem system, Logger logger, ID3D11Device* d11Device)
     {
         this.xr = xr;
@@ -31,7 +31,7 @@ unsafe internal class VRSwapchains : IDisposable
         this.logger = logger;
         this.d11Device = d11Device;
     }
-    public void Initialize()
+    public Vector2D<uint> Initialize()
     {
         var viewConfigurationViews = xr.GetViewConfigurationViews(system.Instance, system.SystemId, ViewConfigType);
         if (viewConfigurationViews.Count != 2)
@@ -46,7 +46,6 @@ unsafe internal class VRSwapchains : IDisposable
 
         var width = viewConfigurationViews[0].RecommendedImageRectWidth;
         var height = viewConfigurationViews[0].RecommendedImageRectHeight;
-        resolutionManager.ChangeResolution(width, height);
         Views = viewConfigurationViews.ConvertAll(viewConfigurationView =>
         {
             logger.Debug($"View has resolution {viewConfigurationView.RecommendedImageRectWidth}x{viewConfigurationView.RecommendedImageRectHeight}");
@@ -119,6 +118,7 @@ unsafe internal class VRSwapchains : IDisposable
                 depthSwapchainInfo: depthSwapchainInfo
             );
         });
+        return new Vector2D<uint>(width, height);
     }
 
     private Swapchain CreateSwapchain(
@@ -143,7 +143,6 @@ unsafe internal class VRSwapchains : IDisposable
     }
     public void Dispose()
     {
-        resolutionManager.RevertResolution();
         Views?.ForEach(view =>
         {
             foreach (var v in view.ColorSwapchainInfo.Views)

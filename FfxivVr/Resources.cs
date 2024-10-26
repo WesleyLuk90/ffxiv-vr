@@ -28,6 +28,9 @@ unsafe public class Resources : IDisposable
     private ID3D11BlendState* blendState = null;
     private ID3D11RasterizerState* rasterizerState = null;
     private ID3D11SamplerState* samplerState = null;
+    private RenderTarget? uiRenderTarget;
+    private RenderTarget? leftEyeRenderTarget;
+    private RenderTarget? rightEyeRenderTarget;
 
     public Resources(ID3D11Device* device, Logger logger)
     {
@@ -46,34 +49,49 @@ unsafe public class Resources : IDisposable
         }
     }
 
-    public void Initialize()
+    public void Initialize(Vector2D<uint> size)
     {
         CreateBuffers();
         CreateSampler();
         CreateStencilState();
         CreateBlendState();
         CreateRasterizerState();
-        CreateUIRenderTarget();
+        uiRenderTarget = CreateRenderTarget(size);
+        leftEyeRenderTarget = CreateRenderTarget(size);
+        rightEyeRenderTarget = CreateRenderTarget(size);
     }
 
-    class RenderTexture
+    class RenderTarget : IDisposable
     {
-        public RenderTexture(
-     ID3D11Texture2D* texture,
-         ID3D11RenderTargetView* renderTargetView,
-         ID3D11ShaderResourceView* shaderResourceView)
-        { }
+        public RenderTarget(
+            ID3D11Texture2D* texture,
+            ID3D11RenderTargetView* renderTargetView,
+            ID3D11ShaderResourceView* shaderResourceView
+        )
+        {
+            Texture = texture;
+            RenderTargetView = renderTargetView;
+            ShaderResourceView = shaderResourceView;
+        }
+
+        public ID3D11Texture2D* Texture { get; }
+        public ID3D11RenderTargetView* RenderTargetView { get; }
+        public ID3D11ShaderResourceView* ShaderResourceView { get; }
+
+        public void Dispose()
+        {
+            Texture->Release();
+            RenderTargetView->Release();
+            ShaderResourceView->Release();
+        }
     }
 
-    public ID3D11Texture2D* uiRenderTexture = null;
-    public ID3D11RenderTargetView* uiRenderTargetView = null;
-    public ID3D11ShaderResourceView* uiShaderResourceView = null;
-    private void CreateUIRenderTarget()
+    private RenderTarget CreateRenderTarget(Vector2D<uint> size)
     {
         var textureDescription = new Texture2DDesc(
             format: Silk.NET.DXGI.Format.FormatR8G8B8A8Unorm,
-            width: 2080,
-            height: 2096,
+            width: size.X,
+            height: size.Y,
             mipLevels: 1,
             sampleDesc: new Silk.NET.DXGI.SampleDesc(count: 1, quality: 0),
             usage: Usage.Default,
@@ -82,7 +100,8 @@ unsafe public class Resources : IDisposable
             bindFlags: (uint)(BindFlag.ShaderResource | BindFlag.RenderTarget),
             miscFlags: (uint)ResourceMiscFlag.Shared
         );
-        device->CreateTexture2D(ref textureDescription, null, ref uiRenderTexture).D3D11Check("CreateTexture2D");
+        ID3D11Texture2D* texture = null;
+        device->CreateTexture2D(ref textureDescription, null, ref texture).D3D11Check("CreateTexture2D");
         var renderTargetViewDescription = new RenderTargetViewDesc(
             format: Silk.NET.DXGI.Format.FormatR8G8B8A8Unorm,
             viewDimension: RtvDimension.Texture2D,
@@ -90,7 +109,8 @@ unsafe public class Resources : IDisposable
                 mipSlice: 0
             )
         );
-        device->CreateRenderTargetView((ID3D11Resource*)uiRenderTexture, ref renderTargetViewDescription, ref uiRenderTargetView).D3D11Check("CreateRenderTargetView");
+        ID3D11RenderTargetView* renderTargetView = null;
+        device->CreateRenderTargetView((ID3D11Resource*)texture, ref renderTargetViewDescription, ref renderTargetView).D3D11Check("CreateRenderTargetView");
         var shaderResourceViewDescription = new ShaderResourceViewDesc(
             format: Silk.NET.DXGI.Format.FormatR8G8B8A8Unorm,
             viewDimension: Silk.NET.Core.Native.D3DSrvDimension.D3DSrvDimensionTexture2D,
@@ -99,7 +119,13 @@ unsafe public class Resources : IDisposable
                 mipLevels: 1
             )
         );
-        device->CreateShaderResourceView((ID3D11Resource*)uiRenderTexture, ref shaderResourceViewDescription, ref uiShaderResourceView).D3D11Check("CreateShaderResourceView");
+        ID3D11ShaderResourceView* shaderResourceView = null;
+        device->CreateShaderResourceView((ID3D11Resource*)texture, ref shaderResourceViewDescription, ref shaderResourceView).D3D11Check("CreateShaderResourceView");
+        return new RenderTarget(
+            texture,
+            renderTargetView,
+            shaderResourceView
+        );
     }
 
     private void CreateSampler()
@@ -322,14 +348,9 @@ unsafe public class Resources : IDisposable
     {
         cameraBuffer?.Dispose();
         vertexBuffer?.Dispose();
-        if (uiRenderTargetView != null)
-        {
-            uiRenderTargetView->Release();
-        }
-        if (uiRenderTexture != null)
-        {
-            uiRenderTexture->Release();
-        }
+        uiRenderTarget?.Dispose();
+        leftEyeRenderTarget?.Dispose();
+        rightEyeRenderTarget?.Dispose();
     }
 
     internal void SetDepthStencilState(ID3D11DeviceContext* context)
@@ -345,8 +366,4 @@ unsafe public class Resources : IDisposable
         }
     }
 
-    internal void BindUIRenderTarget(ID3D11DeviceContext* context)
-    {
-        context->OMSetRenderTargets(1, ref uiRenderTargetView, null);
-    }
 }

@@ -1,18 +1,17 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using Silk.NET.Maths;
 
 namespace FfxivVR;
 unsafe public class ResolutionManager
 {
-    private uint? originalWidth = null;
-    private uint? originalHeight = null;
-    public void ChangeResolution(uint width, uint height)
+    private Vector2D<uint>? original = null;
+    public void ChangeResolution(Vector2D<uint> resolution)
     {
         var dx11DeviceInstance = Device.Instance();
 
-        originalWidth = dx11DeviceInstance->Width;
-        originalHeight = dx11DeviceInstance->Height;
-        dx11DeviceInstance->NewWidth = (uint)width;
-        dx11DeviceInstance->NewHeight = (uint)height;
+        original = new Vector2D<uint>(dx11DeviceInstance->Width, dx11DeviceInstance->Height);
+        dx11DeviceInstance->NewWidth = resolution.X;
+        dx11DeviceInstance->NewHeight = resolution.Y;
         dx11DeviceInstance->RequestResolutionChange = 1;
 
         //var windowHandle = Framework.Instance()->GameWindow->WindowHandle;
@@ -25,14 +24,13 @@ unsafe public class ResolutionManager
     }
     public void RevertResolution()
     {
-        if (originalWidth is uint width && originalHeight is uint hight)
+        if (original is Vector2D<uint> size)
         {
             var dx11DeviceInstance = Device.Instance();
-            dx11DeviceInstance->NewWidth = width;
-            dx11DeviceInstance->NewHeight = hight;
+            dx11DeviceInstance->NewWidth = size.X;
+            dx11DeviceInstance->NewHeight = size.Y;
             dx11DeviceInstance->RequestResolutionChange = 1;
         }
-        originalWidth = null;
-        originalHeight = null;
+        original = null;
     }
 }

@@ -1,8 +1,6 @@
 ﻿using Dalamud.Game;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
-using Silk.NET.Direct3D11;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -107,50 +105,50 @@ public unsafe class RenderPipelineInjector : IDisposable
     Texture* uiTexturePointer = null;
     private readonly Logger logger;
 
-    internal void RedirectUIRender(ID3D11Texture2D* texture, ID3D11RenderTargetView* renderTargetView, ID3D11ShaderResourceView* uiShaderResourceView)
+    internal void RedirectUIRender()
     {
-        if (texture == null || renderTargetView == null || uiShaderResourceView == null)
-        {
-            logger.Debug("Shaders not ready");
-            return;
-        }
-        if (uiTexturePointer == null)
-        {
-            var gameRenderTarget = RenderTargetManager.Instance()->RenderTargets2[33].Value;
-            if (gameRenderTarget->ActualWidth != 2080 || gameRenderTarget->ActualHeight != 2096)
-            {
-                logger.Debug($"Game render targets do not match {gameRenderTarget->ActualWidth}x{gameRenderTarget->ActualHeight}");
-                return;
-            }
-            var ptr = (Texture*)Marshal.AllocHGlobal(sizeof(Texture));
-            *ptr = *gameRenderTarget;
+        //if (texture == null || renderTargetView == null || uiShaderResourceView == null)
+        //{
+        //    logger.Debug("Shaders not ready");
+        //    return;
+        //}
+        //if (uiTexturePointer == null)
+        //{
+        //    var gameRenderTarget = RenderTargetManager.Instance()->RenderTargets2[33].Value;
+        //    if (gameRenderTarget->ActualWidth != 2080 || gameRenderTarget->ActualHeight != 2096)
+        //    {
+        //        logger.Debug($"Game render targets do not match {gameRenderTarget->ActualWidth}x{gameRenderTarget->ActualHeight}");
+        //        return;
+        //    }
+        //    var ptr = (Texture*)Marshal.AllocHGlobal(sizeof(Texture));
+        //    *ptr = *gameRenderTarget;
 
-            var renderTargetViewPointer = (ID3D11RenderTargetView**)Marshal.AllocHGlobal(sizeof(ID3D11RenderTargetView*));
-            *renderTargetViewPointer = renderTargetView;
+        //    var renderTargetViewPointer = (ID3D11RenderTargetView**)Marshal.AllocHGlobal(sizeof(ID3D11RenderTargetView*));
+        //    *renderTargetViewPointer = renderTargetView;
 
-            ptr->D3D11Texture2D = texture;
-            ptr->D3D11ShaderResourceView = uiShaderResourceView;
-            *(IntPtr*)(ptr + 0x018) = (nint)0x90000000L;
-            *(IntPtr*)(ptr + 0x080) = (IntPtr)renderTargetViewPointer;
-            uiTexturePointer = ptr;
-            logger.Debug("Created ui render texture");
-        }
-        if (uiTexturePointer != null)
-        {
-            // Clear only leads to UI on black background
+        //    ptr->D3D11Texture2D = texture;
+        //    ptr->D3D11ShaderResourceView = uiShaderResourceView;
+        //    *(IntPtr*)(ptr + 0x018) = (nint)0x90000000L;
+        //    *(IntPtr*)(ptr + 0x080) = (IntPtr)renderTargetViewPointer;
+        //    uiTexturePointer = ptr;
+        //    logger.Debug("Created ui render texture");
+        //}
+        //if (uiTexturePointer != null)
+        //{
+        // Clear only leads to UI on black background
 
-            UInt64 threadedOffset = GetThreadedOffset();
-            // Set to a different render t
-            //var texturePointer = RenderTargetManager.Instance()->RenderTargets2[34].Value;
-            //SetRenderTargetFn!(threadedOffset, 1, &texturePointer, null, 0, 0, 0, 0);
-            AddcmdClear();
-            //fixed (Texture** ptr = &uiTexturePointer)
-            //{
-            //    // this clears the game render texture then renders the UI? why?
-            //    SetRenderTargetFn!(threadedOffset, 1, ptr, null, 0, 0, 0, 0);
-            //    //AddcmdClear();
-            //}
-        }
+        //UInt64 threadedOffset = GetThreadedOffset();
+        // Set to a different render t
+        //var texturePointer = RenderTargetManager.Instance()->RenderTargets2[34].Value;
+        //SetRenderTargetFn!(threadedOffset, 1, &texturePointer, null, 0, 0, 0, 0);
+        //AddcmdClear();
+        //fixed (Texture** ptr = &uiTexturePointer)
+        //{
+        //    // this clears the game render texture then renders the UI? why?
+        //    SetRenderTargetFn!(threadedOffset, 1, ptr, null, 0, 0, 0, 0);
+        //    //AddcmdClear();
+        //}
+        //}
     }
 
     private void AddcmdClear(bool depth = false, float r = 0, float g = 0, float b = 0, float a = 0)
