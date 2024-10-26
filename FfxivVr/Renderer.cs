@@ -149,23 +149,25 @@ unsafe internal class Renderer
         var viewProj = Matrix4X4.Multiply(viewInverted, proj);
 
         shaders.SetShaders(context);
-        //var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[34].Value;
-        //RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, viewProj);
 
-        if (eye == Eye.Left && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
+        if (eye != Eye.Left && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
         {
             //var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
             //var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
             RenderViewport(context, leftRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
             //RenderViewport(context, resources.uiShaderResourceView, viewProj);
         }
-        else if (eye == Eye.Right && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
+        else if (eye != Eye.Right && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
         {
             //var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
             //var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
             RenderViewport(context, rightRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
             //RenderViewport(context, resources.uiShaderResourceView, viewProj);
         }
+        var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
+        var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+        var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+        RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, modelViewProjection);
 
         //var swapchainTexture = swapchainView.ColorSwapchainInfo.Textures[colorImageIndex];
         //var box = new Box(0,
