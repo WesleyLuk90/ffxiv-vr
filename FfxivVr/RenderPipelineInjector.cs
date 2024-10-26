@@ -161,11 +161,11 @@ public unsafe class RenderPipelineInjector : IDisposable
         UInt64 threadedOffset = GetThreadedOffset();
         if (threadedOffset != 0)
         {
-            UInt64 queueData = AllocateQueueMemmoryFn!(threadedOffset, (ulong)sizeof(cmdClearRenderDepth));
+            UInt64 queueData = AllocateQueueMemmoryFn!(threadedOffset, (ulong)sizeof(ClearCommand));
             if (queueData != 0)
             {
-                cmdClearRenderDepth* cmd = (cmdClearRenderDepth*)queueData;
-                *cmd = new cmdClearRenderDepth();
+                ClearCommand* cmd = (ClearCommand*)queueData;
+                *cmd = new ClearCommand();
                 cmd->SwitchType = 4;
                 cmd->clearType = ((depth) ? 7 : 1);
                 cmd->colorR = r;
@@ -186,7 +186,7 @@ public unsafe class RenderPipelineInjector : IDisposable
 }
 
 [StructLayout(LayoutKind.Explicit)]
-public unsafe struct cmdClearRenderDepth
+public unsafe struct ClearCommand
 {
     [FieldOffset(0x00)] public int SwitchType;
     [FieldOffset(0x04)] public int clearType;

@@ -28,9 +28,9 @@ unsafe public class Resources : IDisposable
     private ID3D11BlendState* blendState = null;
     private ID3D11RasterizerState* rasterizerState = null;
     private ID3D11SamplerState* samplerState = null;
-    private RenderTarget? uiRenderTarget;
-    private RenderTarget? leftEyeRenderTarget;
-    private RenderTarget? rightEyeRenderTarget;
+    public RenderTarget? uiRenderTarget;
+    public RenderTarget? leftEyeRenderTarget;
+    public RenderTarget? rightEyeRenderTarget;
 
     public Resources(ID3D11Device* device, Logger logger)
     {
@@ -61,7 +61,7 @@ unsafe public class Resources : IDisposable
         rightEyeRenderTarget = CreateRenderTarget(size);
     }
 
-    class RenderTarget : IDisposable
+    public class RenderTarget : IDisposable
     {
         public RenderTarget(
             ID3D11Texture2D* texture,
@@ -88,8 +88,9 @@ unsafe public class Resources : IDisposable
 
     private RenderTarget CreateRenderTarget(Vector2D<uint> size)
     {
+        var format = Silk.NET.DXGI.Format.FormatB8G8R8A8Unorm;
         var textureDescription = new Texture2DDesc(
-            format: Silk.NET.DXGI.Format.FormatR8G8B8A8Unorm,
+            format: format,
             width: size.X,
             height: size.Y,
             mipLevels: 1,
@@ -103,7 +104,7 @@ unsafe public class Resources : IDisposable
         ID3D11Texture2D* texture = null;
         device->CreateTexture2D(ref textureDescription, null, ref texture).D3D11Check("CreateTexture2D");
         var renderTargetViewDescription = new RenderTargetViewDesc(
-            format: Silk.NET.DXGI.Format.FormatR8G8B8A8Unorm,
+            format: format,
             viewDimension: RtvDimension.Texture2D,
             texture2D: new Tex2DRtv(
                 mipSlice: 0
@@ -112,7 +113,7 @@ unsafe public class Resources : IDisposable
         ID3D11RenderTargetView* renderTargetView = null;
         device->CreateRenderTargetView((ID3D11Resource*)texture, ref renderTargetViewDescription, ref renderTargetView).D3D11Check("CreateRenderTargetView");
         var shaderResourceViewDescription = new ShaderResourceViewDesc(
-            format: Silk.NET.DXGI.Format.FormatR8G8B8A8Unorm,
+            format: format,
             viewDimension: Silk.NET.Core.Native.D3DSrvDimension.D3DSrvDimensionTexture2D,
             texture2D: new Tex2DSrv(
                 mostDetailedMip: 0,

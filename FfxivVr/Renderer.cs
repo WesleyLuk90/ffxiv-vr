@@ -153,10 +153,14 @@ unsafe internal class Renderer
         //RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, viewProj);
         var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
 
-        var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
-        var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
-        RenderViewport(context, (ID3D11ShaderResourceView*)renderTexture->D3D11ShaderResourceView, modelViewProjection);
-        //RenderViewport(context, resources.uiShaderResourceView, viewProj);
+        if (resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
+        {
+            context->CopyResource((ID3D11Resource*)resources.leftEyeRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
+            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
+            var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+            RenderViewport(context, leftRenderTarget.ShaderResourceView, modelViewProjection);
+            //RenderViewport(context, resources.uiShaderResourceView, viewProj);
+        }
 
         //var swapchainTexture = swapchainView.ColorSwapchainInfo.Textures[colorImageIndex];
         //var box = new Box(0,
