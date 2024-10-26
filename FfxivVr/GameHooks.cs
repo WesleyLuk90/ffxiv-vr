@@ -42,8 +42,8 @@ unsafe internal class GameHooks : IDisposable
         //RenderThreadSetRenderTargetHook?.Dispose();
         RenderSkeletonListHook?.Disable();
         RenderSkeletonListHook?.Dispose();
-        //PushbackUIHook?.Disable();
-        //PushbackUIHook?.Dispose();
+        PushbackUIHook?.Disable();
+        PushbackUIHook?.Dispose();
     }
 
     public void Initialize()
@@ -54,7 +54,7 @@ unsafe internal class GameHooks : IDisposable
         RunGameTasksHook!.Enable();
         //RenderThreadSetRenderTargetHook!.Enable();
         RenderSkeletonListHook?.Enable();
-        //PushbackUIHook?.Enable();
+        PushbackUIHook?.Enable();
     }
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
     [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]

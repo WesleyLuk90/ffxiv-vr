@@ -105,6 +105,7 @@ public unsafe class RenderPipelineInjector : IDisposable
     Texture* uiTexturePointer = null;
     private readonly Logger logger;
 
+    int counter = 0;
     internal void RedirectUIRender()
     {
         //if (texture == null || renderTargetView == null || uiShaderResourceView == null)
@@ -141,12 +142,16 @@ public unsafe class RenderPipelineInjector : IDisposable
         // Set to a different render t
         //var texturePointer = RenderTargetManager.Instance()->RenderTargets2[34].Value;
         //SetRenderTargetFn!(threadedOffset, 1, &texturePointer, null, 0, 0, 0, 0);
-        //AddcmdClear();
+        //var gameRenderTarget = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+        //if (gameRenderTarget->ActualWidth == 2080 || gameRenderTarget->ActualHeight == 2096)
+        //{
+        AddcmdClear();
+        //}
         //fixed (Texture** ptr = &uiTexturePointer)
         //{
         //    // this clears the game render texture then renders the UI? why?
         //    SetRenderTargetFn!(threadedOffset, 1, ptr, null, 0, 0, 0, 0);
-        //    //AddcmdClear();
+        //AddcmdClear();
         //}
         //}
     }

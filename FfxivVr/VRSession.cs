@@ -197,6 +197,9 @@ public unsafe class VRSession : IDisposable
 
     internal void PreUIRender()
     {
-        renderPipelineInjector.RedirectUIRender();
+        if (State.SessionRunning)
+        {
+            renderPipelineInjector.RedirectUIRender();
+        }
     }
 }
