@@ -243,7 +243,7 @@ unsafe public class Resources : IDisposable
         // Seems like the UI always has alpha=1 so pick some hacky numbers to make this transparent
         blendStateDesc.RenderTarget[0] = new RenderTargetBlendDesc(
             blendEnable: true,
-            srcBlend: Blend.One,
+            srcBlend: Blend.SrcColor,
             destBlend: Blend.InvSrcColor,
             blendOp: BlendOp.Add,
             srcBlendAlpha: Blend.One,

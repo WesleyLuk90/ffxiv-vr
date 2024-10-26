@@ -110,7 +110,7 @@ unsafe internal class Renderer
                 imageArrayIndex: 0
             )
         );
-        fixed (float* ptr = new Span<float>([0.17f, 0.17f, 0.17f, 1]))
+        fixed (float* ptr = new Span<float>([0f, 0f, 0f, 1]))
         {
             context->ClearRenderTargetView(currentColorSwapchainImage, ptr);
         }
