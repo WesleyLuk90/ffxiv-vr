@@ -208,11 +208,13 @@ public unsafe class VRSession : IDisposable
         {
             if (renderState is RenderState.RenderingLeft)
             {
-                renderPipelineInjector.RedirectUIRender(true);
+                renderPipelineInjector.QueueRenderTargetCommand(true);
+                renderPipelineInjector.QueueClearCommand();
             }
             else if (renderState is RenderState.RenderingRight)
             {
-                renderPipelineInjector.RedirectUIRender(false);
+                renderPipelineInjector.QueueRenderTargetCommand(false);
+                renderPipelineInjector.QueueClearCommand();
             }
             else if (renderState is RenderState.Skipped || renderState is RenderState.SkipRender) { }
             else

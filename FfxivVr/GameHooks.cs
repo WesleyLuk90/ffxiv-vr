@@ -3,7 +3,6 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
-using static FFXIVClientStructs.FFXIV.Client.System.Framework.TaskManager;
 using static FfxivVR.RenderPipelineInjector;
 
 namespace FfxivVR;
@@ -38,8 +37,6 @@ unsafe internal class GameHooks : IDisposable
         DXGIPresentHook?.Dispose();
         SetMatricesHook?.Disable();
         SetMatricesHook?.Dispose();
-        RunGameTasksHook?.Disable();
-        RunGameTasksHook?.Dispose();
         RenderThreadSetRenderTargetHook?.Disable();
         RenderThreadSetRenderTargetHook?.Dispose();
         RenderSkeletonListHook?.Disable();
@@ -53,7 +50,6 @@ unsafe internal class GameHooks : IDisposable
         FrameworkTickHook!.Enable();
         DXGIPresentHook!.Enable();
         SetMatricesHook!.Enable();
-        RunGameTasksHook!.Enable();
         RenderThreadSetRenderTargetHook!.Enable();
         RenderSkeletonListHook?.Enable();
         PushbackUIHook?.Enable();
@@ -134,37 +130,10 @@ unsafe internal class GameHooks : IDisposable
         });
     }
 
-    delegate void RunGameTasksDg(TaskManager* taskManager, IntPtr frameTiming);
-    [Signature(Signatures.RunGameTasks, DetourName = nameof(RunGameTasksFn))]
-    private Hook<RunGameTasksDg>? RunGameTasksHook = null;
-
-    public void RunGameTasksFn(TaskManager* taskManager, IntPtr frameTiming)
-    {
-        if (debugHooks)
-        {
-            logger.Debug("RunGameTasksFn start");
-        }
-        var tasks = new Span<RootTask>(taskManager->TaskList, (int)taskManager->TaskCount);
-        for (int i = 0; i < taskManager->TaskCount; i++)
-        {
-            if (i == taskManager->TaskCount - 1)
-            {
-                //renderPipelineInjector.AddSetRenderTargetCommand();
-            }
-            tasks[i].Execute((void*)frameTiming);
-        }
-        //logger.Debug($"Render calls {counter}");
-        //RunGameTasksHook!.Original(taskManager, frameTiming);
-        if (debugHooks)
-        {
-            logger.Debug("RunGameTasksFn end");
-        }
-    }
     private delegate void RenderThreadSetRenderTargetDg(Device* deviceInstance, SetRenderTargetCommand* command);
     [Signature(Signatures.RenderThreadSetRenderTarget, DetourName = nameof(RenderThreadSetRenderTargetFn))]
     private Hook<RenderThreadSetRenderTargetDg>? RenderThreadSetRenderTargetHook = null;
 
-    int counter = 0;
     private void RenderThreadSetRenderTargetFn(Device* deviceInstance, SetRenderTargetCommand* command)
     {
         var renderTargets = command->numRenderTargets;

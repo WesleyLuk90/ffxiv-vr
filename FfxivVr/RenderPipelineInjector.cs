@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
-public unsafe class RenderPipelineInjector : IDisposable
+public unsafe class RenderPipelineInjector
 {
     private delegate void PushbackDg(UInt64 a, UInt64 b);
     [Signature(Signatures.Pushback, Fallibility = Fallibility.Fallible)]
@@ -63,13 +63,9 @@ public unsafe class RenderPipelineInjector : IDisposable
         return threadedData;
     }
 
-    private delegate void SetRenderTargetDg(UInt64 a, int b, Texture** c, Texture* d, short e, short f, short g, short h);
-    [Signature(Signatures.SetRenderTarget, Fallibility = Fallibility.Fallible)]
-    private SetRenderTargetDg? SetRenderTargetFn = null;
-
     public static int LeftEyeRenderTargetNumber = 101;
     public static int RightEyeRenderTargetNumber = 102;
-    public void AddSetRenderTargetCommand(bool isLeft)
+    public void QueueRenderTargetCommand(bool isLeft)
     {
         UInt64 threadedOffset = GetThreadedOffset();
         if (threadedOffset != 0)
@@ -104,57 +100,14 @@ public unsafe class RenderPipelineInjector : IDisposable
     };
 
     private readonly Logger logger;
-    internal void RedirectUIRender(bool isLeft)
+
+    public void QueueClearCommand()
     {
-        //if (texture == null || renderTargetView == null || uiShaderResourceView == null)
-        //{
-        //    logger.Debug("Shaders not ready");
-        //    return;
-        //}
-        //if (uiTexturePointer == null)
-        //{
-        //    var gameRenderTarget = RenderTargetManager.Instance()->RenderTargets2[33].Value;
-        //    if (gameRenderTarget->ActualWidth != 2080 || gameRenderTarget->ActualHeight != 2096)
-        //    {
-        //        logger.Debug($"Game render targets do not match {gameRenderTarget->ActualWidth}x{gameRenderTarget->ActualHeight}");
-        //        return;
-        //    }
-        //    var ptr = (Texture*)Marshal.AllocHGlobal(sizeof(Texture));
-        //    *ptr = *gameRenderTarget;
-
-        //    var renderTargetViewPointer = (ID3D11RenderTargetView**)Marshal.AllocHGlobal(sizeof(ID3D11RenderTargetView*));
-        //    *renderTargetViewPointer = renderTargetView;
-
-        //    ptr->D3D11Texture2D = texture;
-        //    ptr->D3D11ShaderResourceView = uiShaderResourceView;
-        //    *(IntPtr*)(ptr + 0x018) = (nint)0x90000000L;
-        //    *(IntPtr*)(ptr + 0x080) = (IntPtr)renderTargetViewPointer;
-        //    uiTexturePointer = ptr;
-        //    logger.Debug("Created ui render texture");
-        //}
-        //if (uiTexturePointer != null)
-        //{
-        // Clear only leads to UI on black background
-
-        //UInt64 threadedOffset = GetThreadedOffset();
-        //var texturePointer = RenderTargetManager.Instance()->RenderTargets2[34].Value;
-        //SetRenderTargetFn!(threadedOffset, 1, &texturePointer, null, 0, 0, 0, 0);
-        //var gameRenderTarget = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
-        //if (gameRenderTarget->ActualWidth == 2080 || gameRenderTarget->ActualHeight == 2096)
-        //{
-        //    AddcmdClear();
-        //}
-        //fixed (Texture** ptr = &uiTexturePointer)
-        //{
-        //    // this clears the game render texture then renders the UI? why?
-        //    SetRenderTargetFn!(threadedOffset, 1, ptr, null, 0, 0, 0, 0);
-        AddSetRenderTargetCommand(isLeft);
-        AddcmdClear();
-        //}
-    }
-
-    private void AddcmdClear(bool depth = false, float r = 0, float g = 0, float b = 0, float a = 0)
-    {
+        bool depth = false;
+        float r = 0;
+        float g = 0;
+        float b = 0;
+        float a = 0;
         UInt64 threadedOffset = GetThreadedOffset();
         if (threadedOffset != 0)
         {
@@ -175,10 +128,6 @@ public unsafe class RenderPipelineInjector : IDisposable
                 PushbackFn!(threadedOffset, queueData);
             }
         }
-    }
-
-    public void Dispose()
-    {
     }
 }
 
