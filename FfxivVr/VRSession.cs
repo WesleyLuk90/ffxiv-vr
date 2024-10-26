@@ -24,7 +24,7 @@ public unsafe class VRSession : IDisposable
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
 
-    public VRSession(String openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector)
+    public VRSession(string openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector)
         : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, settings, gameState, renderPipelineInjector)
     {
     }
@@ -65,14 +65,28 @@ public unsafe class VRSession : IDisposable
     }
 
 
-    public abstract record RenderState
+    public abstract class RenderState
     {
-        public record Ready() : RenderState;
-        public record SkipRender(FrameState frameState) : RenderState;
-        public record RenderingLeft(FrameState frameState, View[] views) : RenderState;
-        public record RenderingRight(FrameState frameState, View[] views, CompositionLayerProjectionView leftLayer) : RenderState;
+        public class Ready() : RenderState;
+        public class SkipRender(FrameState frameState) : RenderState
+        {
+            public FrameState FrameState { get; } = frameState;
+        }
 
-        public record Skipped() : RenderState;
+        public class RenderingLeft(FrameState frameState, View[] views) : RenderState
+        {
+            public FrameState FrameState { get; } = frameState;
+            public View[] Views { get; } = views;
+        }
+
+        public class RenderingRight(FrameState frameState, View[] views, CompositionLayerProjectionView leftLayer) : RenderState
+        {
+            public FrameState FrameState { get; } = frameState;
+            public View[] Views { get; } = views;
+            public CompositionLayerProjectionView LeftLayer { get; } = leftLayer;
+        }
+
+        public class Skipped() : RenderState;
     }
 
     private RenderState renderState = new RenderState.Skipped();
@@ -115,16 +129,16 @@ public unsafe class VRSession : IDisposable
         switch (renderState)
         {
             case RenderState.SkipRender skip:
-                renderer.SkipFrame(skip.frameState);
+                renderer.SkipFrame(skip.FrameState);
                 renderState = new RenderState.Ready();
                 break;
             case RenderState.RenderingLeft rendering:
-                var leftLayer = renderer.RenderEye(context, rendering.frameState, gameRenderTexture, rendering.views, Eye.Left);
-                renderState = new RenderState.RenderingRight(rendering.frameState, rendering.views, leftLayer);
+                var leftLayer = renderer.RenderEye(context, rendering.FrameState, gameRenderTexture, rendering.Views, Eye.Left);
+                renderState = new RenderState.RenderingRight(rendering.FrameState, rendering.Views, leftLayer);
                 break;
             case RenderState.RenderingRight rendering:
-                var rightLayer = renderer.RenderEye(context, rendering.frameState, gameRenderTexture, rendering.views, Eye.Right);
-                renderer.EndFrame(context, rendering.frameState, gameRenderTexture, rendering.views, [rendering.leftLayer, rightLayer]);
+                var rightLayer = renderer.RenderEye(context, rendering.FrameState, gameRenderTexture, rendering.Views, Eye.Right);
+                renderer.EndFrame(context, rendering.FrameState, gameRenderTexture, rendering.Views, [rendering.LeftLayer, rightLayer]);
                 renderState = new RenderState.Ready();
                 break;
             case RenderState.Skipped:
@@ -147,11 +161,11 @@ public unsafe class VRSession : IDisposable
         // These seem to be swapped because the render step is out of sync with the update camera call
         if (renderState is RenderState.RenderingLeft renderingLeft)
         {
-            view = renderingLeft.views[Eye.Right.ToIndex()];
+            view = renderingLeft.Views[Eye.Right.ToIndex()];
         }
         else if (renderState is RenderState.RenderingRight renderingRight)
         {
-            view = renderingRight.views[Eye.Left.ToIndex()];
+            view = renderingRight.Views[Eye.Left.ToIndex()];
         }
         else
         {
