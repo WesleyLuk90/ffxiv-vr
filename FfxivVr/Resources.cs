@@ -25,7 +25,8 @@ unsafe public class Resources : IDisposable
     private readonly Logger logger;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
     private ID3D11DepthStencilState* depthStencilStateOff = null;
-    private ID3D11BlendState* blendState = null;
+    private ID3D11BlendState* uiBlendState = null;
+    private ID3D11BlendState* vrBlendState = null;
     private ID3D11RasterizerState* rasterizerState = null;
     private ID3D11SamplerState* samplerState = null;
     public RenderTarget uiRenderTarget = null!;
@@ -225,7 +226,7 @@ unsafe public class Resources : IDisposable
             scissorEnable: false,
             multisampleEnable: false,
             antialiasedLineEnable: false
-            );
+        );
         fixed (ID3D11RasterizerState** ptr = &rasterizerState)
         {
             device->CreateRasterizerState(ref rasterizerDesc, ptr).D3D11Check("CreateRasterizerState");
@@ -234,24 +235,41 @@ unsafe public class Resources : IDisposable
 
     private void CreateBlendState()
     {
-        var blendStateDesc = new BlendDesc(
+        var uiBlendStateDesc = new BlendDesc(
             alphaToCoverageEnable: false,
             independentBlendEnable: false
         );
-        // Seems like the UI always has alpha=1 so pick some hacky numbers to make this transparent
-        blendStateDesc.RenderTarget[0] = new RenderTargetBlendDesc(
+        uiBlendStateDesc.RenderTarget[0] = new RenderTargetBlendDesc(
             blendEnable: true,
-            srcBlend: Blend.SrcColor,
-            destBlend: Blend.InvSrcColor,
+            srcBlend: Blend.SrcAlpha,
+            destBlend: Blend.InvSrcAlpha,
             blendOp: BlendOp.Add,
             srcBlendAlpha: Blend.One,
             destBlendAlpha: Blend.One,
             blendOpAlpha: BlendOp.Add,
             renderTargetWriteMask: (byte)ColorWriteEnable.All
         );
-        fixed (ID3D11BlendState** ptr = &blendState)
+        fixed (ID3D11BlendState** ptr = &uiBlendState)
         {
-            device->CreateBlendState(ref blendStateDesc, ptr).D3D11Check("CreateBlendState");
+            device->CreateBlendState(ref uiBlendStateDesc, ptr).D3D11Check("CreateBlendState");
+        }
+        var vrBlendStateDesc = new BlendDesc(
+            alphaToCoverageEnable: false,
+            independentBlendEnable: false
+        );
+        vrBlendStateDesc.RenderTarget[0] = new RenderTargetBlendDesc(
+            blendEnable: true,
+            srcBlend: Blend.One,
+            destBlend: Blend.Zero,
+            blendOp: BlendOp.Add,
+            srcBlendAlpha: Blend.One,
+            destBlendAlpha: Blend.One,
+            blendOpAlpha: BlendOp.Add,
+            renderTargetWriteMask: (byte)ColorWriteEnable.All
+        );
+        fixed (ID3D11BlendState** ptr = &vrBlendState)
+        {
+            device->CreateBlendState(ref vrBlendStateDesc, ptr).D3D11Check("CreateBlendState");
         }
     }
 
@@ -348,6 +366,14 @@ unsafe public class Resources : IDisposable
         cameraBuffer?.Dispose();
         vertexBuffer?.Dispose();
         uiRenderTarget?.Dispose();
+        if (vrBlendState != null)
+        {
+            vrBlendState->Release();
+        }
+        if (uiBlendState != null)
+        {
+            uiBlendState->Release();
+        }
         if (eyeRenderTargets != null)
         {
             foreach (var target in eyeRenderTargets)
@@ -362,12 +388,12 @@ unsafe public class Resources : IDisposable
         context->OMSetDepthStencilState(depthStencilStateOff, 0);
     }
 
-    internal void SetBlendState(ID3D11DeviceContext* context)
+    internal void SetUIBlendState(ID3D11DeviceContext* context)
     {
-        fixed (float* ptr = new Span<float>([0, 0, 0, 0]))
-        {
-            context->OMSetBlendState(blendState, ptr, 1);
-        }
+        context->OMSetBlendState(uiBlendState, null, 0xffffffff);
     }
-
+    internal void SetVRBlendState(ID3D11DeviceContext* context)
+    {
+        context->OMSetBlendState(vrBlendState, null, 0xffffffff);
+    }
 }

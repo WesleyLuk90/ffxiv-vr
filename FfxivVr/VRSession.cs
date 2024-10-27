@@ -1,4 +1,3 @@
-using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
@@ -112,7 +111,7 @@ public unsafe class VRSession : IDisposable
 
     private RenderPhase? renderPhase;
 
-    public void PrePresent(ID3D11DeviceContext* context, Texture* gameRenderTexture)
+    public void PrePresent(ID3D11DeviceContext* context)
     {
         eventHandler.PollEvents();
         if (!State.SessionRunning)
@@ -124,7 +123,7 @@ public unsafe class VRSession : IDisposable
             var maybeFrameState = renderer.StartFrame(context);
             if (maybeFrameState is FrameState frameState && frameState.ShouldRender == 1)
             {
-                var leftLayer = renderer.RenderEye(context, frameState, gameRenderTexture, leftRenderPhase.Views, Eye.Left);
+                var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left);
                 renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views);
             }
             else
@@ -138,8 +137,8 @@ public unsafe class VRSession : IDisposable
         }
         else if (renderPhase is RightRenderPhase rightRenderPhase)
         {
-            var rightLayer = renderer.RenderEye(context, rightRenderPhase.FrameState, gameRenderTexture, rightRenderPhase.Views, Eye.Right);
-            renderer.EndFrame(context, rightRenderPhase.FrameState, gameRenderTexture, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
+            var rightLayer = renderer.RenderEye(context, rightRenderPhase.FrameState, rightRenderPhase.Views, Eye.Right);
+            renderer.EndFrame(context, rightRenderPhase.FrameState, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
             logger.Trace("End frame");
             renderPhase = null;
         }
@@ -203,6 +202,7 @@ public unsafe class VRSession : IDisposable
         if (State.SessionRunning && cameraPhase is CameraPhase phase)
         {
             logger.Trace($"Queue {phase.Eye} render");
+
             renderPipelineInjector.QueueRenderTargetCommand(phase.Eye);
             renderPipelineInjector.QueueClearCommand();
         }

@@ -1,5 +1,4 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using Silk.NET.Direct3D11;
 using System;
 
@@ -103,15 +102,8 @@ public unsafe class VRLifecycle : IDisposable
                     RealDisableVR();
                 }
             }
-            var renderTargetManager = RenderTargetManager.Instance();
-            Texture* texture = GetGameRenderTexture(renderTargetManager);
-            vrSession?.PrePresent(GetContext(), texture);
+            vrSession?.PrePresent(GetContext());
         }
-    }
-
-    private static FFXIVClientStructs.Interop.Pointer<Texture> GetGameRenderTexture(RenderTargetManager* renderTargetManager)
-    {
-        return renderTargetManager->RenderTargets2[33];
     }
 
     public void Dispose()

@@ -1,4 +1,3 @@
-using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
@@ -74,7 +73,7 @@ unsafe internal class Renderer
         return views;
     }
 
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, FrameState frameState, Texture* texture, View[] views, Eye eye)
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, FrameState frameState, View[] views, Eye eye)
     {
         var swapchainView = swapchains.Views[eye.ToIndex()];
         var view = views[eye.ToIndex()];
@@ -117,7 +116,6 @@ unsafe internal class Renderer
         context->ClearDepthStencilView(currentDepthSwapchainImage, (uint)ClearFlag.Depth, 1.0f, 0);
 
         resources.SetDepthStencilState(context);
-        resources.SetBlendState(context);
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
         Viewport viewport = new Viewport(
             topLeftX: 0f,
@@ -151,6 +149,7 @@ unsafe internal class Renderer
         shaders.SetShaders(context);
 
         var currentEyeRenderTarget = resources.eyeRenderTargets[eye.ToIndex()];
+        resources.SetVRBlendState(context);
         if (eye == Eye.Left)
         {
             logger.Trace("Rendering left eye");
@@ -158,7 +157,8 @@ unsafe internal class Renderer
 
             var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
             var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
-            var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+            var uiText = GameTextures.GetGameRenderTexture();
+            resources.SetUIBlendState(context);
             RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, modelViewProjection);
             context->CopyResource((ID3D11Resource*)resources.uiRenderTarget!.Texture, (ID3D11Resource*)uiText->D3D11Texture2D);
         }
@@ -169,6 +169,7 @@ unsafe internal class Renderer
 
             var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
             var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+            resources.SetUIBlendState(context);
             RenderViewport(context, resources.uiRenderTarget!.ShaderResourceView, modelViewProjection);
         }
 
@@ -178,7 +179,7 @@ unsafe internal class Renderer
         return compositionLayerProjectionView;
     }
 
-    internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, Texture* texture, View[] views, CompositionLayerProjectionView[] compositionLayerProjectionViews)
+    internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, View[] views, CompositionLayerProjectionView[] compositionLayerProjectionViews)
     {
         var compositionLayerSpan = new Span<CompositionLayerProjectionView>(compositionLayerProjectionViews);
         fixed (CompositionLayerProjectionView* ptr = compositionLayerSpan)
@@ -252,7 +253,7 @@ unsafe internal class Renderer
 
     internal void CopyTexture(ID3D11DeviceContext* context, Eye eye)
     {
-        var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+        var renderTexture = GameTextures.GetGameRenderTexture();
 
         logger.Trace($"Copy resource {eye} render target");
         var texture = resources.eyeRenderTargets[eye.ToIndex()].Texture;

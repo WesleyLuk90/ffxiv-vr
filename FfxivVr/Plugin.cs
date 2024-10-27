@@ -6,6 +6,7 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FfxivVR.Windows;
+using Silk.NET.Direct3D11;
 using System;
 using System.IO;
 using System.Linq;
@@ -145,6 +146,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
                         if (tex != null)
                         {
                             logger.Info($"Render target {i}:{tex->ActualWidth}x{tex->ActualHeight} format ${tex->TextureFormat}");
+                            var texture = (ID3D11Texture2D*)tex->D3D11Texture2D;
+                            var desc = new Texture2DDesc();
+                            texture->GetDesc(ref desc);
+                            logger.Info($"Type is {desc.Format}");
                         }
                         else
                         {

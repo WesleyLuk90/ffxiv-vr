@@ -42,6 +42,7 @@ unsafe internal class VRSwapchains : IDisposable
 
         var formats = xr.GetSwapchainFormats(system.Session);
         var colorFormat = formats.Where(f => ColorFormats.Contains((Format)f)).First();
+        logger.Debug($"Selected color format {(Format)colorFormat}, available {string.Join(",", formats.Select(f => (Format)f))}");
         var depthFormat = formats.Where(f => DepthFormats.Contains((Format)f)).First();
 
         var width = viewConfigurationViews[0].RecommendedImageRectWidth;

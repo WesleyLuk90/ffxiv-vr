@@ -107,7 +107,7 @@ public unsafe class RenderPipelineInjector
         float r = 0;
         float g = 0;
         float b = 0;
-        float a = 1;
+        float a = 0;
         UInt64 threadedOffset = GetThreadedOffset();
         if (threadedOffset != 0)
         {
