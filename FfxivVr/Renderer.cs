@@ -154,16 +154,22 @@ unsafe internal class Renderer
         {
             logger.Trace("Rendering left eye");
             RenderViewport(context, leftRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
+
+            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
+            var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+            var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+            RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, modelViewProjection);
+            context->CopyResource((ID3D11Resource*)resources.uiRenderTarget!.Texture, (ID3D11Resource*)uiText->D3D11Texture2D);
         }
         else if (eye == Eye.Right && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
         {
             logger.Trace("Rendering right eye");
             RenderViewport(context, rightRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
+
+            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
+            var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+            RenderViewport(context, resources.uiRenderTarget!.ShaderResourceView, modelViewProjection);
         }
-        var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
-        var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
-        var uiText = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
-        RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, modelViewProjection);
 
         var releaseInfo = new SwapchainImageReleaseInfo(next: null);
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
