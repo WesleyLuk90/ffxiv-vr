@@ -19,7 +19,7 @@ unsafe internal class GameVisibility
     {
         this.logger = logger;
     }
-    public void ForceFirstPersonBodyVisible()
+    public void ForceFirstPersonBodyVisible(bool isFirstPerson)
     {
         Character* character = getCharacter();
         if (character == null)
@@ -28,7 +28,10 @@ unsafe internal class GameVisibility
         }
         if (character->GameObject.DrawObject != null)
         {
-            character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+            if (isFirstPerson)
+            {
+                character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+            }
 
             if (character->Mount.MountObject != null)
             {
@@ -39,23 +42,23 @@ unsafe internal class GameVisibility
             }
             if (character->OrnamentData.OrnamentObject != null)
             {
-                if (character->OrnamentData.OrnamentObject->DrawObject != null)
+                if (character->OrnamentData.OrnamentObject->DrawObject != null && isFirstPerson)
                 {
                     character->OrnamentData.OrnamentObject->DrawObject->Flags = (byte)ModelCullTypes.Visible;
                 }
             }
             var mainHand = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.MainHand);
-            if (mainHand.DrawObject != null)
+            if (mainHand.DrawObject != null && isFirstPerson)
             {
                 mainHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
             }
             var offHand = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand);
-            if (offHand.DrawObject != null)
+            if (offHand.DrawObject != null && isFirstPerson)
             {
                 offHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
             }
             var unknown = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.Unk);
-            if (unknown.DrawObject != null)
+            if (unknown.DrawObject != null && isFirstPerson)
             {
                 unknown.DrawObject->Flags = (byte)ModelCullTypes.Visible;
             }
@@ -72,8 +75,12 @@ unsafe internal class GameVisibility
         return (Character*)player!.Address;
     }
 
-    public void HideHeadMesh()
+    public void HideHeadMesh(bool isFirstPerson)
     {
+        if (isFirstPerson)
+        {
+            return;
+        }
         Character* character = getCharacter();
         if (character == null)
         {
@@ -118,6 +125,10 @@ unsafe internal class GameVisibility
                 {
                     continue;
                 }
+                if (partial->LocalPose.Length > neckIndex)
+                {
+                    continue;
+                }
                 var transform = partial->LocalPose[(int)neckIndex!];
                 transform.Scale.X = 0.00001f;
                 transform.Scale.Y = 0.00001f;
@@ -127,16 +138,19 @@ unsafe internal class GameVisibility
 
                 neckChildren.ForEach((c) =>
                 {
-                    var transform = partial->LocalPose[(int)c];
-                    transform.Translation.X *= -1;
-                    transform.Translation.Y *= -1;
-                    transform.Translation.Z *= -1;
-                    transform.Translation.W *= -1;
-                    transform.Scale.X = 0.00001f;
-                    transform.Scale.Y = 0.00001f;
-                    transform.Scale.Z = 0.00001f;
-                    transform.Scale.W = 0.00001f;
-                    partial->LocalPose[(int)c] = transform;
+                    if (partial->LocalPose.Length > c)
+                    {
+                        var transform = partial->LocalPose[(int)c];
+                        transform.Translation.X *= -1;
+                        transform.Translation.Y *= -1;
+                        transform.Translation.Z *= -1;
+                        transform.Translation.W *= -1;
+                        transform.Scale.X = 0.00001f;
+                        transform.Scale.Y = 0.00001f;
+                        transform.Scale.Z = 0.00001f;
+                        transform.Scale.W = 0.00001f;
+                        partial->LocalPose[(int)c] = transform;
+                    }
                 });
             }
         }

@@ -197,10 +197,10 @@ public unsafe class VRSession : IDisposable
 
     internal void UpdateVisibility()
     {
-        if (State.SessionRunning && gameState.IsFirstPerson())
+        if (State.SessionRunning)
         {
-            gameVisibility.ForceFirstPersonBodyVisible();
-            gameVisibility.HideHeadMesh();
+            gameVisibility.ForceFirstPersonBodyVisible(gameState.IsFirstPerson());
+            gameVisibility.HideHeadMesh(gameState.IsFirstPerson());
         }
     }
 
