@@ -28,10 +28,7 @@ unsafe internal class GameVisibility
         }
         if (character->GameObject.DrawObject != null)
         {
-            if (isFirstPerson)
-            {
-                character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
-            }
+            character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
 
             if (character->Mount.MountObject != null)
             {
@@ -42,23 +39,23 @@ unsafe internal class GameVisibility
             }
             if (character->OrnamentData.OrnamentObject != null)
             {
-                if (character->OrnamentData.OrnamentObject->DrawObject != null && isFirstPerson)
+                if (character->OrnamentData.OrnamentObject->DrawObject != null)
                 {
                     character->OrnamentData.OrnamentObject->DrawObject->Flags = (byte)ModelCullTypes.Visible;
                 }
             }
             var mainHand = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.MainHand);
-            if (mainHand.DrawObject != null && isFirstPerson)
+            if (mainHand.DrawObject != null)
             {
                 mainHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
             }
             var offHand = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand);
-            if (offHand.DrawObject != null && isFirstPerson)
+            if (offHand.DrawObject != null)
             {
                 offHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
             }
             var unknown = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.Unk);
-            if (unknown.DrawObject != null && isFirstPerson)
+            if (unknown.DrawObject != null)
             {
                 unknown.DrawObject->Flags = (byte)ModelCullTypes.Visible;
             }
@@ -77,7 +74,7 @@ unsafe internal class GameVisibility
 
     public void HideHeadMesh(bool isFirstPerson)
     {
-        if (isFirstPerson)
+        if (!isFirstPerson)
         {
             return;
         }
@@ -125,7 +122,7 @@ unsafe internal class GameVisibility
                 {
                     continue;
                 }
-                if (partial->LocalPose.Length > neckIndex)
+                if (neckIndex >= partial->LocalPose.Length)
                 {
                     continue;
                 }
@@ -138,7 +135,7 @@ unsafe internal class GameVisibility
 
                 neckChildren.ForEach((c) =>
                 {
-                    if (partial->LocalPose.Length > c)
+                    if (c < partial->LocalPose.Length)
                     {
                         var transform = partial->LocalPose[(int)c];
                         transform.Translation.X *= -1;
