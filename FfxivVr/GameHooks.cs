@@ -21,7 +21,6 @@ unsafe internal class GameHooks : IDisposable
     private readonly ExceptionHandler exceptionHandler;
     private readonly Logger logger;
     private readonly RenderPipelineInjector renderPipelineInjector;
-    private readonly bool debugHooks = false;
     public GameHooks(VRLifecycle vrLifecycle, ExceptionHandler exceptionHandler, Logger logger, RenderPipelineInjector renderPipelineInjector)
     {
         this.vrLifecycle = vrLifecycle;
@@ -60,10 +59,7 @@ unsafe internal class GameHooks : IDisposable
 
     private UInt64 FrameworkTickFn(Framework* FrameworkInstance)
     {
-        if (debugHooks)
-        {
-            logger.Debug("FrameworkTickFn start");
-        }
+        logger.Trace("FrameworkTickFn start");
         var returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         var shouldSecondRender = false;
         exceptionHandler.FaultBarrier(() =>
@@ -74,10 +70,7 @@ unsafe internal class GameHooks : IDisposable
         {
             returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         }
-        if (debugHooks)
-        {
-            logger.Debug("FrameworkTickFn end");
-        }
+        logger.Trace("FrameworkTickFn end");
         return returnValue;
     }
 
@@ -86,10 +79,7 @@ unsafe internal class GameHooks : IDisposable
     private Hook<DXGIPresentDg>? DXGIPresentHook = null;
     private void DXGIPresentFn(UInt64 a, UInt64 b)
     {
-        if (debugHooks)
-        {
-            logger.Debug("DXGIPresentFn start");
-        }
+        logger.Trace("DXGIPresentFn start");
         exceptionHandler.FaultBarrier(() =>
         {
             vrLifecycle.PrePresent();
@@ -99,10 +89,7 @@ unsafe internal class GameHooks : IDisposable
         {
             vrLifecycle.PostPresent();
         });
-        if (debugHooks)
-        {
-            logger.Debug("DXGIPresentFn start");
-        }
+        logger.Trace("DXGIPresentFn end");
     }
 
 
@@ -117,15 +104,7 @@ unsafe internal class GameHooks : IDisposable
         {
             if (camera == FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance()->GetActiveCamera()->SceneCamera.RenderCamera)
             {
-                if (debugHooks)
-                {
-                    logger.Debug("SetMatricesFn start");
-                }
                 vrLifecycle.UpdateCamera(&FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance()->GetActiveCamera()->SceneCamera);
-                if (debugHooks)
-                {
-                    logger.Debug("SetMatricesFn start");
-                }
             }
         });
     }

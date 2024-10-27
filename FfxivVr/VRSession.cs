@@ -3,6 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
+using System.Collections.Concurrent;
 
 namespace FfxivVR;
 
@@ -48,7 +49,7 @@ public unsafe class VRSession : IDisposable
 
     public void Initialize()
     {
-        vrSystem.Initialize();
+        xrExtensions = vrSystem.Initialize();
         vrShaders.Initialize();
         var size = swapchains.Initialize();
         resolutionManager.ChangeResolution(size);
@@ -58,19 +59,12 @@ public unsafe class VRSession : IDisposable
 
     public void Dispose()
     {
-        logger.Debug("Revert resolution");
         resolutionManager.RevertResolution();
-        logger.Debug("vrSpace.Dispose");
         vrSpace.Dispose();
-        logger.Debug("vrShaders.Dispose");
         vrShaders.Dispose();
-        logger.Debug("swapchains.Dispose");
-        swapchains.Dispose(); // Causes a crash?
-        logger.Debug("resources.Dispose");
+        swapchains.Dispose();
         resources.Dispose();
-        logger.Debug("vrSystem.Dispose");
         vrSystem.Dispose();
-        logger.Debug("Disposee done");
     }
 
 
@@ -98,7 +92,9 @@ public unsafe class VRSession : IDisposable
         public class Skipped() : RenderState;
     }
 
+    private ConcurrentQueue<Eye> eyes = new ConcurrentQueue<Eye>();
     private RenderState renderState = new RenderState.Skipped();
+    private XrExtensions xrExtensions;
 
     public void PostPresent(ID3D11DeviceContext* context)
     {
@@ -108,13 +104,15 @@ public unsafe class VRSession : IDisposable
         {
             if (State.SessionRunning)
             {
+                renderer.LocateView(xrExtensions.Now(vrSystem.Instance));
                 var maybeFrameState = renderer.StartFrame(context);
                 if (maybeFrameState is FrameState frameState)
                 {
                     if (State.IsActive() && frameState.ShouldRender != 0)
                     {
-                        var views = renderer.LocateView(frameState);
+                        var views = renderer.LocateView(frameState.PredictedDisplayTime);
                         renderState = new RenderState.RenderingLeft(frameState, views);
+                        eyes.Enqueue(Eye.Left);
                     }
                     else
                     {
@@ -144,10 +142,12 @@ public unsafe class VRSession : IDisposable
             case RenderState.RenderingLeft rendering:
                 var leftLayer = renderer.RenderEye(context, rendering.FrameState, gameRenderTexture, rendering.Views, Eye.Left);
                 renderState = new RenderState.RenderingRight(rendering.FrameState, rendering.Views, leftLayer);
+                eyes.Enqueue(Eye.Right);
                 break;
             case RenderState.RenderingRight rendering:
                 var rightLayer = renderer.RenderEye(context, rendering.FrameState, gameRenderTexture, rendering.Views, Eye.Right);
                 renderer.EndFrame(context, rendering.FrameState, gameRenderTexture, rendering.Views, [rendering.LeftLayer, rightLayer]);
+                logger.Trace("End frame");
                 renderState = new RenderState.Ready();
                 break;
             case RenderState.Skipped:
@@ -170,10 +170,12 @@ public unsafe class VRSession : IDisposable
         // These seem to be swapped because the render step is out of sync with the update camera call
         if (renderState is RenderState.RenderingLeft renderingLeft)
         {
+            logger.Trace("Set left camera matrix");
             view = renderingLeft.Views[Eye.Right.ToIndex()];
         }
         else if (renderState is RenderState.RenderingRight renderingRight)
         {
+            logger.Trace("Set right camera matrix");
             view = renderingRight.Views[Eye.Left.ToIndex()];
         }
         else
@@ -190,7 +192,7 @@ public unsafe class VRSession : IDisposable
 
     internal void RecenterCamera()
     {
-        vrSpace.RecenterCamera(renderer.LastTime);
+        vrSpace.RecenterCamera(xrExtensions.Now(vrSystem.Instance));
     }
 
     internal void UpdateVisibility()
@@ -206,20 +208,22 @@ public unsafe class VRSession : IDisposable
     {
         if (State.SessionRunning)
         {
-            if (renderState is RenderState.RenderingLeft)
+            Eye eye;
+            if (eyes.TryDequeue(out eye))
             {
-                renderPipelineInjector.QueueRenderTargetCommand(true);
-                renderPipelineInjector.QueueClearCommand();
-            }
-            else if (renderState is RenderState.RenderingRight)
-            {
-                renderPipelineInjector.QueueRenderTargetCommand(false);
-                renderPipelineInjector.QueueClearCommand();
-            }
-            else if (renderState is RenderState.Skipped || renderState is RenderState.SkipRender) { }
-            else
-            {
-                logger.Debug($"Invalid render state ${renderState}");
+                // TODO fix pipeline so that these aren't swapped
+                if (eye == Eye.Right)
+                {
+                    logger.Trace("Queue left render");
+                    renderPipelineInjector.QueueRenderTargetCommand(true);
+                    renderPipelineInjector.QueueClearCommand();
+                }
+                else if (eye == Eye.Left)
+                {
+                    logger.Trace("Queue right render");
+                    renderPipelineInjector.QueueRenderTargetCommand(false);
+                    renderPipelineInjector.QueueClearCommand();
+                }
             }
         }
     }

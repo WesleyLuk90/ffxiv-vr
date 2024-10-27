@@ -56,13 +56,13 @@ unsafe internal class Renderer
     }
 
     // Can't be called from the FrameworkTickFn
-    internal View[] LocateView(FrameState frameState)
+    internal View[] LocateView(long predictedDisplayTime)
     {
         var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
         var viewState = new ViewState(next: null);
         var viewLocateInfo = new ViewLocateInfo(
             viewConfigurationType: ViewConfigurationType.PrimaryStereo,
-            displayTime: frameState.PredictedDisplayTime,
+            displayTime: predictedDisplayTime,
             space: vrSpace.LocalSpace
         );
         uint viewCount = 0;
@@ -150,12 +150,14 @@ unsafe internal class Renderer
 
         shaders.SetShaders(context);
 
-        if (eye != Eye.Left && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
+        if (eye == Eye.Left && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
         {
+            logger.Trace("Rendering left eye");
             RenderViewport(context, leftRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
         }
-        else if (eye != Eye.Right && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
+        else if (eye == Eye.Right && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
         {
+            logger.Trace("Rendering right eye");
             RenderViewport(context, rightRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
         }
         var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
@@ -246,13 +248,15 @@ unsafe internal class Renderer
     internal void CopyTexture(ID3D11DeviceContext* context, bool isLeft)
     {
         var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+        // FIXME left right is swapped
         if (isLeft && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
         {
+            logger.Trace("Copy resource left render target");
             context->CopyResource((ID3D11Resource*)leftRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
         }
         else if (!isLeft && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
         {
-            logger.Debug("Copy resource right right eye");
+            logger.Trace("Copy resource right render target");
             context->CopyResource((ID3D11Resource*)rightRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
         }
     }
