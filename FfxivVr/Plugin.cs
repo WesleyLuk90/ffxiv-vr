@@ -1,4 +1,5 @@
 using Dalamud.Game;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
@@ -22,6 +23,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
     [PluginService] internal static IGameInteropProvider GameHookService { get; private set; } = null!;
     [PluginService] internal static ISigScanner SigScanner { get; private set; } = null!;
+    [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
+    [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
 
     private const string CommandName = "/vr";
 
@@ -74,7 +77,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         exceptionHandler = new ExceptionHandler(logger);
         var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
-        vrLifecycle = new VRLifecycle(logger, dllPath, settings, gameState, pipelineInjector);
+        vrLifecycle = new VRLifecycle(logger, dllPath, settings, gameState, pipelineInjector, GameGui, ClientState, TargetManager);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector);
 
@@ -157,6 +160,9 @@ public unsafe sealed class Plugin : IDalamudPlugin
                         }
                     }
                     //logger.Info($"depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight} format ${depthTexture.Value->TextureFormat}");
+                    break;
+                case "nameplates":
+                    settings.UpdateNamePlates = !settings.UpdateNamePlates; ;
                     break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");

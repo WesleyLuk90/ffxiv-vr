@@ -1,4 +1,6 @@
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
@@ -22,14 +24,11 @@ public unsafe class VRSession : IDisposable
     private readonly VRSettings settings;
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
+    private readonly IGameGui gameGui;
     private readonly ResolutionManager resolutionManager = new ResolutionManager();
-    public VRSession(string openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector)
-        : this(new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath })), logger, device, settings, gameState, renderPipelineInjector)
+    public VRSession(string openXRLoaderDllPath, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector, IGameGui gameGui, IClientState clientState, Dalamud.Game.ClientState.Objects.ITargetManager targetManager)
     {
-    }
-    public VRSession(XR xr, Logger logger, ID3D11Device* device, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector)
-    {
-        this.xr = xr;
+        this.xr = new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath }));
         vrSystem = new VRSystem(xr, device, logger);
         this.logger = logger;
         State = new VRState();
@@ -40,9 +39,10 @@ public unsafe class VRSession : IDisposable
         this.settings = settings;
         this.gameState = gameState;
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, settings);
-        gameVisibility = new GameVisibility(logger, gameState);
+        gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
         this.renderPipelineInjector = renderPipelineInjector;
+        this.gameGui = gameGui;
     }
 
     public void Initialize()
@@ -223,5 +223,14 @@ public unsafe class VRSession : IDisposable
             var views = renderer.LocateView(vrSystem.Now());
             cameraPhase = new CameraPhase(Eye.Left, views);
         }
+    }
+
+    internal void UpdateNamePlates(AddonNamePlate* namePlate)
+    {
+        if (!State.SessionRunning)
+        {
+            return;
+        }
+        gameVisibility.UpdateNamePlates(namePlate);
     }
 }

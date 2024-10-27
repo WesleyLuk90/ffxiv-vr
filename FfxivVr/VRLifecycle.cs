@@ -1,4 +1,7 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+﻿using Dalamud.Game.ClientState.Objects;
+using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
 using System;
 
@@ -10,14 +13,18 @@ public unsafe class VRLifecycle : IDisposable
     private readonly VRSettings settings;
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
+    private readonly IGameGui gameGui;
 
-    public VRLifecycle(Logger logger, String openxrDllPath, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector)
+    public VRLifecycle(Logger logger, String openxrDllPath, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector, IGameGui gameGui, IClientState clientState, ITargetManager targetManager)
     {
         this.logger = logger;
         this.openxrDllPath = openxrDllPath;
         this.settings = settings;
         this.gameState = gameState;
         this.renderPipelineInjector = renderPipelineInjector;
+        this.gameGui = gameGui;
+        this.clientState = clientState;
+        this.targetManager = targetManager;
     }
 
     private VRSession? vrSession;
@@ -35,7 +42,10 @@ public unsafe class VRLifecycle : IDisposable
             device: GetDevice(),
             settings: settings,
             gameState: gameState,
-            renderPipelineInjector: renderPipelineInjector
+            renderPipelineInjector: renderPipelineInjector,
+            gameGui: gameGui,
+            targetManager: targetManager,
+            clientState: clientState
         );
         try
         {
@@ -90,6 +100,9 @@ public unsafe class VRLifecycle : IDisposable
     }
 
     private int disposeTimer = -1;
+    private IClientState clientState;
+    private ITargetManager targetManager;
+
     public void PrePresent()
     {
         lock (this)
@@ -155,6 +168,14 @@ public unsafe class VRLifecycle : IDisposable
         lock (this)
         {
             vrSession?.StartCycle();
+        }
+    }
+
+    internal void UpdateNamePlates(AddonNamePlate* namePlate)
+    {
+        lock (this)
+        {
+            vrSession?.UpdateNamePlates(namePlate);
         }
     }
 }

@@ -2,6 +2,7 @@
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
 using static FfxivVR.RenderPipelineInjector;
 
@@ -42,6 +43,8 @@ unsafe internal class GameHooks : IDisposable
         RenderSkeletonListHook?.Dispose();
         PushbackUIHook?.Disable();
         PushbackUIHook?.Dispose();
+        NamePlateDrawHook?.Disable();
+        NamePlateDrawHook?.Dispose();
     }
 
     public void Initialize()
@@ -52,6 +55,7 @@ unsafe internal class GameHooks : IDisposable
         RenderThreadSetRenderTargetHook!.Enable();
         RenderSkeletonListHook?.Enable();
         PushbackUIHook?.Enable();
+        NamePlateDrawHook?.Enable();
     }
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
     [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]
@@ -151,5 +155,17 @@ unsafe internal class GameHooks : IDisposable
             vrLifecycle.PreUIRender();
         });
         PushbackUIHook!.Original(a, b);
+    }
+    private delegate void NamePlateDrawDg(AddonNamePlate* a);
+    [Signature(Signatures.NamePlateDraw, DetourName = nameof(NamePlateDrawFn))]
+    private Hook<NamePlateDrawDg>? NamePlateDrawHook = null;
+
+    private void NamePlateDrawFn(AddonNamePlate* a)
+    {
+        exceptionHandler.FaultBarrier(() =>
+        {
+            vrLifecycle.UpdateNamePlates(a);
+        });
+        NamePlateDrawHook!.Original(a);
     }
 }
