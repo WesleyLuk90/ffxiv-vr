@@ -37,7 +37,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly VRLifecycle vrLifecycle;
     private readonly GameHooks gameHooks;
     private readonly VRSettings settings = new VRSettings();
-    private readonly GameState gameState = new GameState();
+    private readonly GameState gameState = new GameState(ClientState);
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");

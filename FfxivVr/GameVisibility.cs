@@ -7,6 +7,7 @@ namespace FfxivVR;
 unsafe internal class GameVisibility
 {
     private readonly Logger logger;
+    private GameState gameState;
 
     public enum ModelCullTypes : byte
     {
@@ -15,11 +16,14 @@ unsafe internal class GameVisibility
         OutsideCullCone = 67,
         Visible = 75
     }
-    public GameVisibility(Logger logger)
+
+    public GameVisibility(Logger logger, GameState gameState)
     {
         this.logger = logger;
+        this.gameState = gameState;
     }
-    public void ForceFirstPersonBodyVisible(bool isFirstPerson)
+
+    public void ForceFirstPersonBodyVisible()
     {
         Character* character = getCharacter();
         if (character == null)
@@ -64,6 +68,15 @@ unsafe internal class GameVisibility
 
     private Character* getCharacter()
     {
+        Character* character = gameState.GetGposeTarget();
+        if (gameState.IsGPosing() && character == null)
+        {
+            return null;
+        }
+        if (character != null)
+        {
+            return character;
+        }
         var player = ClientState.LocalPlayer;
         if (player == null)
         {
@@ -72,9 +85,9 @@ unsafe internal class GameVisibility
         return (Character*)player!.Address;
     }
 
-    public void HideHeadMesh(bool isFirstPerson)
+    public void HideHeadMesh()
     {
-        if (!isFirstPerson)
+        if (!gameState.IsFirstPerson())
         {
             return;
         }

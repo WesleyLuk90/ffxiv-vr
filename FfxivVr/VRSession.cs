@@ -42,7 +42,7 @@ public unsafe class VRSession : IDisposable
         this.settings = settings;
         this.gameState = gameState;
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, settings);
-        gameVisibility = new GameVisibility(logger);
+        gameVisibility = new GameVisibility(logger, gameState);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
         this.renderPipelineInjector = renderPipelineInjector;
     }
@@ -199,8 +199,9 @@ public unsafe class VRSession : IDisposable
     {
         if (State.SessionRunning)
         {
-            gameVisibility.ForceFirstPersonBodyVisible(gameState.IsFirstPerson());
-            gameVisibility.HideHeadMesh(gameState.IsFirstPerson());
+            gameVisibility.ForceFirstPersonBodyVisible();
+
+            gameVisibility.HideHeadMesh();
         }
     }
 
