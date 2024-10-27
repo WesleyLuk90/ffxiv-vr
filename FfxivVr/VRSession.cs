@@ -3,7 +3,6 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
-using System.Collections.Concurrent;
 
 namespace FfxivVR;
 
@@ -49,7 +48,7 @@ public unsafe class VRSession : IDisposable
 
     public void Initialize()
     {
-        xrExtensions = vrSystem.Initialize();
+        vrSystem.Initialize();
         vrShaders.Initialize();
         var size = swapchains.Initialize();
         resolutionManager.ChangeResolution(size);
@@ -67,132 +66,126 @@ public unsafe class VRSession : IDisposable
         vrSystem.Dispose();
     }
 
-
-    public abstract class RenderState
+    public class CameraPhase
     {
-        public class Ready() : RenderState;
-        public class SkipRender(FrameState frameState) : RenderState
+        public Eye Eye;
+        public View[] Views;
+
+        public CameraPhase(Eye eye, View[] views)
         {
-            public FrameState FrameState { get; } = frameState;
+            Eye = eye;
+            Views = views;
         }
 
-        public class RenderingLeft(FrameState frameState, View[] views) : RenderState
+        public View CurrentView()
         {
-            public FrameState FrameState { get; } = frameState;
-            public View[] Views { get; } = views;
+            return Views[Eye.ToIndex()];
         }
-
-        public class RenderingRight(FrameState frameState, View[] views, CompositionLayerProjectionView leftLayer) : RenderState
-        {
-            public FrameState FrameState { get; } = frameState;
-            public View[] Views { get; } = views;
-            public CompositionLayerProjectionView LeftLayer { get; } = leftLayer;
-        }
-
-        public class Skipped() : RenderState;
     }
 
-    private ConcurrentQueue<Eye> eyes = new ConcurrentQueue<Eye>();
-    private RenderState renderState = new RenderState.Skipped();
-    private XrExtensions xrExtensions;
+    private CameraPhase? cameraPhase;
 
-    public void PostPresent(ID3D11DeviceContext* context)
+    abstract class RenderPhase;
+    class LeftRenderPhase : RenderPhase
     {
-        eventHandler.PollEvents();
+        public View[] Views;
 
-        if (renderState is RenderState.Ready)
+        public LeftRenderPhase(View[] views)
         {
-            if (State.SessionRunning)
-            {
-                renderer.LocateView(xrExtensions.Now(vrSystem.Instance));
-                var maybeFrameState = renderer.StartFrame(context);
-                if (maybeFrameState is FrameState frameState)
-                {
-                    if (State.IsActive() && frameState.ShouldRender != 0)
-                    {
-                        var views = renderer.LocateView(frameState.PredictedDisplayTime);
-                        renderState = new RenderState.RenderingLeft(frameState, views);
-                        eyes.Enqueue(Eye.Left);
-                    }
-                    else
-                    {
-                        renderState = new RenderState.SkipRender(frameState);
-                    }
-                }
-                else
-                {
-                    renderState = new RenderState.Skipped();
-                }
-            }
-            else
-            {
-                renderState = new RenderState.Skipped();
-            }
+            Views = views;
         }
     }
+    class RightRenderPhase : RenderPhase
+    {
+        public FrameState FrameState;
+        public CompositionLayerProjectionView LeftLayer;
+        public View[] Views;
+
+        public RightRenderPhase(FrameState frameState, CompositionLayerProjectionView leftLayer, View[] views)
+        {
+            FrameState = frameState;
+            Views = views;
+            LeftLayer = leftLayer;
+        }
+
+    }
+
+    private RenderPhase? renderPhase;
 
     public void PrePresent(ID3D11DeviceContext* context, Texture* gameRenderTexture)
     {
-        switch (renderState)
+        eventHandler.PollEvents();
+        if (!State.SessionRunning)
         {
-            case RenderState.SkipRender skip:
-                renderer.SkipFrame(skip.FrameState);
-                renderState = new RenderState.Ready();
-                break;
-            case RenderState.RenderingLeft rendering:
-                var leftLayer = renderer.RenderEye(context, rendering.FrameState, gameRenderTexture, rendering.Views, Eye.Left);
-                renderState = new RenderState.RenderingRight(rendering.FrameState, rendering.Views, leftLayer);
-                eyes.Enqueue(Eye.Right);
-                break;
-            case RenderState.RenderingRight rendering:
-                var rightLayer = renderer.RenderEye(context, rendering.FrameState, gameRenderTexture, rendering.Views, Eye.Right);
-                renderer.EndFrame(context, rendering.FrameState, gameRenderTexture, rendering.Views, [rendering.LeftLayer, rightLayer]);
-                logger.Trace("End frame");
-                renderState = new RenderState.Ready();
-                break;
-            case RenderState.Skipped:
-                renderState = new RenderState.Ready();
-                break;
-            default:
-                logger.Error($"Unexpected frame state at end {renderState}");
-                break;
+            renderPhase = null;
+        }
+        if (renderPhase is LeftRenderPhase leftRenderPhase)
+        {
+            var maybeFrameState = renderer.StartFrame(context);
+            if (maybeFrameState is FrameState frameState && frameState.ShouldRender == 1)
+            {
+                var leftLayer = renderer.RenderEye(context, frameState, gameRenderTexture, leftRenderPhase.Views, Eye.Left);
+                renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views);
+            }
+            else
+            {
+                if (maybeFrameState is FrameState skipFrameState)
+                {
+                    renderer.SkipFrame(skipFrameState);
+                }
+                renderPhase = null;
+            }
+        }
+        else if (renderPhase is RightRenderPhase rightRenderPhase)
+        {
+            var rightLayer = renderer.RenderEye(context, rightRenderPhase.FrameState, gameRenderTexture, rightRenderPhase.Views, Eye.Right);
+            renderer.EndFrame(context, rightRenderPhase.FrameState, gameRenderTexture, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
+            logger.Trace("End frame");
+            renderPhase = null;
+        }
+        if (cameraPhase is CameraPhase phase)
+        {
+            switch (phase.Eye)
+            {
+                case Eye.Left:
+                    {
+                        phase.Eye = Eye.Right;
+                        renderPhase = new LeftRenderPhase(phase.Views);
+                        break;
+                    }
+                case Eye.Right:
+                    {
+                        cameraPhase = null;
+                        break;
+                    }
+                default: break;
+            }
         }
     }
 
     internal bool SecondRender(ID3D11DeviceContext* context)
     {
-        return renderState is RenderState.RenderingRight;
+        return cameraPhase?.Eye == Eye.Right;
     }
 
     internal void UpdateCamera(Camera* camera)
     {
-        View view;
-        // These seem to be swapped because the render step is out of sync with the update camera call
-        if (renderState is RenderState.RenderingLeft renderingLeft)
+        if (State.SessionRunning && cameraPhase is CameraPhase phase)
         {
-            logger.Trace("Set left camera matrix");
-            view = renderingLeft.Views[Eye.Right.ToIndex()];
-        }
-        else if (renderState is RenderState.RenderingRight renderingRight)
-        {
-            logger.Trace("Set right camera matrix");
-            view = renderingRight.Views[Eye.Left.ToIndex()];
-        }
-        else
-        {
-            return;
-        }
+            logger.Trace($"Set {phase.Eye} camera matrix");
+            View view = view = phase.CurrentView();
 
-        camera->RenderCamera->ProjectionMatrix = renderer.ComputeProjectionMatrix(view);
-        camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
+            camera->RenderCamera->ProjectionMatrix = renderer.ComputeProjectionMatrix(view);
+            camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
 
-        camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
-        camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
+            camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
+            camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
+        }
     }
 
     internal void RecenterCamera()
     {
-        vrSpace.RecenterCamera(xrExtensions.Now(vrSystem.Instance));
+        vrSpace.RecenterCamera(vrSystem.Now());
     }
 
     internal void UpdateVisibility()
@@ -207,33 +200,28 @@ public unsafe class VRSession : IDisposable
 
     internal void PreUIRender()
     {
-        if (State.SessionRunning)
+        if (State.SessionRunning && cameraPhase is CameraPhase phase)
         {
-            Eye eye;
-            if (eyes.TryDequeue(out eye))
-            {
-                // TODO fix pipeline so that these aren't swapped
-                if (eye == Eye.Right)
-                {
-                    logger.Trace("Queue left render");
-                    renderPipelineInjector.QueueRenderTargetCommand(true);
-                    renderPipelineInjector.QueueClearCommand();
-                }
-                else if (eye == Eye.Left)
-                {
-                    logger.Trace("Queue right render");
-                    renderPipelineInjector.QueueRenderTargetCommand(false);
-                    renderPipelineInjector.QueueClearCommand();
-                }
-            }
+            logger.Trace($"Queue {phase.Eye} render");
+            renderPipelineInjector.QueueRenderTargetCommand(phase.Eye);
+            renderPipelineInjector.QueueClearCommand();
         }
     }
 
-    internal void DoCopyRenderTexture(ID3D11DeviceContext* context, bool isLeft)
+    internal void DoCopyRenderTexture(ID3D11DeviceContext* context, Eye eye)
     {
         if (State.SessionRunning)
         {
-            renderer.CopyTexture(context, isLeft);
+            renderer.CopyTexture(context, eye);
+        }
+    }
+
+    internal void StartCycle()
+    {
+        if (State.SessionRunning)
+        {
+            var views = renderer.LocateView(vrSystem.Now());
+            cameraPhase = new CameraPhase(Eye.Left, views);
         }
     }
 }

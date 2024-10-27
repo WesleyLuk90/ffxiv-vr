@@ -28,9 +28,8 @@ unsafe public class Resources : IDisposable
     private ID3D11BlendState* blendState = null;
     private ID3D11RasterizerState* rasterizerState = null;
     private ID3D11SamplerState* samplerState = null;
-    public RenderTarget? uiRenderTarget;
-    public RenderTarget? leftEyeRenderTarget;
-    public RenderTarget? rightEyeRenderTarget;
+    public RenderTarget uiRenderTarget = null!;
+    public RenderTarget[] eyeRenderTargets = null!;
 
     public Resources(ID3D11Device* device, Logger logger)
     {
@@ -57,8 +56,7 @@ unsafe public class Resources : IDisposable
         CreateBlendState();
         CreateRasterizerState();
         uiRenderTarget = CreateRenderTarget(size);
-        leftEyeRenderTarget = CreateRenderTarget(size);
-        rightEyeRenderTarget = CreateRenderTarget(size);
+        eyeRenderTargets = [CreateRenderTarget(size), CreateRenderTarget(size)];
     }
 
     public class RenderTarget : IDisposable
@@ -350,8 +348,13 @@ unsafe public class Resources : IDisposable
         cameraBuffer?.Dispose();
         vertexBuffer?.Dispose();
         uiRenderTarget?.Dispose();
-        leftEyeRenderTarget?.Dispose();
-        rightEyeRenderTarget?.Dispose();
+        if (eyeRenderTargets != null)
+        {
+            foreach (var target in eyeRenderTargets)
+            {
+                target.Dispose();
+            }
+        }
     }
 
     internal void SetDepthStencilState(ID3D11DeviceContext* context)

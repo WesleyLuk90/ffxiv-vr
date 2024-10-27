@@ -82,15 +82,6 @@ public unsafe class VRLifecycle : IDisposable
         return (ID3D11DeviceContext*)Device.Instance()->D3D11DeviceContext;
     }
 
-
-    public void PostPresent()
-    {
-        lock (this)
-        {
-            vrSession?.PostPresent(GetContext());
-        }
-    }
-
     public bool SecondRender()
     {
         lock (this)
@@ -159,11 +150,19 @@ public unsafe class VRLifecycle : IDisposable
         }
     }
 
-    internal void DoCopyRenderTexture(bool isLeft)
+    internal void DoCopyRenderTexture(Eye eye)
     {
         lock (this)
         {
-            vrSession?.DoCopyRenderTexture(GetContext(), isLeft);
+            vrSession?.DoCopyRenderTexture(GetContext(), eye);
+        }
+    }
+
+    internal void StartCycle()
+    {
+        lock (this)
+        {
+            vrSession?.StartCycle();
         }
     }
 }

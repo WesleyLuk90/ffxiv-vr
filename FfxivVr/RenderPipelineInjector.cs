@@ -65,7 +65,7 @@ public unsafe class RenderPipelineInjector
 
     public static int LeftEyeRenderTargetNumber = 101;
     public static int RightEyeRenderTargetNumber = 102;
-    public void QueueRenderTargetCommand(bool isLeft)
+    public void QueueRenderTargetCommand(Eye eye)
     {
         UInt64 threadedOffset = GetThreadedOffset();
         if (threadedOffset != 0)
@@ -75,7 +75,7 @@ public unsafe class RenderPipelineInjector
             {
                 *queueData = new SetRenderTargetCommand();
                 queueData->SwitchType = 0;
-                queueData->numRenderTargets = isLeft ? LeftEyeRenderTargetNumber : RightEyeRenderTargetNumber;
+                queueData->numRenderTargets = eye == Eye.Left ? LeftEyeRenderTargetNumber : RightEyeRenderTargetNumber;
                 queueData->RenderTarget0 = null;
                 PushbackFn!(threadedOffset, (ulong)queueData);
             }

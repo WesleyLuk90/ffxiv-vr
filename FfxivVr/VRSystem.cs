@@ -26,7 +26,7 @@ public unsafe class VRSystem : IDisposable
 
     public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
 
-    public XrExtensions Initialize()
+    public void Initialize()
     {
         ApplicationInfo appInfo = new ApplicationInfo(applicationVersion: 1, engineVersion: 1, apiVersion: 1UL << 48);
         appInfo.SetApplicationName("FFXIV VR");
@@ -81,13 +81,12 @@ public unsafe class VRSystem : IDisposable
 
         PfnVoidFunction performanceToTimePointer = new PfnVoidFunction();
         xr.GetInstanceProcAddr(Instance, "xrConvertWin32PerformanceCounterToTimeKHR", &performanceToTimePointer).CheckResult("GetInstanceProcAddr");
-        var performanceToTime = (delegate* unmanaged[Cdecl]<Instance, long*, long*, Result>)performanceToTimePointer.Handle;
+        performanceToTime = (delegate* unmanaged[Cdecl]<Instance, long*, long*, Result>)performanceToTimePointer.Handle;
 
         var sessionInfo = new SessionCreateInfo(systemId: SystemId, createFlags: 0, next: &binding);
 
         xr.CreateSession(Instance, ref sessionInfo, ref Session).CheckResult("CreateSession");
 
-        return new XrExtensions(performanceToTime);
     }
 
     public void Dispose()
@@ -95,22 +94,14 @@ public unsafe class VRSystem : IDisposable
         xr.DestroySession(Session).LogResult("DestroySession", logger);
         xr.DestroyInstance(Instance).LogResult("DestroyInstance", logger);
     }
-}
 
-public unsafe class XrExtensions
-{
-    private readonly delegate* unmanaged[Cdecl]<Instance, long*, long*, Result> performanceToTime;
+    private delegate* unmanaged[Cdecl]<Instance, long*, long*, Result> performanceToTime = null;
 
-    public XrExtensions(delegate* unmanaged[Cdecl]<Instance, long*, long*, Result> performanceToTime)
-    {
-        this.performanceToTime = performanceToTime;
-    }
-
-    public long Now(Instance instance)
+    public long Now()
     {
         var timestamp = Stopwatch.GetTimestamp();
         long time;
-        performanceToTime(instance, &timestamp, &time).CheckResult("performanceToTime");
+        performanceToTime(Instance, &timestamp, &time).CheckResult("performanceToTime");
         return time;
 
     }

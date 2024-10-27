@@ -150,10 +150,11 @@ unsafe internal class Renderer
 
         shaders.SetShaders(context);
 
-        if (eye == Eye.Left && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
+        var currentEyeRenderTarget = resources.eyeRenderTargets[eye.ToIndex()];
+        if (eye == Eye.Left)
         {
             logger.Trace("Rendering left eye");
-            RenderViewport(context, leftRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
+            RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
 
             var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
             var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
@@ -161,10 +162,10 @@ unsafe internal class Renderer
             RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, modelViewProjection);
             context->CopyResource((ID3D11Resource*)resources.uiRenderTarget!.Texture, (ID3D11Resource*)uiText->D3D11Texture2D);
         }
-        else if (eye == Eye.Right && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
+        else if (eye == Eye.Right)
         {
             logger.Trace("Rendering right eye");
-            RenderViewport(context, rightRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
+            RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
 
             var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
             var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
@@ -204,7 +205,6 @@ unsafe internal class Renderer
         }
     }
 
-    public long LastTime = 0;
     internal FrameState? StartFrame(ID3D11DeviceContext* context)
     {
         var frameWaitInfo = new FrameWaitInfo(next: null);
@@ -218,7 +218,6 @@ unsafe internal class Renderer
             return null;
         }
         result.CheckResult("BeginFrame");
-        LastTime = frameState.PredictedDisplayTime;
         return frameState;
     }
 
@@ -251,19 +250,12 @@ unsafe internal class Renderer
         return invertedViewMatrix;
     }
 
-    internal void CopyTexture(ID3D11DeviceContext* context, bool isLeft)
+    internal void CopyTexture(ID3D11DeviceContext* context, Eye eye)
     {
         var renderTexture = FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
-        // FIXME left right is swapped
-        if (isLeft && resources.leftEyeRenderTarget is RenderTarget leftRenderTarget)
-        {
-            logger.Trace("Copy resource left render target");
-            context->CopyResource((ID3D11Resource*)leftRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
-        }
-        else if (!isLeft && resources.rightEyeRenderTarget is RenderTarget rightRenderTarget)
-        {
-            logger.Trace("Copy resource right render target");
-            context->CopyResource((ID3D11Resource*)rightRenderTarget.Texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
-        }
+
+        logger.Trace($"Copy resource {eye} render target");
+        var texture = resources.eyeRenderTargets[eye.ToIndex()].Texture;
+        context->CopyResource((ID3D11Resource*)texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
     }
 }
