@@ -1,5 +1,4 @@
 ﻿using Dalamud.Configuration;
-using Dalamud.Plugin;
 using System;
 
 namespace FfxivVR;
@@ -9,8 +8,8 @@ public class Configuration : IPluginConfiguration
 {
     public int Version { get; set; } = 0;
 
-    public bool IsConfigWindowMovable { get; set; } = true;
-    public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
+    public float WorldScale = 1.0f;
+    public float UIDistance = 1.0f;
 
     // the below exist just to make saving less cumbersome
     public void Save()

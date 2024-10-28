@@ -1,12 +1,10 @@
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
-using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
-using FfxivVR.Windows;
 using Silk.NET.Direct3D11;
 using System;
 using System.IO;
@@ -27,48 +25,22 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
 
     private const string CommandName = "/vr";
-
-    public Configuration Configuration { get; init; }
-
-    public readonly WindowSystem WindowSystem = new("SamplePlugin");
-    private ConfigWindow ConfigWindow { get; init; }
-    private MainWindow MainWindow { get; init; }
-
-
     private Logger logger { get; init; }
 
     private readonly ExceptionHandler exceptionHandler;
     private readonly VRLifecycle vrLifecycle;
     private readonly GameHooks gameHooks;
-    private readonly VRSettings settings = new VRSettings();
+    private readonly Configuration configuration;
     private readonly GameState gameState = new GameState(ClientState);
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-
-        // you might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
-
-        ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, goatImagePath);
-
-        WindowSystem.AddWindow(ConfigWindow);
-        WindowSystem.AddWindow(MainWindow);
+        configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "A useful message to display in /xlhelp"
         });
-
-        PluginInterface.UiBuilder.Draw += DrawUI;
-
-        // This adds a button to the plugin installer entry of this plugin which allows
-        // to toggle the display status of the configuration ui
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
-
-        // Adds another button that is doing the same but for the main ui of the plugin
-        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
 
         ChatGui.Print("Loaded VR Plugin");
 
@@ -77,7 +49,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         exceptionHandler = new ExceptionHandler(logger);
         var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
-        vrLifecycle = new VRLifecycle(logger, dllPath, settings, gameState, pipelineInjector, GameGui, ClientState, TargetManager);
+        vrLifecycle = new VRLifecycle(logger, dllPath, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector);
 
@@ -104,10 +76,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     {
         Framework.Update -= FrameworkUpdate;
         gameHooks.Dispose();
-        WindowSystem.RemoveAllWindows();
-
-        ConfigWindow.Dispose();
-        MainWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
 
@@ -132,11 +100,24 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     if (float.TryParse(scaleString, out scale) && scale < 10 && scale > 0.1)
                     {
                         logger.Info($"Setting world scale to {scale}");
-                        settings.Scale = scale;
+                        configuration.WorldScale = scale;
                     }
                     else
                     {
                         logger.Info($"Invalid scale {scaleString}, must be between 0.1 and 10");
+                    }
+                    break;
+                case "ui-distance":
+                    var distanceString = arguments.ElementAtOrDefault(1);
+                    float distance;
+                    if (float.TryParse(distanceString, out distance) && distance < 10 && distance > 0.1)
+                    {
+                        logger.Info($"Setting UI distance to {distance}");
+                        configuration.UIDistance = distance;
+                    }
+                    else
+                    {
+                        logger.Info($"Invalid distance {distanceString}, must be between 0.1 and 10");
                     }
                     break;
                 case "printtextures":
@@ -161,9 +142,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     }
                     //logger.Info($"depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight} format ${depthTexture.Value->TextureFormat}");
                     break;
-                case "nameplates":
-                    settings.UpdateNamePlates = !settings.UpdateNamePlates; ;
-                    break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");
                     break;
@@ -177,10 +155,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private unsafe void StopVR()
     {
         vrLifecycle.DisableVR();
+        configuration.Save();
+        logger.Debug($"Saving settings {configuration}");
     }
-
-    private void DrawUI() => WindowSystem.Draw();
-
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => MainWindow.Toggle();
 }

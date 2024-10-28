@@ -17,9 +17,9 @@ unsafe internal class Renderer
     private readonly Resources resources;
     private readonly VRShaders shaders;
     private readonly VRSpace vrSpace;
-    private readonly VRSettings settings;
+    private readonly Configuration configuration;
 
-    internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders, VRSpace vrSpace, VRSettings settings)
+    internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders, VRSpace vrSpace, Configuration configuration)
     {
         this.xr = xr;
         this.system = system;
@@ -29,7 +29,7 @@ unsafe internal class Renderer
         this.resources = resources;
         this.shaders = shaders;
         this.vrSpace = vrSpace;
-        this.settings = settings;
+        this.configuration = configuration;
     }
 
 
@@ -155,7 +155,7 @@ unsafe internal class Renderer
             logger.Trace("Rendering left eye");
             RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
 
-            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
+            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));
             var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
             var uiText = GameTextures.GetGameRenderTexture();
             resources.SetUIBlendState(context);
@@ -167,7 +167,7 @@ unsafe internal class Renderer
             logger.Trace("Rendering right eye");
             RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
 
-            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -1.0f));
+            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));
             var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
             resources.SetUIBlendState(context);
             RenderViewport(context, resources.uiRenderTarget!.ShaderResourceView, modelViewProjection);
@@ -242,7 +242,7 @@ unsafe internal class Renderer
         var forwardVector = lookAt - position;
         var yAngle = -MathF.PI / 2 - MathF.Atan2(forwardVector.Z, forwardVector.X);
 
-        var gameViewMatrix = Matrix4X4.CreateScale(1f / settings.Scale) * Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(position);
+        var gameViewMatrix = Matrix4X4.CreateScale(1f / configuration.WorldScale) * Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(position);
         var vrViewMatrix = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
 
         var viewMatrix = vrViewMatrix * gameViewMatrix;

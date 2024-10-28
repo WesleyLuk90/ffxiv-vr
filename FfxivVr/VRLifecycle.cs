@@ -10,16 +10,16 @@ public unsafe class VRLifecycle : IDisposable
 {
     private Logger logger;
     private readonly string openxrDllPath;
-    private readonly VRSettings settings;
+    private readonly Configuration configuration;
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
     private readonly IGameGui gameGui;
 
-    public VRLifecycle(Logger logger, String openxrDllPath, VRSettings settings, GameState gameState, RenderPipelineInjector renderPipelineInjector, IGameGui gameGui, IClientState clientState, ITargetManager targetManager)
+    public VRLifecycle(Logger logger, String openxrDllPath, Configuration configuration, GameState gameState, RenderPipelineInjector renderPipelineInjector, IGameGui gameGui, IClientState clientState, ITargetManager targetManager)
     {
         this.logger = logger;
         this.openxrDllPath = openxrDllPath;
-        this.settings = settings;
+        this.configuration = configuration;
         this.gameState = gameState;
         this.renderPipelineInjector = renderPipelineInjector;
         this.gameGui = gameGui;
@@ -40,7 +40,7 @@ public unsafe class VRLifecycle : IDisposable
             this.openxrDllPath,
             logger,
             device: GetDevice(),
-            settings: settings,
+            configuration: configuration,
             gameState: gameState,
             renderPipelineInjector: renderPipelineInjector,
             gameGui: gameGui,
