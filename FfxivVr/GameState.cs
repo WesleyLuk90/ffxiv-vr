@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -40,5 +41,10 @@ unsafe public class GameState
             return null;
         }
         return (Character*)target;
+    }
+
+    internal bool IsInCutscene()
+    {
+        return Conditions.IsWatchingCutscene;
     }
 }

@@ -42,6 +42,10 @@ unsafe internal class GameVisibility
 
     public void ForceFirstPersonBodyVisible()
     {
+        if (gameState.IsInCutscene())
+        {
+            return;
+        }
         UpdateVisbility(targetManager.Target, true);
         if (gameState.IsGPosing())
         {
@@ -70,20 +74,24 @@ unsafe internal class GameVisibility
                     character->OrnamentData.OrnamentObject->DrawObject->Flags = (byte)ModelCullTypes.Visible;
                 }
             }
-            var mainHand = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.MainHand);
-            if (mainHand.DrawObject != null)
+            var drawData = character->DrawData;
+            if (character->IsWeaponDrawn || !drawData.IsWeaponHidden)
             {
-                mainHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
-            }
-            var offHand = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.OffHand);
-            if (offHand.DrawObject != null)
-            {
-                offHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
-            }
-            var unknown = character->DrawData.Weapon(DrawDataContainer.WeaponSlot.Unk);
-            if (unknown.DrawObject != null)
-            {
-                unknown.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+                var mainHand = drawData.Weapon(DrawDataContainer.WeaponSlot.MainHand);
+                if (mainHand.DrawObject != null)
+                {
+                    mainHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+                }
+                var offHand = drawData.Weapon(DrawDataContainer.WeaponSlot.OffHand);
+                if (offHand.DrawObject != null)
+                {
+                    offHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+                }
+                var unknown = drawData.Weapon(DrawDataContainer.WeaponSlot.Unk);
+                if (unknown.DrawObject != null)
+                {
+                    unknown.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+                }
             }
         }
     }
@@ -127,6 +135,10 @@ unsafe internal class GameVisibility
 
     public void HideHeadMesh()
     {
+        if (gameState.IsInCutscene())
+        {
+            return;
+        }
         if (!gameState.IsFirstPerson())
         {
             return;
