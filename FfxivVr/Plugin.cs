@@ -4,8 +4,8 @@ using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
 using System;
 using System.IO;
@@ -121,8 +121,9 @@ public unsafe sealed class Plugin : IDalamudPlugin
                         logger.Info($"Invalid distance {distanceString}, must be between 0.1 and 10");
                     }
                     break;
-                case "debug-flags":
-                    logger.Info($"Flags {string.Join(" ", Conditions.Instance()->Flags.ToArray())}");
+                case "debug-cursor":
+                    var data = UIInputData.Instance();
+                    logger.Info($"Cursor {data->CursorXPosition} {data->CursorYPosition}");
                     break;
                 case "printtextures":
                     var renderTargetManager = RenderTargetManager.Instance();

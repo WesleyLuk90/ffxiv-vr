@@ -1,3 +1,4 @@
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
@@ -38,6 +39,9 @@ unsafe internal class Renderer
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection
         ));
+        resources.SetPixelShaderConstants(context, new PixelShaderConstants(
+            mode: 0,
+            color: new Vector4f(0, 0, 0, 1)));
         resources.SetSampler(context, shaderResourceView);
         resources.Draw(context);
     }
@@ -157,10 +161,15 @@ unsafe internal class Renderer
 
             var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));
             var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
-            var uiText = GameTextures.GetGameRenderTexture();
+            var gameRenderTexture = GameTextures.GetGameRenderTexture();
             resources.SetUIBlendState(context);
-            RenderViewport(context, (ID3D11ShaderResourceView*)uiText->D3D11ShaderResourceView, modelViewProjection);
-            context->CopyResource((ID3D11Resource*)resources.uiRenderTarget!.Texture, (ID3D11Resource*)uiText->D3D11Texture2D);
+
+            context->CopyResource((ID3D11Resource*)resources.uiRenderTarget.Texture, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D);
+
+            RenderCursor(context, currentEyeRenderTarget, new Vector2D<float>(width, height));
+
+            context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
+            RenderViewport(context, resources.uiRenderTarget.ShaderResourceView, modelViewProjection);
         }
         else if (eye == Eye.Right)
         {
@@ -177,6 +186,27 @@ unsafe internal class Renderer
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
         xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
         return compositionLayerProjectionView;
+    }
+
+    private void RenderCursor(ID3D11DeviceContext* context, RenderTarget currentEyeRenderTarget, Vector2D<float> windowSize)
+    {
+        var cursorSize = 10f;
+        var inputData = UIInputData.Instance();
+        var position = new Vector3D<float>(
+            inputData->CursorXPosition / windowSize.X * 2 - 1,
+            (1 - inputData->CursorYPosition / windowSize.Y) * 2 - 1, 0
+        );
+        var target = resources.uiRenderTarget.RenderTargetView;
+        context->OMSetRenderTargets(1, ref target, null);
+        var scale = Matrix4X4.CreateScale(new Vector3D<float>(cursorSize / windowSize.X, cursorSize / windowSize.Y, 0f)) *
+            Matrix4X4.CreateTranslation(position);
+        resources.UpdateCamera(context, new CameraConstants(
+            modelViewProjection: scale
+        ));
+        resources.SetPixelShaderConstants(context, new PixelShaderConstants(
+            mode: 1,
+            color: new Vector4f(1, 0, 0, 1f)));
+        resources.Draw(context);
     }
 
     internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, View[] views, CompositionLayerProjectionView[] compositionLayerProjectionViews)

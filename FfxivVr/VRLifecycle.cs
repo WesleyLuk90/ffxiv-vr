@@ -99,7 +99,6 @@ public unsafe class VRLifecycle : IDisposable
         }
     }
 
-    private int disposeTimer = -1;
     private IClientState clientState;
     private ITargetManager targetManager;
 

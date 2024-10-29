@@ -18,7 +18,15 @@ unsafe public class Resources : IDisposable
         }
     }
 
+    public struct PixelShaderConstants(int mode, Vector4f color)
+    {
+        int mode = mode;
+        int a, b, c;
+        Vector4f color = color;
+    }
+
     private D3DBuffer? cameraBuffer;
+    private D3DBuffer? pixelShaderConstantsBuffer;
     private Vertex[]? vertices;
     private D3DBuffer? vertexBuffer;
     private readonly ID3D11Device* device;
@@ -146,6 +154,7 @@ unsafe public class Resources : IDisposable
     private void CreateBuffers()
     {
         this.cameraBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
+        this.pixelShaderConstantsBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(PixelShaderConstants)]), BindFlag.ConstantBuffer);
         var tr = new Vertex(new Vector3f(1, 1, 0), new Vector2f(1, 0));
         var tl = new Vertex(new Vector3f(-1, 1, 0), new Vector2f(0, 0));
         var bl = new Vertex(new Vector3f(-1, -1, 0), new Vector2f(0, 1));
@@ -340,6 +349,16 @@ unsafe public class Resources : IDisposable
         context->VSSetConstantBuffers(0, 1, ref cameraBuffer!.Handle);
 
         context->RSSetState(rasterizerState);
+    }
+
+    public void SetPixelShaderConstants(ID3D11DeviceContext* context, PixelShaderConstants pixelShaderConstants)
+    {
+        var cameraSpan = new Span<PixelShaderConstants>(ref pixelShaderConstants);
+        SetBufferData(context, MemoryMarshal.AsBytes(cameraSpan), this.pixelShaderConstantsBuffer!);
+
+        context->PSSetConstantBuffers(0, 1, ref pixelShaderConstantsBuffer!.Handle);
+
+        //context->RSSetState(rasterizerState);
     }
 
     public void SetSampler(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView)
