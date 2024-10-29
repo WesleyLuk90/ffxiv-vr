@@ -64,7 +64,7 @@ public unsafe class VRLifecycle : IDisposable
         if (vrSession is VRSession session)
         {
             session.State.SessionRunning = false;
-            disposeTimer = 100;
+            session.State.Exiting = false;
         }
     }
 
@@ -107,13 +107,9 @@ public unsafe class VRLifecycle : IDisposable
     {
         lock (this)
         {
-            if (disposeTimer > 0)
+            if (vrSession?.State?.Exiting == true)
             {
-                disposeTimer--;
-                if (disposeTimer == 0)
-                {
-                    RealDisableVR();
-                }
+                RealDisableVR();
             }
             vrSession?.PrePresent(GetContext());
         }
