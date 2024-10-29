@@ -2,6 +2,7 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
+using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 
@@ -178,7 +179,13 @@ public unsafe class VRSession : IDisposable
             camera->RenderCamera->ProjectionMatrix = renderer.ComputeProjectionMatrix(view);
             camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
 
-            camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
+            Vector3D<float>? headPos = null;
+            if (gameState.IsFirstPerson())
+            {
+                headPos = gameVisibility.GetHeadPosition();
+            }
+
+            camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->Position.ToVector3D(), camera->LookAtVector.ToVector3D(), headPos).ToMatrix4x4();
             camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
 
             camera->RenderCamera->FoV = 2.54f;

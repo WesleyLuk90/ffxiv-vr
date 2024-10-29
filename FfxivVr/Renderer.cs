@@ -266,12 +266,12 @@ unsafe internal class Renderer
         proj.M43 = near;
         return proj.ToMatrix4x4();
     }
-    internal Matrix4X4<float> ComputeViewMatrix(View view, Vector3D<float> position, Vector3D<float> lookAt)
+    internal Matrix4X4<float> ComputeViewMatrix(View view, Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition)
     {
         var forwardVector = lookAt - position;
         var yAngle = -MathF.PI / 2 - MathF.Atan2(forwardVector.Z, forwardVector.X);
 
-        var gameViewMatrix = Matrix4X4.CreateScale(1f / configuration.WorldScale) * Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(position);
+        var gameViewMatrix = Matrix4X4.CreateScale(1f / configuration.WorldScale) * Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(headPosition ?? position);
         var vrViewMatrix = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
 
         var viewMatrix = vrViewMatrix * gameViewMatrix;

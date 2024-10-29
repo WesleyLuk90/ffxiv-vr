@@ -4,8 +4,8 @@ using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
 using System;
 using System.IO;
@@ -121,9 +121,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
                         logger.Info($"Invalid distance {distanceString}, must be between 0.1 and 10");
                     }
                     break;
-                case "debug-cursor":
-                    var data = UIInputData.Instance();
-                    logger.Info($"Cursor {data->CursorXPosition} {data->CursorYPosition}");
+                case "debug-neck":
+                    var manager = CameraManager.Instance();
+                    var renderCamera = manager->GetActiveCamera()->SceneCamera.RenderCamera;
+                    //logger.Info($"Neck {new GameVisibility(logger, gameState, GameGui, TargetManager, ClientState).GetHeadPosition()}");
+                    logger.Info($"Neck {manager->GetActiveCamera()->SceneCamera.Position.ToVector3D()} {manager->GetActiveCamera()->SceneCamera.LookAtVector.ToVector3D()}");
                     break;
                 case "printtextures":
                     var renderTargetManager = RenderTargetManager.Instance();

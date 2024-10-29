@@ -1,4 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
+using Silk.NET.Maths;
 using System.Collections.Generic;
 
 namespace FfxivVR;
@@ -6,6 +7,28 @@ unsafe internal class SkeletonModifier(Logger logger)
 {
     private readonly Logger logger = logger;
 
+    public Vector3D<float>? GetHeadPosition(Skeleton* skeleton)
+    {
+        var neckBone = GetNeckBone(skeleton);
+        if (neckBone != null)
+        {
+            for (int i = 0; i < skeleton->PartialSkeletonCount; i++)
+            {
+                var partial = skeleton->PartialSkeletons[i].GetHavokPose(0);
+                if (partial == null)
+                {
+                    continue;
+                }
+                if (neckBone.BoneIndex >= partial->ModelPose.Length)
+                {
+                    continue;
+                }
+                var translation = partial->ModelPose[(int)neckBone.BoneIndex].Translation;
+                return new Vector3D<float>(translation.X, translation.Y, translation.Z);
+            }
+        }
+        return null;
+    }
     internal void HideHead(Skeleton* skeleton)
     {
         if (skeleton == null)

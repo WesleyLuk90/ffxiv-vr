@@ -5,6 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Silk.NET.Maths;
 
 namespace FfxivVR;
 unsafe internal class GameVisibility
@@ -151,6 +152,31 @@ unsafe internal class GameVisibility
         }
         var skeleton = characterBase->Skeleton;
         skeletonModifier.HideHead(skeleton);
+    }
+
+    public Vector3D<float>? GetHeadPosition()
+    {
+        Character* character = getCharacterOrGpose();
+        if (character == null)
+        {
+            return null;
+        }
+        var characterBase = (CharacterBase*)character->GameObject.DrawObject;
+        if (characterBase == null)
+        {
+            return null;
+        }
+        var skeleton = characterBase->Skeleton;
+        var pos = characterBase->Position;
+        var rot = characterBase->Rotation;
+        var rotQuat = new Quaternion<float>(rot.X, rot.Y, rot.Z, rot.W);
+        var headPosition = skeletonModifier.GetHeadPosition(skeleton);
+        if (headPosition == null)
+        {
+            return null;
+        }
+        Vector3D<float> head2 = (Vector3D<float>)headPosition;
+        return Vector3D.Transform(head2, Matrix4X4.CreateFromQuaternion(rotQuat)) + new Vector3D<float>(pos.X, pos.Y, pos.Z);
     }
 
     internal void UpdateNamePlates(AddonNamePlate* namePlate)
