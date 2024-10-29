@@ -180,6 +180,8 @@ public unsafe class VRSession : IDisposable
 
             camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->RenderCamera->Origin.ToVector3D(), camera->LookAtVector.ToVector3D()).ToMatrix4x4();
             camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
+
+            camera->RenderCamera->FoV = 2.54f;
         }
     }
 

@@ -18,11 +18,11 @@ unsafe public class Resources : IDisposable
         }
     }
 
+    [StructLayout(LayoutKind.Explicit)]
     public struct PixelShaderConstants(int mode, Vector4f color)
     {
-        int mode = mode;
-        int a, b, c;
-        Vector4f color = color;
+        [FieldOffset(0)] int mode = mode;
+        [FieldOffset(16)] Vector4f color = color;
     }
 
     private D3DBuffer? cameraBuffer;
