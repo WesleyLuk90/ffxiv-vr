@@ -45,6 +45,8 @@ unsafe public class GameState
 
     internal bool IsInCutscene()
     {
-        return Conditions.IsWatchingCutscene;
+        return Conditions.IsWatchingCutscene ||
+            Conditions.IsOccupied ||
+            Conditions.IsOccupiedInCutSceneEvent;
     }
 }
