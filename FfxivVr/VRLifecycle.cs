@@ -64,7 +64,7 @@ public unsafe class VRLifecycle : IDisposable
         if (vrSession is VRSession session)
         {
             session.State.SessionRunning = false;
-            session.State.Exiting = false;
+            session.State.Exiting = true;
         }
     }
 

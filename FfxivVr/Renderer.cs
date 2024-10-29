@@ -214,11 +214,10 @@ unsafe internal class Renderer
 
         var beginFrameInfo = new FrameBeginInfo(next: null);
         var result = xr.BeginFrame(system.Session, ref beginFrameInfo);
-        if (result == Result.FrameDiscarded)
+        if (result != Result.FrameDiscarded)
         {
-            return null;
+            result.CheckResult("BeginFrame");
         }
-        result.CheckResult("BeginFrame");
         return frameState;
     }
 

@@ -55,6 +55,8 @@ public unsafe class VRSession : IDisposable
 
     public void Dispose()
     {
+        cameraPhase = null;
+        renderPhase = null;
         resolutionManager.RevertResolution();
         vrSpace.Dispose();
         vrShaders.Dispose();
@@ -115,6 +117,7 @@ public unsafe class VRSession : IDisposable
         if (!State.SessionRunning)
         {
             renderPhase = null;
+            cameraPhase = null;
         }
         if (renderPhase is LeftRenderPhase leftRenderPhase)
         {
