@@ -6,7 +6,8 @@ struct VertexShaderOutput
 
 cbuffer PixelShaderConstants
 {
-    int mode,a,b,c;
+    int mode;
+    float gamma, b, c;
     float4 constantColor;
 };
 
@@ -20,7 +21,7 @@ float4 main(VertexShaderOutput vertexShaderOutput) : SV_TARGET
     {
         color = tex.Sample(tex_sampler, vertexShaderOutput.texcoord);
     }
-    else if(mode == 1) // Draw circle
+    else if (mode == 1) // Draw circle
     {
         float d2 = length(vertexShaderOutput.texcoord - float2(0.5, 0.5));
         if (d2 < 0.5)
@@ -38,5 +39,5 @@ float4 main(VertexShaderOutput vertexShaderOutput) : SV_TARGET
     }
         
     // Apply gamma, not sure why but this does fix it
-    return float4(pow(abs(color.r), 2.2), pow(abs(color.g), 2.2), pow(abs(color.b), 2.2), color.a);
+    return float4(pow(abs(color.r), gamma), pow(abs(color.g), gamma), pow(abs(color.b), gamma), color.a);
 }

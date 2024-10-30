@@ -41,6 +41,7 @@ unsafe internal class Renderer
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: 0,
+            gamma: 2.2f,
             color: new Vector4f(0, 0, 0, 1)));
         resources.SetSampler(context, shaderResourceView);
         resources.Draw(context);
@@ -162,6 +163,7 @@ unsafe internal class Renderer
             var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));
             var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
             var gameRenderTexture = GameTextures.GetGameRenderTexture();
+
             resources.SetUIBlendState(context);
 
             context->CopyResource((ID3D11Resource*)resources.uiRenderTarget.Texture, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D);
@@ -205,6 +207,7 @@ unsafe internal class Renderer
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: 1,
+            gamma: 1f,
             color: new Vector4f(1, 0, 0, 1f)));
         resources.Draw(context);
     }

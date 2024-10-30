@@ -41,7 +41,7 @@ public unsafe class VRSession : IDisposable
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
         this.renderPipelineInjector = renderPipelineInjector;
         this.configuration = configuration;
-        resolutionManager = new ResolutionManager();
+        resolutionManager = new ResolutionManager(logger);
     }
 
     public void Initialize()

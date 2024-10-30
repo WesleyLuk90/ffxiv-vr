@@ -9,18 +9,14 @@ unsafe internal class SkeletonModifier(Logger logger)
 
     private const string Neck = "j_kubi";
     private const string Head = "j_kao";
+
+    private Vector3D<float>? originalHeadPosition = null;
     public Vector3D<float>? GetHeadPosition(Skeleton* skeleton)
     {
-        var neckBone = GetBoneByName(Neck, skeleton);
-        if (neckBone != null)
-        {
-            var neckPosition = GetPosePosition(skeleton, neckBone);
-            return neckPosition;
-        }
-        return null;
+        return ComputeHeadPosition(skeleton);
     }
 
-    private static Vector3D<float>? GetPosePosition(Skeleton* skeleton, Bone neckBone)
+    private static Vector3D<float>? GetPosePosition(Skeleton* skeleton, Bone bone)
     {
         for (int i = 0; i < skeleton->PartialSkeletonCount; i++)
         {
@@ -29,11 +25,11 @@ unsafe internal class SkeletonModifier(Logger logger)
             {
                 continue;
             }
-            if (neckBone.BoneIndex >= partial->ModelPose.Length)
+            if (bone.BoneIndex >= partial->ModelPose.Length)
             {
                 continue;
             }
-            var translation = partial->ModelPose[(int)neckBone.BoneIndex].Translation;
+            var translation = partial->ModelPose[(int)bone.BoneIndex].Translation;
             return new Vector3D<float>(translation.X, translation.Y, translation.Z);
         }
         return null;
@@ -45,8 +41,9 @@ unsafe internal class SkeletonModifier(Logger logger)
         {
             return;
         }
+        //originalHeadPosition = ComputeHeadPosition(skeleton);
+        Bone? neckBone = GetBoneByName(Neck, skeleton);
 
-        var neckBone = GetBoneByName(Neck, skeleton);
         if (neckBone != null)
         {
             for (int i = 0; i < skeleton->PartialSkeletonCount; i++)
@@ -85,10 +82,20 @@ unsafe internal class SkeletonModifier(Logger logger)
                 });
             }
         }
-        else
+    }
+
+    private Vector3D<float>? ComputeHeadPosition(Skeleton* skeleton)
+    {
+        var neckBone = GetBoneByName(Neck, skeleton);
+        if (neckBone != null)
         {
-            logger.Debug("Neck bone not found");
+            var neckPosition = GetPosePosition(skeleton, neckBone);
+            if (neckPosition != null)
+            {
+                return neckPosition;
+            }
         }
+        return null;
     }
 
     private Dictionary<string, Bone>? bonesByName;

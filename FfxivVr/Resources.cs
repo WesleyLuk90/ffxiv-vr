@@ -19,9 +19,10 @@ unsafe public class Resources : IDisposable
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    public struct PixelShaderConstants(int mode, Vector4f color)
+    public struct PixelShaderConstants(int mode, float gamma, Vector4f color)
     {
         [FieldOffset(0)] int mode = mode;
+        [FieldOffset(4)] float gamma = gamma;
         [FieldOffset(16)] Vector4f color = color;
     }
 

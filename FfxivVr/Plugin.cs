@@ -4,7 +4,6 @@ using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using Silk.NET.Direct3D11;
 using System;
@@ -125,10 +124,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     configuration.FollowCharacter = !configuration.FollowCharacter;
                     break;
                 case "debug-neck":
-                    var manager = CameraManager.Instance();
-                    var renderCamera = manager->GetActiveCamera()->SceneCamera.RenderCamera;
-                    //logger.Info($"Neck {new GameVisibility(logger, gameState, GameGui, TargetManager, ClientState).GetHeadPosition()}");
-                    logger.Info($"Neck {manager->GetActiveCamera()->SceneCamera.Position.ToVector3D()} {manager->GetActiveCamera()->SceneCamera.LookAtVector.ToVector3D()}");
+
                     break;
                 case "printtextures":
                     var renderTargetManager = RenderTargetManager.Instance();
