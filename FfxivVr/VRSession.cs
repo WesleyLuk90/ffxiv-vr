@@ -11,7 +11,6 @@ namespace FfxivVR;
 public unsafe class VRSession : IDisposable
 {
 
-    private readonly XR xr;
     private readonly VRSystem vrSystem;
     private readonly Logger logger;
     public readonly VRState State;
@@ -24,11 +23,11 @@ public unsafe class VRSession : IDisposable
     private readonly VRSwapchains swapchains;
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
-    private readonly IGameGui gameGui;
-    private readonly ResolutionManager resolutionManager = new ResolutionManager();
+    private readonly Configuration configuration;
+    private readonly ResolutionManager resolutionManager;
     public VRSession(string openXRLoaderDllPath, Logger logger, ID3D11Device* device, Configuration configuration, GameState gameState, RenderPipelineInjector renderPipelineInjector, IGameGui gameGui, IClientState clientState, Dalamud.Game.ClientState.Objects.ITargetManager targetManager)
     {
-        this.xr = new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath }));
+        var xr = new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath }));
         vrSystem = new VRSystem(xr, device, logger);
         this.logger = logger;
         State = new VRState();
@@ -41,7 +40,8 @@ public unsafe class VRSession : IDisposable
         gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
         this.renderPipelineInjector = renderPipelineInjector;
-        this.gameGui = gameGui;
+        this.configuration = configuration;
+        resolutionManager = new ResolutionManager();
     }
 
     public void Initialize()
@@ -180,7 +180,7 @@ public unsafe class VRSession : IDisposable
             camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
 
             Vector3D<float>? headPos = null;
-            if (gameState.IsFirstPerson())
+            if (gameState.IsFirstPerson() && configuration.FollowCharacter)
             {
                 headPos = gameVisibility.GetHeadPosition();
             }

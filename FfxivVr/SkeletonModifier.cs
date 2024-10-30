@@ -7,28 +7,38 @@ unsafe internal class SkeletonModifier(Logger logger)
 {
     private readonly Logger logger = logger;
 
+    private const string Neck = "j_kubi";
+    private const string Head = "j_kao";
     public Vector3D<float>? GetHeadPosition(Skeleton* skeleton)
     {
-        var neckBone = GetNeckBone(skeleton);
+        var neckBone = GetBoneByName(Neck, skeleton);
         if (neckBone != null)
         {
-            for (int i = 0; i < skeleton->PartialSkeletonCount; i++)
-            {
-                var partial = skeleton->PartialSkeletons[i].GetHavokPose(0);
-                if (partial == null)
-                {
-                    continue;
-                }
-                if (neckBone.BoneIndex >= partial->ModelPose.Length)
-                {
-                    continue;
-                }
-                var translation = partial->ModelPose[(int)neckBone.BoneIndex].Translation;
-                return new Vector3D<float>(translation.X, translation.Y, translation.Z);
-            }
+            var neckPosition = GetPosePosition(skeleton, neckBone);
+            return neckPosition;
         }
         return null;
     }
+
+    private static Vector3D<float>? GetPosePosition(Skeleton* skeleton, Bone neckBone)
+    {
+        for (int i = 0; i < skeleton->PartialSkeletonCount; i++)
+        {
+            var partial = skeleton->PartialSkeletons[i].GetHavokPose(0);
+            if (partial == null)
+            {
+                continue;
+            }
+            if (neckBone.BoneIndex >= partial->ModelPose.Length)
+            {
+                continue;
+            }
+            var translation = partial->ModelPose[(int)neckBone.BoneIndex].Translation;
+            return new Vector3D<float>(translation.X, translation.Y, translation.Z);
+        }
+        return null;
+    }
+
     internal void HideHead(Skeleton* skeleton)
     {
         if (skeleton == null)
@@ -36,7 +46,7 @@ unsafe internal class SkeletonModifier(Logger logger)
             return;
         }
 
-        var neckBone = GetNeckBone(skeleton);
+        var neckBone = GetBoneByName(Neck, skeleton);
         if (neckBone != null)
         {
             for (int i = 0; i < skeleton->PartialSkeletonCount; i++)
@@ -81,44 +91,45 @@ unsafe internal class SkeletonModifier(Logger logger)
         }
     }
 
-    private Bone? neck = null;
-    private Bone? GetNeckBone(Skeleton* skeleton)
+    private Dictionary<string, Bone>? bonesByName;
+    private Bone? GetBoneByName(string name, Skeleton* skeleton)
     {
-        if (neck != null)
+        if (bonesByName == null && skeleton->SkeletonResourceHandles != null && skeleton->SkeletonResourceHandles[0] != null)
         {
-            return neck;
-        }
-        if (skeleton->SkeletonResourceHandles != null && skeleton->SkeletonResourceHandles[0] != null)
-        {
-            int? index = null;
-            var children = new List<int>();
+            List<Bone> boneList = new List<Bone>();
             var havokSkeleton = skeleton->SkeletonResourceHandles[0]->HavokSkeleton;
             for (int currentBone = 0; currentBone < havokSkeleton->Bones.Length; currentBone++)
             {
                 var bone = havokSkeleton->Bones[currentBone];
                 var parent = havokSkeleton->ParentIndices[currentBone];
-                var name = bone!.Name!.String;
-                if (name == "j_kubi")
+                var currentBoneName = bone!.Name!.String!;
+                boneList.Add(new Bone(currentBoneName, currentBone, new List<int>()));
+
+                if (currentBone != 0 && parent >= 0)
                 {
-                    index = currentBone;
-                }
-                if (parent == index)
-                {
-                    children.Add(currentBone);
+                    if (parent >= boneList.Count)
+                    {
+                        logger.Error("Invalid bone");
+                    }
+                    else
+                    {
+                        boneList[parent].Children.Add(currentBone);
+                    }
                 }
             }
-            if (index is int boneIndex)
+            bonesByName = new Dictionary<string, Bone>();
+            foreach (var bone in boneList)
             {
-                neck = new Bone(boneIndex, children);
+                bonesByName[bone.Name] = bone;
             }
         }
-        return neck;
+        return bonesByName?.GetValueOrDefault(name);
     }
 
-    class Bone(int boneIndex, List<int> children)
+    class Bone(string name, int boneIndex, List<int> children)
     {
         public List<int> Children = children;
-
+        public string Name { get; } = name;
         public int BoneIndex { get; } = boneIndex;
     }
 }
