@@ -1,5 +1,6 @@
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -123,8 +124,29 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 case "follow-character":
                     configuration.FollowCharacter = !configuration.FollowCharacter;
                     break;
-                case "debug-neck":
-
+                case "print-height":
+                    var hight = arguments.ElementAtOrDefault(1);
+                    float height;
+                    if (!float.TryParse(hight, out height))
+                    {
+                        break;
+                    }
+                    IGameObject? player = ClientState.LocalPlayer;
+                    if (player == null)
+                    {
+                        return;
+                    }
+                    var gameObject = (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)player.Address;
+                    if (gameObject == null)
+                    {
+                        return;
+                    }
+                    var drawObject = (ActorModel*)gameObject->GetDrawObject();
+                    if (drawObject == null)
+                    {
+                        return;
+                    }
+                    logger.Info($"Height {drawObject->Height}");
                     break;
                 case "printtextures":
                     var renderTargetManager = RenderTargetManager.Instance();

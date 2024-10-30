@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Maths;
+using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 unsafe internal class GameVisibility
@@ -166,6 +167,7 @@ unsafe internal class GameVisibility
         {
             return null;
         }
+        var actorModel = (ActorModel*)characterBase;
         var skeleton = characterBase->Skeleton;
         var pos = characterBase->Position;
         var rot = characterBase->Rotation;
@@ -176,11 +178,17 @@ unsafe internal class GameVisibility
             return null;
         }
         Vector3D<float> head2 = (Vector3D<float>)headPosition;
-        return Vector3D.Transform(head2, Matrix4X4.CreateFromQuaternion(rotQuat)) + new Vector3D<float>(pos.X, pos.Y, pos.Z);
+        return Vector3D.Transform(head2, Matrix4X4.CreateScale<float>(actorModel->Height) * Matrix4X4.CreateFromQuaternion(rotQuat)) + new Vector3D<float>(pos.X, pos.Y, pos.Z);
     }
 
     internal void UpdateNamePlates(AddonNamePlate* namePlate)
     {
         nameplateModifier.UpdateNamePlates(namePlate);
     }
+}
+
+[StructLayout(LayoutKind.Explicit)]
+public struct ActorModel
+{
+    [FieldOffset(0x2A4)] public float Height;
 }
