@@ -43,7 +43,7 @@ jobs:
 
     - name: Build
       run: |
-        dotnet build --no-restore --configuration Release --nologo
+        dotnet build --configuration Release --nologo
 
     - name: Archive
       run: Compress-Archive -Path FfxivVr\bin\x64\Release/* -DestinationPath FfxivVR.zip
