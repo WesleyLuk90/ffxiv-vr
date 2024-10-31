@@ -10,6 +10,7 @@ public class Configuration : IPluginConfiguration
 
     public float WorldScale = 1.0f;
     public float UIDistance = 1.0f;
+    public float Gamma = 2.2f;
     public bool FollowCharacter = false;
 
     public void Save()

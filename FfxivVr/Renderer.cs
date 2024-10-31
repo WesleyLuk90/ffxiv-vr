@@ -43,7 +43,7 @@ unsafe internal class Renderer
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: invertAlpha ? 2 : 0,
-            gamma: 2.2f,
+            gamma: configuration.Gamma,
             color: new Vector4f(0, 0, 0, 1)));
         resources.SetSampler(context, shaderResourceView);
         resources.Draw(context);

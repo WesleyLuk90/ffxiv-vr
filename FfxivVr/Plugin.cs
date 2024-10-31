@@ -113,8 +113,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "scale":
                     var scaleString = arguments.ElementAtOrDefault(1);
-                    float scale;
-                    if (float.TryParse(scaleString, out scale) && scale <= 10 && scale >= 0.1)
+                    if (float.TryParse(scaleString, out float scale) && scale <= 10 && scale >= 0.1)
                     {
                         logger.Info($"Setting world scale to {scale}");
                         configuration.WorldScale = scale;
@@ -126,8 +125,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "ui-distance":
                     var distanceString = arguments.ElementAtOrDefault(1);
-                    float distance;
-                    if (float.TryParse(distanceString, out distance) && distance <= 10 && distance >= 0.1)
+                    if (float.TryParse(distanceString, out float distance) && distance <= 10 && distance >= 0.1)
                     {
                         logger.Info($"Setting UI distance to {distance}");
                         configuration.UIDistance = distance;
@@ -135,6 +133,18 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     else
                     {
                         logger.Info($"Invalid distance {distanceString}, must be between 0.1 and 10");
+                    }
+                    break;
+                case "gamma":
+                    var gammaString = arguments.ElementAtOrDefault(1);
+                    if (float.TryParse(gammaString, out float gamma) && gamma <= 10 && gamma >= 0.1)
+                    {
+                        logger.Info($"Setting Gamma to {gamma}");
+                        configuration.Gamma = gamma;
+                    }
+                    else
+                    {
+                        logger.Info($"Invalid Gamma {gamma}, must be between 0.1 and 10");
                     }
                     break;
                 case "follow-character":

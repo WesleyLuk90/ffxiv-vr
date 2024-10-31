@@ -9,8 +9,6 @@ namespace FfxivVR;
 unsafe internal class VRSwapchains : IDisposable
 {
     private static List<Format> ColorFormats = new List<Format>() {
-        Format.FormatR8G8B8A8Unorm,
-        Format.FormatB8G8R8A8Unorm,
         Format.FormatR8G8B8A8UnormSrgb,
         Format.FormatB8G8R8A8UnormSrgb,
     };

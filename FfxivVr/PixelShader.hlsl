@@ -42,7 +42,7 @@ float4 main(VertexShaderOutput vertexShaderOutput) : SV_TARGET
     {
         color = float4(1, 0, 0, 1);
     }
-        
+    
     // Apply gamma, not sure why but this does fix it
     return float4(pow(abs(color.r), gamma), pow(abs(color.g), gamma), pow(abs(color.b), gamma), color.a);
 }
