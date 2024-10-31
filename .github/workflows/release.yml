@@ -1,8 +1,9 @@
-name: .NET Core Desktop
+name: Release
 
 on:
   push:
-    tags:
+    tags:        
+      - '*'
 
 jobs:
 
