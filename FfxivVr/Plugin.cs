@@ -57,6 +57,22 @@ public unsafe sealed class Plugin : IDalamudPlugin
         GameHookService.InitializeFromAttributes(gameHooks);
         gameHooks.Initialize();
         Framework.Update += FrameworkUpdate;
+
+        PluginInterface.UiBuilder.Draw += DrawUI;
+        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
+        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+    }
+
+    private void ToggleMainUI()
+    {
+    }
+
+    private void ToggleConfigUI()
+    {
+    }
+
+    private void DrawUI()
+    {
     }
 
     private bool? isFirstPerson = null;

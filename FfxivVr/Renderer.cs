@@ -19,8 +19,9 @@ unsafe internal class Renderer
     private readonly VRShaders shaders;
     private readonly VRSpace vrSpace;
     private readonly Configuration configuration;
+    private readonly DalamudRenderer dalamudRenderer;
 
-    internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders, VRSpace vrSpace, Configuration configuration)
+    internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders, VRSpace vrSpace, Configuration configuration, DalamudRenderer dalamudRenderer)
     {
         this.xr = xr;
         this.system = system;
@@ -31,16 +32,17 @@ unsafe internal class Renderer
         this.shaders = shaders;
         this.vrSpace = vrSpace;
         this.configuration = configuration;
+        this.dalamudRenderer = dalamudRenderer;
     }
 
 
-    private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection)
+    private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false)
     {
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
-            mode: 0,
+            mode: invertAlpha ? 2 : 0,
             gamma: 2.2f,
             color: new Vector4f(0, 0, 0, 1)));
         resources.SetSampler(context, shaderResourceView);
@@ -114,10 +116,8 @@ unsafe internal class Renderer
                 imageArrayIndex: 0
             )
         );
-        fixed (float* ptr = new Span<float>([0f, 0f, 0f, 1]))
-        {
-            context->ClearRenderTargetView(currentColorSwapchainImage, ptr);
-        }
+        var color = new float[] { 0f, 0f, 0f, 1f };
+        context->ClearRenderTargetView(currentColorSwapchainImage, ref color[0]);
         context->ClearDepthStencilView(currentDepthSwapchainImage, (uint)ClearFlag.Depth, 1.0f, 0);
 
         resources.SetDepthStencilState(context);
@@ -153,35 +153,26 @@ unsafe internal class Renderer
 
         shaders.SetShaders(context);
 
-        var currentEyeRenderTarget = resources.eyeRenderTargets[eye.ToIndex()];
-        resources.SetVRBlendState(context);
+        var currentEyeRenderTarget = resources.SceneRenderTargets[eye.ToIndex()];
         if (eye == Eye.Left)
         {
             logger.Trace("Rendering left eye");
+            resources.SetSceneBlendState(context);
             RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
 
-            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));
-            var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
-            var gameRenderTexture = GameTextures.GetGameRenderTexture();
-
-            resources.SetUIBlendState(context);
-
-            context->CopyResource((ID3D11Resource*)resources.uiRenderTarget.Texture, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D);
-
-            RenderCursor(context, currentEyeRenderTarget, new Vector2D<float>(width, height));
+            RenderUITexture(context, width, height);
 
             context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
-            RenderViewport(context, resources.uiRenderTarget.ShaderResourceView, modelViewProjection);
+
+            RenderUI(context, viewProj);
         }
         else if (eye == Eye.Right)
         {
             logger.Trace("Rendering right eye");
+            resources.SetSceneBlendState(context);
             RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
 
-            var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));
-            var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
-            resources.SetUIBlendState(context);
-            RenderViewport(context, resources.uiRenderTarget!.ShaderResourceView, modelViewProjection);
+            RenderUI(context, viewProj);
         }
 
         var releaseInfo = new SwapchainImageReleaseInfo(next: null);
@@ -190,7 +181,32 @@ unsafe internal class Renderer
         return compositionLayerProjectionView;
     }
 
-    private void RenderCursor(ID3D11DeviceContext* context, RenderTarget currentEyeRenderTarget, Vector2D<float> windowSize)
+    private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj)
+    {
+        var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));
+        var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+
+        resources.SetCompositingBlendState(context);
+        RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, modelViewProjection, false);
+        RenderViewport(context, resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection, true);
+        RenderViewport(context, resources.CursorRenderTarget.ShaderResourceView, modelViewProjection, false);
+    }
+
+    private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)
+    {
+        var gameRenderTexture = GameTextures.GetGameRenderTexture();
+        context->CopyResource((ID3D11Resource*)resources.UIRenderTarget.Texture, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D);
+
+        resources.SetUIBlendState(context);
+        var color = new float[] { 0f, 0f, 0f, 1f };
+        context->ClearRenderTargetView(resources.DalamudRenderTarget.RenderTargetView, ref color[0]);
+        dalamudRenderer.Render(resources.DalamudRenderTarget.RenderTargetView);
+
+        RenderCursor(context, new Vector2D<float>(width, height));
+
+    }
+
+    private void RenderCursor(ID3D11DeviceContext* context, Vector2D<float> windowSize)
     {
         var cursorSize = 10f;
         var inputData = UIInputData.Instance();
@@ -198,7 +214,9 @@ unsafe internal class Renderer
             inputData->CursorXPosition / windowSize.X * 2 - 1,
             (1 - inputData->CursorYPosition / windowSize.Y) * 2 - 1, 0
         );
-        var target = resources.uiRenderTarget.RenderTargetView;
+        var target = resources.CursorRenderTarget.RenderTargetView;
+        var color = new float[] { 0f, 0f, 0f, 0f };
+        context->ClearRenderTargetView(target, ref color[0]);
         context->OMSetRenderTargets(1, ref target, null);
         var scale = Matrix4X4.CreateScale(new Vector3D<float>(cursorSize / windowSize.X, cursorSize / windowSize.Y, 0f)) *
             Matrix4X4.CreateTranslation(position);
@@ -288,7 +306,7 @@ unsafe internal class Renderer
         var renderTexture = GameTextures.GetGameRenderTexture();
 
         logger.Trace($"Copy resource {eye} render target");
-        var texture = resources.eyeRenderTargets[eye.ToIndex()].Texture;
+        var texture = resources.SceneRenderTargets[eye.ToIndex()].Texture;
         context->CopyResource((ID3D11Resource*)texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
     }
 }

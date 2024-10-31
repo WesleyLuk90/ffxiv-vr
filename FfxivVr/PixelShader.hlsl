@@ -33,6 +33,11 @@ float4 main(VertexShaderOutput vertexShaderOutput) : SV_TARGET
             color = float4(0, 0, 0, 0);
         }
     }
+    else if (mode == 2) // Invert alpha mode, dalamud renders its UI with weird inverted alpha values
+    {
+        color = tex.Sample(tex_sampler, vertexShaderOutput.texcoord);
+        color.a = 1 - color.a;
+    }
     else
     {
         color = float4(1, 0, 0, 1);

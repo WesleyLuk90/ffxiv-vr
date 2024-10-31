@@ -14,8 +14,20 @@ public unsafe class VRLifecycle : IDisposable
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
     private readonly IGameGui gameGui;
+    private readonly IClientState clientState;
+    private readonly ITargetManager targetManager;
 
-    public VRLifecycle(Logger logger, String openxrDllPath, Configuration configuration, GameState gameState, RenderPipelineInjector renderPipelineInjector, IGameGui gameGui, IClientState clientState, ITargetManager targetManager)
+
+    public VRLifecycle(
+        Logger logger,
+        string openxrDllPath,
+        Configuration configuration,
+        GameState gameState,
+        RenderPipelineInjector renderPipelineInjector,
+        IGameGui gameGui,
+        IClientState clientState,
+        ITargetManager targetManager
+        )
     {
         this.logger = logger;
         this.openxrDllPath = openxrDllPath;
@@ -98,10 +110,6 @@ public unsafe class VRLifecycle : IDisposable
             return vrSession?.SecondRender(GetContext()) ?? false;
         }
     }
-
-    private IClientState clientState;
-    private ITargetManager targetManager;
-
     public void PrePresent()
     {
         lock (this)

@@ -32,5 +32,9 @@
         <PackageReference Include="Silk.NET.OpenXR.Extensions.EXT" Version="2.21.0" />
         <PackageReference Include="Silk.NET.OpenXR.Extensions.FB" Version="2.21.0" />
         <PackageReference Include="Silk.NET.OpenXR.Extensions.KHR" Version="2.21.0" />
-    </ItemGroup>
+
+		<Reference Include="SharpDX" Private="false" />
+		<Reference Include="SharpDX.Direct3D11" Private="false" />
+		<Reference Include="SharpDX.DXGI" Private="false" />
+	</ItemGroup>
 </Project>

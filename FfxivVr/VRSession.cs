@@ -22,6 +22,7 @@ public unsafe class VRSession : IDisposable
     private readonly Resources resources;
     private readonly VRSwapchains swapchains;
     private readonly GameState gameState;
+    private readonly DalamudRenderer dalamudRenderer;
     private readonly RenderPipelineInjector renderPipelineInjector;
     private readonly Configuration configuration;
     private readonly ResolutionManager resolutionManager;
@@ -36,7 +37,8 @@ public unsafe class VRSession : IDisposable
         vrShaders = new VRShaders(device, logger);
         vrSpace = new VRSpace(xr, logger, vrSystem);
         this.gameState = gameState;
-        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration);
+        this.dalamudRenderer = new DalamudRenderer(logger);
+        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer);
         gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
         this.renderPipelineInjector = renderPipelineInjector;

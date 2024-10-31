@@ -35,11 +35,14 @@ unsafe public class Resources : IDisposable
     private ID3D11DepthStencilState* depthStencilStateOn = null;
     private ID3D11DepthStencilState* depthStencilStateOff = null;
     private ID3D11BlendState* uiBlendState = null;
-    private ID3D11BlendState* vrBlendState = null;
+    private ID3D11BlendState* sceneBlendState = null;
+    private ID3D11BlendState* compositingBlendState = null;
     private ID3D11RasterizerState* rasterizerState = null;
     private ID3D11SamplerState* samplerState = null;
-    public RenderTarget uiRenderTarget = null!;
-    public RenderTarget[] eyeRenderTargets = null!;
+    public RenderTarget UIRenderTarget = null!;
+    public RenderTarget DalamudRenderTarget = null!;
+    public RenderTarget CursorRenderTarget = null!;
+    public RenderTarget[] SceneRenderTargets = [];
 
     public Resources(ID3D11Device* device, Logger logger)
     {
@@ -65,8 +68,10 @@ unsafe public class Resources : IDisposable
         CreateStencilState();
         CreateBlendState();
         CreateRasterizerState();
-        uiRenderTarget = CreateRenderTarget(size);
-        eyeRenderTargets = [CreateRenderTarget(size), CreateRenderTarget(size)];
+        UIRenderTarget = CreateRenderTarget(size);
+        DalamudRenderTarget = CreateRenderTarget(size);
+        CursorRenderTarget = CreateRenderTarget(size);
+        SceneRenderTargets = [CreateRenderTarget(size), CreateRenderTarget(size)];
     }
 
     public class RenderTarget : IDisposable
@@ -243,44 +248,49 @@ unsafe public class Resources : IDisposable
         }
     }
 
-    private void CreateBlendState()
+    private ID3D11BlendState* CreateBlendState(RenderTargetBlendDesc renderTargetBlendDesc)
     {
-        var uiBlendStateDesc = new BlendDesc(
+        var description = new BlendDesc(
             alphaToCoverageEnable: false,
             independentBlendEnable: false
         );
-        uiBlendStateDesc.RenderTarget[0] = new RenderTargetBlendDesc(
+        description.RenderTarget[0] = renderTargetBlendDesc;
+        ID3D11BlendState* state = null;
+        device->CreateBlendState(ref description, &state).D3D11Check("CreateBlendState");
+        return state;
+    }
+    private void CreateBlendState()
+    {
+        uiBlendState = CreateBlendState(new RenderTargetBlendDesc(
             blendEnable: true,
-            srcBlend: Blend.SrcAlpha,
+            srcBlend: Blend.One,
+            destBlend: Blend.InvSrcAlpha,
+            blendOp: BlendOp.Add,
+            srcBlendAlpha: Blend.One,
+            destBlendAlpha: Blend.One,
+            blendOpAlpha: BlendOp.Max,
+            renderTargetWriteMask: (byte)ColorWriteEnable.All
+        ));
+        sceneBlendState = CreateBlendState(new RenderTargetBlendDesc(
+            blendEnable: true,
+            srcBlend: Blend.One,
+            destBlend: Blend.One,
+            blendOp: BlendOp.Add,
+            srcBlendAlpha: Blend.One,
+            destBlendAlpha: Blend.One,
+            blendOpAlpha: BlendOp.Add,
+            renderTargetWriteMask: (byte)ColorWriteEnable.All
+        ));
+        compositingBlendState = CreateBlendState(new RenderTargetBlendDesc(
+            blendEnable: true,
+            srcBlend: Blend.One,
             destBlend: Blend.InvSrcAlpha,
             blendOp: BlendOp.Add,
             srcBlendAlpha: Blend.One,
             destBlendAlpha: Blend.One,
             blendOpAlpha: BlendOp.Add,
             renderTargetWriteMask: (byte)ColorWriteEnable.All
-        );
-        fixed (ID3D11BlendState** ptr = &uiBlendState)
-        {
-            device->CreateBlendState(ref uiBlendStateDesc, ptr).D3D11Check("CreateBlendState");
-        }
-        var vrBlendStateDesc = new BlendDesc(
-            alphaToCoverageEnable: false,
-            independentBlendEnable: false
-        );
-        vrBlendStateDesc.RenderTarget[0] = new RenderTargetBlendDesc(
-            blendEnable: true,
-            srcBlend: Blend.One,
-            destBlend: Blend.Zero,
-            blendOp: BlendOp.Add,
-            srcBlendAlpha: Blend.One,
-            destBlendAlpha: Blend.One,
-            blendOpAlpha: BlendOp.Add,
-            renderTargetWriteMask: (byte)ColorWriteEnable.All
-        );
-        fixed (ID3D11BlendState** ptr = &vrBlendState)
-        {
-            device->CreateBlendState(ref vrBlendStateDesc, ptr).D3D11Check("CreateBlendState");
-        }
+        ));
     }
 
     class D3DBuffer : IDisposable
@@ -385,18 +395,28 @@ unsafe public class Resources : IDisposable
     {
         cameraBuffer?.Dispose();
         vertexBuffer?.Dispose();
-        uiRenderTarget?.Dispose();
-        if (vrBlendState != null)
+        UIRenderTarget?.Dispose();
+        DalamudRenderTarget?.Dispose();
+        CursorRenderTarget?.Dispose();
+        foreach (var rt in SceneRenderTargets)
         {
-            vrBlendState->Release();
+            rt.Dispose();
+        }
+        if (sceneBlendState != null)
+        {
+            sceneBlendState->Release();
         }
         if (uiBlendState != null)
         {
             uiBlendState->Release();
         }
-        if (eyeRenderTargets != null)
+        if (compositingBlendState != null)
         {
-            foreach (var target in eyeRenderTargets)
+            compositingBlendState->Release();
+        }
+        if (SceneRenderTargets != null)
+        {
+            foreach (var target in SceneRenderTargets)
             {
                 target.Dispose();
             }
@@ -412,8 +432,12 @@ unsafe public class Resources : IDisposable
     {
         context->OMSetBlendState(uiBlendState, null, 0xffffffff);
     }
-    internal void SetVRBlendState(ID3D11DeviceContext* context)
+    internal void SetSceneBlendState(ID3D11DeviceContext* context)
     {
-        context->OMSetBlendState(vrBlendState, null, 0xffffffff);
+        context->OMSetBlendState(sceneBlendState, null, 0xffffffff);
+    }
+    internal void SetCompositingBlendState(ID3D11DeviceContext* context)
+    {
+        context->OMSetBlendState(compositingBlendState, null, 0xffffffff);
     }
 }
