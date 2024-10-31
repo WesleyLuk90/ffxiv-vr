@@ -274,7 +274,7 @@ unsafe internal class Renderer
 
     internal Matrix4x4 ComputeProjectionMatrix(View view)
     {
-        var near = 0.1f;
+        var near = 0.01f;
         var left = MathF.Tan(view.Fov.AngleLeft) * near;
         var right = MathF.Tan(view.Fov.AngleRight) * near;
         var down = MathF.Tan(view.Fov.AngleDown) * near;
@@ -282,7 +282,7 @@ unsafe internal class Renderer
 
         var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
 
-        // Overwrite these for FFXIV's weird projection matrix
+        // FFXIV uses reverse z matrixes, update the matrix to handle this
         proj.M33 = 0;
         proj.M43 = near;
         return proj.ToMatrix4x4();
