@@ -296,8 +296,7 @@ unsafe internal class Renderer
         var vrViewMatrix = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
 
         var viewMatrix = vrViewMatrix * gameViewMatrix;
-        var invertedViewMatrix = Matrix4X4<float>.Identity;
-        Matrix4X4.Invert(viewMatrix, out invertedViewMatrix);
+        Matrix4X4.Invert(viewMatrix, out Matrix4X4<float> invertedViewMatrix);
         return invertedViewMatrix;
     }
 
