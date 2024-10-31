@@ -274,7 +274,7 @@ unsafe internal class Renderer
 
     internal Matrix4x4 ComputeProjectionMatrix(View view)
     {
-        var near = 0.01f;
+        var near = 0.1f;
         var left = MathF.Tan(view.Fov.AngleLeft) * near;
         var right = MathF.Tan(view.Fov.AngleRight) * near;
         var down = MathF.Tan(view.Fov.AngleDown) * near;
