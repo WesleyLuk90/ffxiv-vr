@@ -44,14 +44,12 @@ jobs:
       run: |
         dotnet build --configuration Release --nologo
 
-    - name: Archive
-      run: Compress-Archive -Path FfxivVr\bin\x64\Release/* -DestinationPath FfxivVR.zip
-
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4
       with:
         path: |
-          ./FfxivVr\bin\x64\Release/*
+          ./FfxivVr\bin\x64\Release\FfxivVR\latest.zip
+        if-no-files-found: error
 
     - name: Create Release
       id: create_release
