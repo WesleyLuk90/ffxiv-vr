@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Dalamud.Plugin.Bootstrap.targets" />
+  <PropertyGroup>
+    <Version>0.0.6</Version>
+    <Description>A VR plugin for FFXIV.</Description>
+    <PackageProjectUrl>https://github.com/goatcorp/SamplePlugin</PackageProjectUrl>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="$(PkgOpenXR_Loader)\native\x64\release\bin\openxr_loader.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Target Name="CompileShaders" Inputs="VertexShader.hlsl;FragmentShader.hlsl" BeforeTargets="BeforeResGen" Outputs="VertexShader.cso">
+    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo VertexShader.cso /T vs_5_0 .\VertexShader.hlsl" />
+    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo PixelShader.cso /T ps_5_0 .\PixelShader.hlsl" />
+  </Target>
+  <ItemGroup>
+    <EmbeddedResource Include="VertexShader.cso" WithCulture="false" Type="Non-Resx" />
+    <EmbeddedResource Include="PixelShader.cso" WithCulture="false" Type="Non-Resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="OpenXR.Loader" Version="1.0.10.2" GeneratePathProperty="true" />
+    <PackageReference Include="Silk.NET.Direct3D11" Version="2.21.0" />
+    <PackageReference Include="Silk.NET.Maths" Version="2.21.0" />
+    <PackageReference Include="Silk.NET.OpenXR" Version="2.21.0" />
+    <PackageReference Include="Silk.NET.OpenXR.Extensions.EXT" Version="2.21.0" />
+    <PackageReference Include="Silk.NET.OpenXR.Extensions.FB" Version="2.21.0" />
+    <PackageReference Include="Silk.NET.OpenXR.Extensions.KHR" Version="2.21.0" />
+    <Reference Include="SharpDX" Private="false" />
+    <Reference Include="SharpDX.Direct3D11" Private="false" />
+    <Reference Include="SharpDX.DXGI" Private="false" />
+  </ItemGroup>
+</Project>
