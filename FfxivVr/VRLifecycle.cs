@@ -108,11 +108,11 @@ public unsafe class VRLifecycle : IDisposable
         return (ID3D11DeviceContext*)Device.Instance()->D3D11DeviceContext;
     }
 
-    public bool SecondRender()
+    public bool ShouldSecondRender()
     {
         lock (this)
         {
-            return vrSession?.SecondRender(GetContext()) ?? false;
+            return vrSession?.ShouldSecondRender() ?? false;
         }
     }
     public void PrePresent()
@@ -171,11 +171,11 @@ public unsafe class VRLifecycle : IDisposable
         }
     }
 
-    internal void StartCycle()
+    internal void PrepareVRRender()
     {
         lock (this)
         {
-            vrSession?.StartCycle();
+            vrSession?.PrepareVRRender();
         }
     }
 

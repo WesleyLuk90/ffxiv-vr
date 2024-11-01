@@ -168,7 +168,7 @@ public unsafe class VRSession : IDisposable
         }
     }
 
-    internal bool SecondRender(ID3D11DeviceContext* context)
+    internal bool ShouldSecondRender()
     {
         return cameraPhase?.Eye == Eye.Right;
     }
@@ -230,7 +230,7 @@ public unsafe class VRSession : IDisposable
         }
     }
 
-    internal void StartCycle()
+    internal void PrepareVRRender()
     {
         if (State.SessionRunning)
         {

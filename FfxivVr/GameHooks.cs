@@ -64,12 +64,12 @@ unsafe internal class GameHooks : IDisposable
     private UInt64 FrameworkTickFn(Framework* FrameworkInstance)
     {
         logger.Trace("FrameworkTickFn start");
-        vrLifecycle.StartCycle();
+        vrLifecycle.PrepareVRRender();
         var returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         var shouldSecondRender = false;
         exceptionHandler.FaultBarrier(() =>
         {
-            shouldSecondRender = vrLifecycle.SecondRender();
+            shouldSecondRender = vrLifecycle.ShouldSecondRender();
         });
         if (shouldSecondRender)
         {
