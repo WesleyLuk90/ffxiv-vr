@@ -110,6 +110,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private void FirstToThirdPerson()
     {
+        if (!vrLifecycle.IsEnabled())
+        {
+            return;
+        }
         if (configuration.RecenterOnViewChange)
         {
             vrLifecycle.RecenterCamera();
@@ -122,6 +126,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private void ThirdToFirstPerson()
     {
+        if (!vrLifecycle.IsEnabled())
+        {
+            return;
+        }
         if (configuration.RecenterOnViewChange)
         {
             vrLifecycle.RecenterCamera();

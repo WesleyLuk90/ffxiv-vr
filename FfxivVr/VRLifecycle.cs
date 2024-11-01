@@ -71,6 +71,11 @@ public unsafe class VRLifecycle : IDisposable
             throw;
         }
     }
+
+    public bool IsEnabled()
+    {
+        return vrSession != null;
+    }
     public void DisableVR()
     {
         if (vrSession is VRSession session)
