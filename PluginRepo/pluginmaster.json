@@ -1,0 +1,23 @@
+[
+    {
+        "Author":  "Wes",
+        "Name":  "FFXIV VR",
+        "Punchline":  "A VR .",
+        "Description":  "A VR .",
+        "Changelog":  ".",
+        "InternalName":  "FFXIV VR",
+        "AssemblyVersion":  "0.0.3",
+        "RepoUrl":  "https://github.com/WesleyLuk90/ffxiv-vr",
+        "ApplicableVersion":  "any",
+        "DalamudApiLevel":  10,
+        "LoadPriority":  0,
+        "IconUrl":  "",
+        "DownloadLinkInstall":  "https://github.com/WesleyLuk90/ffxiv-vr/latest.zip",
+        "IsHide":  false,
+        "IsTestingExclusive":  false,
+        "DownloadLinkTesting":  "https://github.com/WesleyLuk90/ffxiv-vr/latest.zip",
+        "DownloadLinkUpdate":  "https://github.com/WesleyLuk90/ffxiv-vr/latest.zip",
+        "DownloadCount":  0,
+        "LastUpdated":  "1728914799"
+    }
+]
