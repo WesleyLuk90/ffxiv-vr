@@ -39,6 +39,12 @@ internal class ConfigWindow : Window, IDisposable
                 config.FollowCharacter = followCharacterMovement;
                 config.Save();
             }
+            var recenter = config.DisableAutoFaceTargetInFirstPerson;
+            if (ImGui.Checkbox("Disable Auto Face Target in First Person", ref recenter))
+            {
+                config.DisableAutoFaceTargetInFirstPerson = recenter;
+                config.Save();
+            }
             var worldScale = config.WorldScale;
             if (ImGui.SliderFloat("World Scale", ref worldScale, 0.1f, 10f))
             {

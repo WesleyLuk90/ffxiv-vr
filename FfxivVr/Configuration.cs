@@ -13,6 +13,7 @@ public class Configuration : IPluginConfiguration
     public float Gamma = 2.2f;
     public bool FollowCharacter = false;
     public bool RecenterOnViewChange = true;
+    public bool DisableAutoFaceTargetInFirstPerson = false;
 
     public void Save()
     {

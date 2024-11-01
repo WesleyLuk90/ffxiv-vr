@@ -6,6 +6,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Silk.NET.Direct3D11;
 using System;
 using System.IO;
@@ -37,6 +38,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly GameState gameState = new GameState(ClientState);
     private readonly ConfigWindow configWindow;
     private readonly WindowSystem WindowSystem = new("FFXIV VR");
+
+    private readonly GameSettingsManager gameSettingsManager;
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -61,6 +64,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
         GameHookService.InitializeFromAttributes(gameHooks);
         gameHooks.Initialize();
         Framework.Update += FrameworkUpdate;
+
+        gameSettingsManager = new GameSettingsManager(logger);
 
         configWindow = new ConfigWindow(configuration);
         WindowSystem.AddWindow(configWindow);
@@ -109,6 +114,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
         {
             vrLifecycle.RecenterCamera();
         }
+        if (configuration.DisableAutoFaceTargetInFirstPerson)
+        {
+            gameSettingsManager.SetBooleanSetting(ConfigOption.AutoFaceTargetOnAction, true);
+        }
     }
 
     private void ThirdToFirstPerson()
@@ -116,6 +125,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
         if (configuration.RecenterOnViewChange)
         {
             vrLifecycle.RecenterCamera();
+        }
+        if (configuration.DisableAutoFaceTargetInFirstPerson)
+        {
+            gameSettingsManager.SetBooleanSetting(ConfigOption.AutoFaceTargetOnAction, false);
         }
     }
 
@@ -136,11 +149,17 @@ public unsafe sealed class Plugin : IDalamudPlugin
         {
             switch (arguments.FirstOrDefault())
             {
+                case "":
+                    configWindow.Toggle();
+                    break;
                 case "start":
                     StartVR();
                     break;
                 case "stop":
                     StopVR();
+                    break;
+                case "debugsetting":
+                    gameSettingsManager.SetBooleanSetting(ConfigOption.AutoFaceTargetOnAction, false);
                     break;
                 case "toggle-gamepad":
                     var assembly = Assembly.GetAssembly(typeof(IGamepadState)) ?? throw new Exception("Could not get assembly");
