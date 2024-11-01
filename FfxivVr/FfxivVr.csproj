@@ -3,8 +3,8 @@
     <Import Project="Dalamud.Plugin.Bootstrap.targets" />
 
     <PropertyGroup>
-        <Version>0.0.0.1</Version>
-        <Description>A sample plugin.</Description>
+        <Version>0.0.5</Version>
+        <Description>A VR plugin for FFXIV.</Description>
         <PackageProjectUrl>https://github.com/goatcorp/SamplePlugin</PackageProjectUrl>
         <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
         <IsPackable>false</IsPackable>
