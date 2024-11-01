@@ -25,8 +25,20 @@ internal class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
-        if (ImGui.CollapsingHeader("General"))
+        if (ImGui.CollapsingHeader("View"))
         {
+            var recenterOnViewChange = config.RecenterOnViewChange;
+            if (ImGui.Checkbox("Recenter Camera on View Change", ref recenterOnViewChange))
+            {
+                config.RecenterOnViewChange = recenterOnViewChange;
+                config.Save();
+            }
+            var followCharacterMovement = config.FollowCharacter;
+            if (ImGui.Checkbox("Follow Head in First Person", ref followCharacterMovement))
+            {
+                config.RecenterOnViewChange = followCharacterMovement;
+                config.Save();
+            }
             var worldScale = config.WorldScale;
             if (ImGui.SliderFloat("World Scale", ref worldScale, 0.1f, 10f))
             {

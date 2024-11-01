@@ -26,7 +26,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ISigScanner SigScanner { get; private set; } = null!;
     [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
     [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
-    [PluginService] internal static IGamepadState GamepadState { get; private set; }
+    [PluginService] internal static IGamepadState GamepadState { get; private set; } = null!;
 
     private const string CommandName = "/vr";
     private Logger logger { get; init; }
@@ -91,13 +91,33 @@ public unsafe sealed class Plugin : IDalamudPlugin
     {
         exceptionHandler.FaultBarrier(() =>
         {
-            var isFirstPersonNow = gameState.IsFirstPerson();
-            if (isFirstPerson != null && isFirstPerson != isFirstPersonNow)
+            var nextFirstPerson = gameState.IsFirstPerson();
+            if (nextFirstPerson && isFirstPerson == false)
             {
-                vrLifecycle.RecenterCamera();
+                ThirdToFirstPerson();
             }
-            isFirstPerson = isFirstPersonNow;
+            if (!nextFirstPerson && isFirstPerson == true)
+            {
+                FirstToThirdPerson();
+            }
+            isFirstPerson = nextFirstPerson;
         });
+    }
+
+    private void FirstToThirdPerson()
+    {
+        if (configuration.RecenterOnViewChange)
+        {
+            vrLifecycle.RecenterCamera();
+        }
+    }
+
+    private void ThirdToFirstPerson()
+    {
+        if (configuration.RecenterOnViewChange)
+        {
+            vrLifecycle.RecenterCamera();
+        }
     }
 
     public void Dispose()
