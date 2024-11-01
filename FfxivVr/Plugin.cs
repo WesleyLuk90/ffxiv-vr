@@ -10,6 +10,7 @@ using Silk.NET.Direct3D11;
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace FfxivVR;
 
@@ -24,6 +25,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ISigScanner SigScanner { get; private set; } = null!;
     [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
     [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
+
+    [PluginService] internal static IGamepadState GamepadState { get; private set; }
 
     private const string CommandName = "/vr";
     private Logger logger { get; init; }
@@ -61,6 +64,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+
     }
 
     private void ToggleMainUI()
@@ -87,6 +91,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
             }
             isFirstPerson = isFirstPersonNow;
         });
+        if (GamepadState.LeftStick.X > 0)
+        {
+            logger.Debug($"Stick {GamepadState.LeftStick}");
+        }
     }
 
     public void Dispose()
@@ -149,6 +157,16 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "follow-character":
                     configuration.FollowCharacter = !configuration.FollowCharacter;
+                    break;
+                case "toggle-gamepad":
+                    var assembly = Assembly.GetAssembly(typeof(IGamepadState)) ?? throw new Exception("Could not get assembly");
+                    var gamepad = assembly.GetType("Dalamud.Game.ClientState.GamePad.GamepadState") ?? throw new Exception("Could not get gamepad");
+                    var property = gamepad.GetProperty("NavEnableGamepad",
+                         BindingFlags.NonPublic |
+                         BindingFlags.Instance) ?? throw new Exception("Could not get NavEnableGamepad");
+                    var newState = !(bool)property.GetValue(GamepadState);
+                    property.SetValue(GamepadState, newState);
+                    logger.Info($"Set state {newState}");
                     break;
                 case "print-height":
                     var hight = arguments.ElementAtOrDefault(1);
