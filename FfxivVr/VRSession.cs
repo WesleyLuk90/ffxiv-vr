@@ -23,6 +23,7 @@ public unsafe class VRSession : IDisposable
     private readonly VRSwapchains swapchains;
     private readonly GameState gameState;
     private readonly DalamudRenderer dalamudRenderer;
+    private readonly VRCamera vrCamera;
     private readonly RenderPipelineInjector renderPipelineInjector;
     private readonly Configuration configuration;
     private readonly ResolutionManager resolutionManager;
@@ -38,7 +39,8 @@ public unsafe class VRSession : IDisposable
         vrSpace = new VRSpace(xr, logger, vrSystem);
         this.gameState = gameState;
         this.dalamudRenderer = new DalamudRenderer(logger);
-        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer);
+        vrCamera = new VRCamera(configuration);
+        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera);
         gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
         this.renderPipelineInjector = renderPipelineInjector;
@@ -178,7 +180,7 @@ public unsafe class VRSession : IDisposable
             logger.Trace($"Set {phase.Eye} camera matrix");
             View view = view = phase.CurrentView();
 
-            camera->RenderCamera->ProjectionMatrix = renderer.ComputeProjectionMatrix(view);
+            camera->RenderCamera->ProjectionMatrix = vrCamera.ComputeGameProjectionMatrix(view);
             camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
 
             Vector3D<float>? headPos = null;
@@ -187,7 +189,7 @@ public unsafe class VRSession : IDisposable
                 headPos = gameVisibility.GetHeadPosition();
             }
 
-            camera->RenderCamera->ViewMatrix = renderer.ComputeViewMatrix(view, camera->Position.ToVector3D(), camera->LookAtVector.ToVector3D(), headPos).ToMatrix4x4();
+            camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, camera->Position.ToVector3D(), camera->LookAtVector.ToVector3D(), headPos).ToMatrix4x4();
             camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
 
             camera->RenderCamera->FoV = view.Fov.AngleRight - view.Fov.AngleLeft;

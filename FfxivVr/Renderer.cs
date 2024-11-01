@@ -1,5 +1,4 @@
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Common.Math;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
@@ -8,33 +7,30 @@ using static FfxivVR.Resources;
 
 namespace FfxivVR;
 
-unsafe internal class Renderer
+unsafe internal class Renderer(
+    XR xr,
+    VRSystem system,
+    VRState vrState,
+    Logger logger,
+    VRSwapchains swapchains,
+    Resources resources,
+    VRShaders shaders,
+    VRSpace vrSpace,
+    Configuration configuration,
+    DalamudRenderer dalamudRenderer,
+    VRCamera vrCamera)
 {
-    private readonly XR xr;
-    private readonly VRSystem system;
-    private readonly VRState vrState;
-    private readonly Logger logger;
-    private readonly VRSwapchains swapchains;
-    private readonly Resources resources;
-    private readonly VRShaders shaders;
-    private readonly VRSpace vrSpace;
-    private readonly Configuration configuration;
-    private readonly DalamudRenderer dalamudRenderer;
-
-    internal Renderer(XR xr, VRSystem system, VRState vrState, Logger logger, VRSwapchains swapchains, Resources resources, VRShaders shaders, VRSpace vrSpace, Configuration configuration, DalamudRenderer dalamudRenderer)
-    {
-        this.xr = xr;
-        this.system = system;
-        this.vrState = vrState;
-        this.logger = logger;
-        this.swapchains = swapchains;
-        this.resources = resources;
-        this.shaders = shaders;
-        this.vrSpace = vrSpace;
-        this.configuration = configuration;
-        this.dalamudRenderer = dalamudRenderer;
-    }
-
+    private readonly XR xr = xr;
+    private readonly VRSystem system = system;
+    private readonly VRState vrState = vrState;
+    private readonly Logger logger = logger;
+    private readonly VRSwapchains swapchains = swapchains;
+    private readonly Resources resources = resources;
+    private readonly VRShaders shaders = shaders;
+    private readonly VRSpace vrSpace = vrSpace;
+    private readonly Configuration configuration = configuration;
+    private readonly DalamudRenderer dalamudRenderer = dalamudRenderer;
+    private readonly VRCamera vrCamera = vrCamera;
 
     private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false)
     {
@@ -136,20 +132,7 @@ unsafe internal class Renderer
         );
         context->RSSetScissorRects(1, &scissor);
 
-        var rotation = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion());
-        var translation = Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
-        var toView = Matrix4X4.Multiply(rotation, translation);
-        var viewInverted = new Matrix4X4<float>();
-        Matrix4X4.Invert(toView, out viewInverted);
-
-        var near = 0.05f;
-        var left = MathF.Tan(view.Fov.AngleLeft) * near;
-        var right = MathF.Tan(view.Fov.AngleRight) * near;
-        var down = MathF.Tan(view.Fov.AngleDown) * near;
-        var up = MathF.Tan(view.Fov.AngleUp) * near;
-
-        var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
-        var viewProj = Matrix4X4.Multiply(viewInverted, proj);
+        var vrViewProjectionMatrix = vrCamera.ComputeVRViewProjectionMatrix(view);
 
         shaders.SetShaders(context);
 
@@ -164,7 +147,7 @@ unsafe internal class Renderer
 
             context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
 
-            RenderUI(context, viewProj);
+            RenderUI(context, vrViewProjectionMatrix);
         }
         else if (eye == Eye.Right)
         {
@@ -172,7 +155,7 @@ unsafe internal class Renderer
             resources.SetSceneBlendState(context);
             RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
 
-            RenderUI(context, viewProj);
+            RenderUI(context, vrViewProjectionMatrix);
         }
 
         var releaseInfo = new SwapchainImageReleaseInfo(next: null);
@@ -270,34 +253,6 @@ unsafe internal class Renderer
             result.CheckResult("BeginFrame");
         }
         return frameState;
-    }
-
-    internal Matrix4x4 ComputeProjectionMatrix(View view)
-    {
-        var near = 0.1f;
-        var left = MathF.Tan(view.Fov.AngleLeft) * near;
-        var right = MathF.Tan(view.Fov.AngleRight) * near;
-        var down = MathF.Tan(view.Fov.AngleDown) * near;
-        var up = MathF.Tan(view.Fov.AngleUp) * near;
-
-        var proj = Matrix4X4.CreatePerspectiveOffCenter<float>(left, right, down, up, nearPlaneDistance: near, farPlaneDistance: 100f);
-
-        // FFXIV uses reverse z matrixes, update the matrix to handle this
-        proj.M33 = 0;
-        proj.M43 = near;
-        return proj.ToMatrix4x4();
-    }
-    internal Matrix4X4<float> ComputeViewMatrix(View view, Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition)
-    {
-        var forwardVector = lookAt - position;
-        var yAngle = -MathF.PI / 2 - MathF.Atan2(forwardVector.Z, forwardVector.X);
-
-        var gameViewMatrix = Matrix4X4.CreateScale(1f / configuration.WorldScale) * Matrix4X4.CreateRotationY<float>(yAngle) * Matrix4X4.CreateTranslation<float>(headPosition ?? position);
-        var vrViewMatrix = Matrix4X4.CreateFromQuaternion<float>(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation<float>(view.Pose.Position.ToVector3D());
-
-        var viewMatrix = vrViewMatrix * gameViewMatrix;
-        Matrix4X4.Invert(viewMatrix, out Matrix4X4<float> invertedViewMatrix);
-        return invertedViewMatrix;
     }
 
     internal void CopyTexture(ID3D11DeviceContext* context, Eye eye)
