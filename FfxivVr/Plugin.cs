@@ -1,6 +1,5 @@
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
-using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
@@ -143,45 +142,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 case "stop":
                     StopVR();
                     break;
-                case "scale":
-                    var scaleString = arguments.ElementAtOrDefault(1);
-                    if (float.TryParse(scaleString, out float scale) && scale <= 10 && scale >= 0.1)
-                    {
-                        logger.Info($"Setting world scale to {scale}");
-                        configuration.WorldScale = scale;
-                    }
-                    else
-                    {
-                        logger.Info($"Invalid scale {scaleString}, must be between 0.1 and 10");
-                    }
-                    break;
-                case "ui-distance":
-                    var distanceString = arguments.ElementAtOrDefault(1);
-                    if (float.TryParse(distanceString, out float distance) && distance <= 10 && distance >= 0.1)
-                    {
-                        logger.Info($"Setting UI distance to {distance}");
-                        configuration.UIDistance = distance;
-                    }
-                    else
-                    {
-                        logger.Info($"Invalid distance {distanceString}, must be between 0.1 and 10");
-                    }
-                    break;
-                case "gamma":
-                    var gammaString = arguments.ElementAtOrDefault(1);
-                    if (float.TryParse(gammaString, out float gamma) && gamma <= 10 && gamma >= 0.1)
-                    {
-                        logger.Info($"Setting Gamma to {gamma}");
-                        configuration.Gamma = gamma;
-                    }
-                    else
-                    {
-                        logger.Info($"Invalid Gamma {gamma}, must be between 0.1 and 10");
-                    }
-                    break;
-                case "follow-character":
-                    configuration.FollowCharacter = !configuration.FollowCharacter;
-                    break;
                 case "toggle-gamepad":
                     var assembly = Assembly.GetAssembly(typeof(IGamepadState)) ?? throw new Exception("Could not get assembly");
                     var gamepad = assembly.GetType("Dalamud.Game.ClientState.GamePad.GamepadState") ?? throw new Exception("Could not get gamepad");
@@ -191,30 +151,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     var newState = !(bool)property.GetValue(GamepadState);
                     property.SetValue(GamepadState, newState);
                     logger.Info($"Set state {newState}");
-                    break;
-                case "print-height":
-                    var hight = arguments.ElementAtOrDefault(1);
-                    float height;
-                    if (!float.TryParse(hight, out height))
-                    {
-                        break;
-                    }
-                    IGameObject? player = ClientState.LocalPlayer;
-                    if (player == null)
-                    {
-                        return;
-                    }
-                    var gameObject = (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)player.Address;
-                    if (gameObject == null)
-                    {
-                        return;
-                    }
-                    var drawObject = (ActorModel*)gameObject->GetDrawObject();
-                    if (drawObject == null)
-                    {
-                        return;
-                    }
-                    logger.Info($"Height {drawObject->Height}");
                     break;
                 case "printtextures":
                     var renderTargetManager = RenderTargetManager.Instance();

@@ -36,7 +36,7 @@ internal class ConfigWindow : Window, IDisposable
             var followCharacterMovement = config.FollowCharacter;
             if (ImGui.Checkbox("Follow Head in First Person", ref followCharacterMovement))
             {
-                config.RecenterOnViewChange = followCharacterMovement;
+                config.FollowCharacter = followCharacterMovement;
                 config.Save();
             }
             var worldScale = config.WorldScale;
