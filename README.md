@@ -8,8 +8,8 @@ Still a work in progress but the basic VR rendering works with a floating UI.
 
 ## Instructions
 
-1. Download and extract the latest release
-2. Add FfxivVR.dll as a dev plugin in Dalamud Settings > Experimental > Dev Plugin Locations
+1. Add `https://raw.githubusercontent.com/WesleyLuk90/ffxiv-vr/refs/heads/master/PluginRepo/pluginmaster.json` as a custom plugin repo in Dalamud settings
+2. Install the FFXIV VR plugin
 3. Run `/vr start` to start VR, run `/vr stop` to stop
 4. Run `/vr` to access settings
 
