@@ -7,7 +7,7 @@ if(!($version -match '\d+.\d+.\d+')) {
 
 $xml = [xml](Get-Content -Path .\FfxivVr\FfxivVR.csproj)
 $xml.Project.PropertyGroup.Version = $version
-$xml.Save($xml)
+$xml.Save(".\FfxivVr\FfxivVR.csproj")
 
 git add .
 git commit -m "Release version $version"
