@@ -6,7 +6,7 @@
         "Description":  "A VR .",
         "Changelog":  ".",
         "InternalName":  "FFXIV VR",
-        "AssemblyVersion":  "0.0.3",
+        "AssemblyVersion":  "0.0.4",
         "RepoUrl":  "https://github.com/WesleyLuk90/ffxiv-vr",
         "ApplicableVersion":  "any",
         "DalamudApiLevel":  10,
