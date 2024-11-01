@@ -2,6 +2,7 @@ using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
+using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -25,7 +26,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ISigScanner SigScanner { get; private set; } = null!;
     [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
     [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
-
     [PluginService] internal static IGamepadState GamepadState { get; private set; }
 
     private const string CommandName = "/vr";
@@ -36,6 +36,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly GameHooks gameHooks;
     private readonly Configuration configuration;
     private readonly GameState gameState = new GameState(ClientState);
+    private readonly ConfigWindow configWindow;
+    private readonly WindowSystem WindowSystem = new("FFXIV VR");
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -61,6 +63,9 @@ public unsafe sealed class Plugin : IDalamudPlugin
         gameHooks.Initialize();
         Framework.Update += FrameworkUpdate;
 
+        configWindow = new ConfigWindow(configuration);
+        WindowSystem.AddWindow(configWindow);
+
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
@@ -73,10 +78,12 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private void ToggleConfigUI()
     {
+        configWindow.Toggle();
     }
 
     private void DrawUI()
     {
+        WindowSystem.Draw();
     }
 
     private bool? isFirstPerson = null;
@@ -91,14 +98,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
             }
             isFirstPerson = isFirstPersonNow;
         });
-        if (GamepadState.LeftStick.X > 0)
-        {
-            logger.Debug($"Stick {GamepadState.LeftStick}");
-        }
     }
 
     public void Dispose()
     {
+        configWindow.Dispose();
         Framework.Update -= FrameworkUpdate;
         gameHooks.Dispose();
 
@@ -228,6 +232,5 @@ public unsafe sealed class Plugin : IDalamudPlugin
     {
         vrLifecycle.DisableVR();
         configuration.Save();
-        logger.Debug($"Saving settings {configuration}");
     }
 }
