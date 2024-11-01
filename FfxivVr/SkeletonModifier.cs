@@ -1,6 +1,7 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using Silk.NET.Maths;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FfxivVR;
 unsafe internal class SkeletonModifier(Logger logger)
@@ -95,38 +96,56 @@ unsafe internal class SkeletonModifier(Logger logger)
 
 
     private Dictionary<string, Bone>? bonesByName;
+    private List<Bone>? bones;
     private Bone? GetBoneByName(string name, Skeleton* skeleton)
     {
-        if (bonesByName == null && skeleton->SkeletonResourceHandles != null && skeleton->SkeletonResourceHandles[0] != null)
-        {
-            List<Bone> boneList = new List<Bone>();
-            var havokSkeleton = skeleton->SkeletonResourceHandles[0]->HavokSkeleton;
-            for (int currentBone = 0; currentBone < havokSkeleton->Bones.Length; currentBone++)
-            {
-                var bone = havokSkeleton->Bones[currentBone];
-                var parent = havokSkeleton->ParentIndices[currentBone];
-                var currentBoneName = bone!.Name!.String!;
-                boneList.Add(new Bone(currentBoneName, currentBone, new List<int>()));
+        CreateBoneList(skeleton);
+        return bonesByName?.GetValueOrDefault(name);
+    }
 
-                if (currentBone != 0 && parent >= 0)
+    private Bone? GetBoneByIndex(int index, Skeleton* skeleton)
+    {
+        CreateBoneList(skeleton);
+        return bones?.ElementAtOrDefault(index);
+    }
+
+    private void CreateBoneList(Skeleton* skeleton)
+    {
+        if (bonesByName != null && bones != null)
+        {
+            return;
+        };
+        if (skeleton->SkeletonResourceHandles == null || skeleton->SkeletonResourceHandles[0] == null)
+        {
+            return;
+        }
+        List<Bone> boneList = new List<Bone>();
+        var havokSkeleton = skeleton->SkeletonResourceHandles[0]->HavokSkeleton;
+        for (int currentBone = 0; currentBone < havokSkeleton->Bones.Length; currentBone++)
+        {
+            var bone = havokSkeleton->Bones[currentBone];
+            var parent = havokSkeleton->ParentIndices[currentBone];
+            var currentBoneName = bone!.Name!.String!;
+            boneList.Add(new Bone(currentBoneName, currentBone, new List<int>()));
+
+            if (currentBone != 0 && parent >= 0)
+            {
+                if (parent >= boneList.Count)
                 {
-                    if (parent >= boneList.Count)
-                    {
-                        logger.Error("Invalid bone");
-                    }
-                    else
-                    {
-                        boneList[parent].Children.Add(currentBone);
-                    }
+                    logger.Error("Invalid bone");
+                }
+                else
+                {
+                    boneList[parent].Children.Add(currentBone);
                 }
             }
-            bonesByName = new Dictionary<string, Bone>();
-            foreach (var bone in boneList)
-            {
-                bonesByName[bone.Name] = bone;
-            }
         }
-        return bonesByName?.GetValueOrDefault(name);
+        bonesByName = new Dictionary<string, Bone>();
+        foreach (var bone in boneList)
+        {
+            bonesByName[bone.Name] = bone;
+        }
+        bones = boneList;
     }
 
     class Bone(string name, int boneIndex, List<int> children)
