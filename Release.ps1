@@ -14,4 +14,5 @@ ConvertTo-Json $repo -depth 32| set-content 'PluginRepo/pluginmaster.json'
 git add .
 git commit -m "Release version $version"
 git tag v$version
+git push origin master
 git push origin tag v$version
