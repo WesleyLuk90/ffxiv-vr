@@ -7,8 +7,11 @@ if(!($version -match '\d+.\d+.\d+')) {
 
 Remove-TypeData -ErrorAction Ignore System.Array 
 
+$now = [int](Get-Date -UFormat %s -Millisecond 0)
+
 $repo = Get-Content 'PluginRepo/pluginmaster.json' -raw | ConvertFrom-Json
 $repo[0].AssemblyVersion = $version
+$repo[0].LastUpdated = $now
 ConvertTo-Json $repo -depth 32| set-content 'PluginRepo/pluginmaster.json'
 
 git add .
