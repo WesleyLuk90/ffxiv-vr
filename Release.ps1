@@ -20,6 +20,9 @@ $now = [int](Get-Date -UFormat %s -Millisecond 0)
 $repo = Get-Content 'PluginRepo/pluginmaster.json' -raw | ConvertFrom-Json
 $repo[0].AssemblyVersion = $version
 $repo[0].LastUpdated = $now
+$repo[0].DownloadLinkInstall = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v$version/FfxivVR.zip"
+$repo[0].DownloadLinkTesting = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v$version/FfxivVR.zip"
+$repo[0].DownloadLinkUpdate = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v$version/FfxivVR.zip"
 ConvertTo-Json $repo -depth 32| set-content 'PluginRepo/pluginmaster.json'
 
 git add .
