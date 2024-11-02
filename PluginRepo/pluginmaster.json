@@ -6,7 +6,7 @@
         "Description":  "A VR plugin for FFXIV.",
         "Changelog":  "",
         "InternalName":  "FfxivVR",
-        "AssemblyVersion":  "0.0.6",
+        "AssemblyVersion":  "0.0.7",
         "RepoUrl":  "https://github.com/WesleyLuk90/ffxiv-vr",
         "ApplicableVersion":  "any",
         "DalamudApiLevel":  10,
@@ -18,6 +18,6 @@
         "DownloadLinkTesting":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/latest/download/FfxivVR.zip",
         "DownloadLinkUpdate":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/latest/download/FfxivVR.zip",
         "DownloadCount":  0,
-        "LastUpdated":  1730467457
+        "LastUpdated":  1730537467
     }
 ]
