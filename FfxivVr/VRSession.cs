@@ -5,6 +5,7 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.Threading.Tasks;
 
 namespace FfxivVR;
 
@@ -28,6 +29,8 @@ public unsafe class VRSession : IDisposable
     private readonly RenderPipelineInjector renderPipelineInjector;
     private readonly Configuration configuration;
     private readonly ResolutionManager resolutionManager;
+    private readonly WaitFrameService waitFrameService;
+
     public VRSession(
         string openXRLoaderDllPath,
         Logger logger,
@@ -53,7 +56,8 @@ public unsafe class VRSession : IDisposable
         vrCamera = new VRCamera(configuration, FreeCamera);
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera);
         gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
-        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);
+        waitFrameService = new WaitFrameService(vrSystem, xr);
+        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService);
         this.renderPipelineInjector = renderPipelineInjector;
         this.configuration = configuration;
         resolutionManager = new ResolutionManager(logger);
@@ -85,12 +89,15 @@ public unsafe class VRSession : IDisposable
     {
         public Eye Eye;
         public View[] Views;
+        public Task<FrameState> WaitFrameTask { get; }
 
-        public CameraPhase(Eye eye, View[] views)
+        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask)
         {
             Eye = eye;
             Views = views;
+            WaitFrameTask = waitFrameTask;
         }
+
 
         public View CurrentView()
         {
@@ -104,11 +111,14 @@ public unsafe class VRSession : IDisposable
     class LeftRenderPhase : RenderPhase
     {
         public View[] Views;
+        public Task<FrameState> WaitFrameTask { get; }
 
-        public LeftRenderPhase(View[] views)
+        public LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask)
         {
             Views = views;
+            WaitFrameTask = waitFrameTask;
         }
+
     }
     class RightRenderPhase : RenderPhase
     {
@@ -129,26 +139,49 @@ public unsafe class VRSession : IDisposable
 
     public void PrePresent(ID3D11DeviceContext* context)
     {
-        eventHandler.PollEvents();
-        if (!State.SessionRunning)
+        if (renderPhase is LeftRenderPhase p)
         {
-            renderPhase = null;
-            cameraPhase = null;
+            p.WaitFrameTask.Wait();
+        }
+        var didEndSession = eventHandler.PollEvents(() =>
+        {
+            // Ensure we end the frame if we need to end the session
+            if (renderPhase is LeftRenderPhase p)
+            {
+                renderer.StartFrame(context);
+                renderer.SkipFrame(p.WaitFrameTask.Result);
+            }
+            if (renderPhase is RightRenderPhase p2)
+            {
+                renderer.SkipFrame(p2.FrameState);
+            }
+        });
+        if (!State.SessionRunning || didEndSession)
+        {
+            if (renderPhase != null || cameraPhase != null)
+            {
+                logger.Debug("Session not running, discarding phases");
+                renderPhase = null;
+                cameraPhase = null;
+            }
         }
         if (renderPhase is LeftRenderPhase leftRenderPhase)
         {
-            var maybeFrameState = renderer.StartFrame(context);
-            if (maybeFrameState is FrameState frameState && frameState.ShouldRender == 1)
+            var task = leftRenderPhase.WaitFrameTask;
+            logger.Trace("Starting to wait for frame");
+            task.Wait();
+            var frameState = task.Result;
+            logger.Trace("Start frame");
+            renderer.StartFrame(context);
+            if (frameState.ShouldRender == 1)
             {
                 var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left);
                 renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views);
             }
             else
             {
-                if (maybeFrameState is FrameState skipFrameState)
-                {
-                    renderer.SkipFrame(skipFrameState);
-                }
+                logger.Trace("Frame skipped");
+                renderer.SkipFrame(frameState);
                 renderPhase = null;
             }
         }
@@ -166,7 +199,7 @@ public unsafe class VRSession : IDisposable
                 case Eye.Left:
                     {
                         phase.Eye = Eye.Right;
-                        renderPhase = new LeftRenderPhase(phase.Views);
+                        renderPhase = new LeftRenderPhase(phase.Views, cameraPhase.WaitFrameTask);
                         break;
                     }
                 case Eye.Right:
@@ -245,8 +278,14 @@ public unsafe class VRSession : IDisposable
     {
         if (State.SessionRunning)
         {
+            logger.Trace("Starting cycle");
             var views = renderer.LocateView(vrSystem.Now());
-            cameraPhase = new CameraPhase(Eye.Left, views);
+            Task<FrameState> waitFrameTask = Task.Run(() =>
+            {
+                var frameState = waitFrameService.WaitFrame();
+                return frameState;
+            });
+            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask);
         }
     }
 

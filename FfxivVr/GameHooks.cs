@@ -63,7 +63,7 @@ unsafe internal class GameHooks : IDisposable
 
     private UInt64 FrameworkTickFn(Framework* FrameworkInstance)
     {
-        logger.Trace("FrameworkTickFn start");
+        //logger.Trace("FrameworkTickFn start");
         vrLifecycle.PrepareVRRender();
         var returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         var shouldSecondRender = false;
@@ -75,7 +75,7 @@ unsafe internal class GameHooks : IDisposable
         {
             returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         }
-        logger.Trace("FrameworkTickFn end");
+        //logger.Trace("FrameworkTickFn end");
         return returnValue;
     }
 
@@ -84,13 +84,13 @@ unsafe internal class GameHooks : IDisposable
     private Hook<DXGIPresentDg>? DXGIPresentHook = null;
     private void DXGIPresentFn(UInt64 a, UInt64 b)
     {
-        logger.Trace("DXGIPresentFn start");
+        //logger.Trace("DXGIPresentFn start");
         exceptionHandler.FaultBarrier(() =>
         {
             vrLifecycle.PrePresent();
         });
         DXGIPresentHook!.Original(a, b);
-        logger.Trace("DXGIPresentFn end");
+        //logger.Trace("DXGIPresentFn end");
     }
 
 

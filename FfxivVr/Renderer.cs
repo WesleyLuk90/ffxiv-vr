@@ -57,16 +57,18 @@ unsafe internal class Renderer(
         xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
     }
 
-    // Can't be called from the FrameworkTickFn
+    private long lastLocateDelay = 0;
+    private long? lastLocateView = null;
     internal View[] LocateView(long predictedDisplayTime)
     {
         var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
         var viewState = new ViewState(next: null);
         var viewLocateInfo = new ViewLocateInfo(
             viewConfigurationType: ViewConfigurationType.PrimaryStereo,
-            displayTime: predictedDisplayTime,
+            displayTime: predictedDisplayTime + lastLocateDelay,
             space: vrSpace.LocalSpace
         );
+        lastLocateView = predictedDisplayTime;
         uint viewCount = 0;
         xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
         if (viewCount != 2)
@@ -231,6 +233,7 @@ unsafe internal class Renderer(
                 layerCount: 1,
                 layers: (CompositionLayerBaseHeader**)&layerProjectionPointer
             );
+            //logger.Debug($"delta time {system.Now() - frameState.PredictedDisplayTime}");
             var result = xr.EndFrame(system.Session, ref endFrameInfo);
             if (result == Result.ErrorSessionNotRunning)
             {
@@ -239,20 +242,14 @@ unsafe internal class Renderer(
             result.CheckResult("EndFrame");
         }
     }
-
-    internal FrameState? StartFrame(ID3D11DeviceContext* context)
+    internal void StartFrame(ID3D11DeviceContext* context)
     {
-        var frameWaitInfo = new FrameWaitInfo(next: null);
-        var frameState = new FrameState(next: null);
-        xr.WaitFrame(system.Session, ref frameWaitInfo, ref frameState).CheckResult("WaitFrame");
-
         var beginFrameInfo = new FrameBeginInfo(next: null);
         var result = xr.BeginFrame(system.Session, ref beginFrameInfo);
         if (result != Result.FrameDiscarded)
         {
             result.CheckResult("BeginFrame");
         }
-        return frameState;
     }
 
     internal void CopyTexture(ID3D11DeviceContext* context, Eye eye)

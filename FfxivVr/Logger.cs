@@ -13,33 +13,29 @@ namespace FfxivVR
         {
             var log = $"[Debug] {message}";
             Log?.Info(log);
-            System.Diagnostics.Debug.WriteLine(log);
         }
 
-        private bool trace = false;
+        public bool TraceEnabled = true;
         internal void Trace(string message)
         {
-            if (!trace)
+            if (!TraceEnabled)
             {
                 return;
             }
             var log = $"[Trace] {message}";
             Log?.Info(log);
-            System.Diagnostics.Debug.WriteLine(log);
         }
         internal void Info(string message)
         {
             var log = $"[Info] {message}";
             Log?.Info(log);
             ChatGui?.Print(log);
-            System.Diagnostics.Debug.WriteLine(log);
         }
         internal void Error(string message)
         {
             var log = $"[Error] {message}";
             Log?.Info(log);
             ChatGui?.Print(log);
-            System.Diagnostics.Debug.WriteLine(log);
         }
     }
 }

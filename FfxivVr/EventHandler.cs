@@ -10,24 +10,27 @@ namespace FfxivVR
         private readonly Logger logger;
         private readonly VRState vrState;
         private readonly VRSpace vrSpace;
+        private readonly WaitFrameService waitFrameService;
 
-        internal EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState, VRSpace vrSpace)
+        internal EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState, VRSpace vrSpace, WaitFrameService waitFrameService)
         {
             this.xr = xr;
             this.vrSystem = vrSystem;
             this.logger = logger;
             this.vrState = vrState;
             this.vrSpace = vrSpace;
+            this.waitFrameService = waitFrameService;
         }
-        internal unsafe void PollEvents()
+        internal unsafe bool PollEvents(System.Action beforeStop)
         {
+            var didEndSession = false;
             while (true)
             {
                 var eventDataBuffer = new EventDataBuffer(next: null);
                 var result = xr.PollEvent(vrSystem.Instance, ref eventDataBuffer);
                 if (result == Result.EventUnavailable)
                 {
-                    return;
+                    return didEndSession;
                 }
                 result.CheckResult("PollEvent");
                 switch (eventDataBuffer.Type)
@@ -59,7 +62,7 @@ namespace FfxivVR
                     case StructureType.EventDataSessionStateChanged:
                         {
                             var stateChanged = Unsafe.As<EventDataBuffer, EventDataSessionStateChanged>(ref eventDataBuffer);
-                            HandleSessionStateChanged(stateChanged);
+                            didEndSession |= HandleSessionStateChanged(stateChanged, beforeStop);
                             break;
                         }
                     default:
@@ -71,12 +74,13 @@ namespace FfxivVR
             }
         }
 
-        private unsafe void HandleSessionStateChanged(EventDataSessionStateChanged stateChanged)
+        private unsafe bool HandleSessionStateChanged(EventDataSessionStateChanged stateChanged, System.Action beforeStop)
         {
+            var didEndSession = false;
             if (!stateChanged.Session.Equals(vrSystem.Session))
             {
                 logger.Error($"Session state changed for different session, got {stateChanged.Session.Handle} but expected {vrSystem.Session.Handle}");
-                return;
+                return false;
             }
             logger.Debug($"Session state has changed to {stateChanged.State}");
             switch (stateChanged.State)
@@ -85,13 +89,17 @@ namespace FfxivVR
                     {
                         var beginInfo = new SessionBeginInfo(next: null, primaryViewConfigurationType: vrSystem.ViewConfigurationType);
                         xr.BeginSession(vrSystem.Session, ref beginInfo).CheckResult("BeginSession");
+                        waitFrameService.SessionStarted();
                         vrState.SessionRunning = true;
                         logger.Debug("Started session");
                         break;
                     }
                 case SessionState.Stopping:
                     {
+                        waitFrameService.SessionStopped();
+                        beforeStop();
                         xr.EndSession(vrSystem.Session).CheckResult("EndSession");
+                        didEndSession = true;
                         vrState.SessionRunning = false;
                         break;
                     }
@@ -109,6 +117,7 @@ namespace FfxivVR
                     }
             }
             vrState.State = stateChanged.State;
+            return didEndSession;
         }
     }
 }
