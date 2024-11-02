@@ -30,6 +30,7 @@ public unsafe class VRSession : IDisposable
     private readonly Configuration configuration;
     private readonly ResolutionManager resolutionManager;
     private readonly WaitFrameService waitFrameService;
+    private readonly FramePrediction framePrediction;
 
     public VRSession(
         string openXRLoaderDllPath,
@@ -61,6 +62,7 @@ public unsafe class VRSession : IDisposable
         this.renderPipelineInjector = renderPipelineInjector;
         this.configuration = configuration;
         resolutionManager = new ResolutionManager(logger);
+        framePrediction = new FramePrediction(vrSystem);
     }
 
     public void Initialize()
@@ -158,6 +160,7 @@ public unsafe class VRSession : IDisposable
             logger.Trace("Starting to wait for frame");
             task.Wait();
             var frameState = task.Result;
+            framePrediction.MarkPredictedFrameTime(frameState.PredictedDisplayTime);
             logger.Trace("Start frame");
             renderer.StartFrame(context);
             if (frameState.ShouldRender == 1)
@@ -212,6 +215,7 @@ public unsafe class VRSession : IDisposable
             renderer.SkipFrame(right.FrameState);
         }
         renderPhase = null;
+        framePrediction.Reset();
     }
 
     internal bool ShouldSecondRender()
@@ -281,7 +285,7 @@ public unsafe class VRSession : IDisposable
         if (State.SessionRunning)
         {
             logger.Trace("Starting cycle");
-            var views = renderer.LocateView(vrSystem.Now());
+            var views = renderer.LocateView(framePrediction.GetPredictedFrameTime());
             Task<FrameState> waitFrameTask = Task.Run(() =>
             {
                 var frameState = waitFrameService.WaitFrame();
