@@ -21,16 +21,15 @@ namespace FfxivVR
             this.vrSpace = vrSpace;
             this.waitFrameService = waitFrameService;
         }
-        internal unsafe bool PollEvents(System.Action beforeStop)
+        internal unsafe void PollEvents(System.Action onSessionEnd)
         {
-            var didEndSession = false;
             while (true)
             {
                 var eventDataBuffer = new EventDataBuffer(next: null);
                 var result = xr.PollEvent(vrSystem.Instance, ref eventDataBuffer);
                 if (result == Result.EventUnavailable)
                 {
-                    return didEndSession;
+                    return;
                 }
                 result.CheckResult("PollEvent");
                 switch (eventDataBuffer.Type)
@@ -62,7 +61,7 @@ namespace FfxivVR
                     case StructureType.EventDataSessionStateChanged:
                         {
                             var stateChanged = Unsafe.As<EventDataBuffer, EventDataSessionStateChanged>(ref eventDataBuffer);
-                            didEndSession |= HandleSessionStateChanged(stateChanged, beforeStop);
+                            HandleSessionStateChanged(stateChanged, onSessionEnd);
                             break;
                         }
                     default:
@@ -74,13 +73,12 @@ namespace FfxivVR
             }
         }
 
-        private unsafe bool HandleSessionStateChanged(EventDataSessionStateChanged stateChanged, System.Action beforeStop)
+        private unsafe void HandleSessionStateChanged(EventDataSessionStateChanged stateChanged, System.Action onSessionEnd)
         {
-            var didEndSession = false;
             if (!stateChanged.Session.Equals(vrSystem.Session))
             {
                 logger.Error($"Session state changed for different session, got {stateChanged.Session.Handle} but expected {vrSystem.Session.Handle}");
-                return false;
+                return;
             }
             logger.Debug($"Session state has changed to {stateChanged.State}");
             switch (stateChanged.State)
@@ -97,9 +95,8 @@ namespace FfxivVR
                 case SessionState.Stopping:
                     {
                         waitFrameService.SessionStopped();
-                        beforeStop();
+                        onSessionEnd();
                         xr.EndSession(vrSystem.Session).CheckResult("EndSession");
-                        didEndSession = true;
                         vrState.SessionRunning = false;
                         break;
                     }
@@ -117,7 +114,6 @@ namespace FfxivVR
                     }
             }
             vrState.State = stateChanged.State;
-            return didEndSession;
         }
     }
 }

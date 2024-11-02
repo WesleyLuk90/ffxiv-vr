@@ -139,24 +139,11 @@ public unsafe class VRSession : IDisposable
 
     public void PrePresent(ID3D11DeviceContext* context)
     {
-        if (renderPhase is LeftRenderPhase p)
+        eventHandler.PollEvents(() =>
         {
-            p.WaitFrameTask.Wait();
-        }
-        var didEndSession = eventHandler.PollEvents(() =>
-        {
-            // Ensure we end the frame if we need to end the session
-            if (renderPhase is LeftRenderPhase p)
-            {
-                renderer.StartFrame(context);
-                renderer.SkipFrame(p.WaitFrameTask.Result);
-            }
-            if (renderPhase is RightRenderPhase p2)
-            {
-                renderer.SkipFrame(p2.FrameState);
-            }
+            OnSessionEnd(context);
         });
-        if (!State.SessionRunning || didEndSession)
+        if (!State.SessionRunning)
         {
             if (renderPhase != null || cameraPhase != null)
             {
@@ -210,6 +197,21 @@ public unsafe class VRSession : IDisposable
                 default: break;
             }
         }
+    }
+
+    private void OnSessionEnd(ID3D11DeviceContext* context)
+    {
+        // Ensure we end the frame if we need to end the session
+        if (renderPhase is LeftRenderPhase left)
+        {
+            renderer.StartFrame(context);
+            renderer.SkipFrame(left.WaitFrameTask.Result);
+        }
+        if (renderPhase is RightRenderPhase right)
+        {
+            renderer.SkipFrame(right.FrameState);
+        }
+        renderPhase = null;
     }
 
     internal bool ShouldSecondRender()

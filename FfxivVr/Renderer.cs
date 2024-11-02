@@ -233,7 +233,6 @@ unsafe internal class Renderer(
                 layerCount: 1,
                 layers: (CompositionLayerBaseHeader**)&layerProjectionPointer
             );
-            //logger.Debug($"delta time {system.Now() - frameState.PredictedDisplayTime}");
             var result = xr.EndFrame(system.Session, ref endFrameInfo);
             if (result == Result.ErrorSessionNotRunning)
             {

@@ -3,7 +3,6 @@ using ImGuiScene;
 using SharpDX.Direct3D11;
 using Silk.NET.Direct3D11;
 using System;
-using System.Linq;
 using System.Reflection;
 
 namespace FfxivVR;
@@ -35,12 +34,6 @@ unsafe internal class DalamudRenderer
         var scene = sceneMethod.GetValue(interfaceManager)
              ?? throw new Exception("Failed to get Scene property");
         this.scene = (RawDX11Scene)(scene);
-        this.scene.GetType().GetFields(
-                         BindingFlags.NonPublic |
-                         BindingFlags.Instance).ToList().ForEach(property =>
-        {
-            logger.Debug($"property {property}");
-        });
         renderTargetViewProperty = this.scene.GetType().GetField("rtv",
                          BindingFlags.NonPublic |
                          BindingFlags.Instance)

@@ -7,6 +7,7 @@ public unsafe class WaitFrameService(VRSystem system, XR xr)
 {
     private readonly VRSystem system = system;
     private readonly XR xr = xr;
+    // Use a mutex to ensure we don't race between starting and stopping the session and calling WaitFrame
     private Mutex mutex = new Mutex();
     private bool sessionStatus = false;
     public void SessionStarted()
@@ -17,7 +18,6 @@ public unsafe class WaitFrameService(VRSystem system, XR xr)
     }
     public void SessionStopped()
     {
-        // Ensure that we never call WaitFrame once we call EndFrame
         mutex.WaitOne();
         sessionStatus = false;
         mutex.ReleaseMutex();
