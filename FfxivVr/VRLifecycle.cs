@@ -25,8 +25,8 @@ public unsafe class VRLifecycle : IDisposable
         RenderPipelineInjector renderPipelineInjector,
         IGameGui gameGui,
         IClientState clientState,
-        ITargetManager targetManager
-        )
+        ITargetManager targetManager,
+        HookStatus hookStatus)
     {
         this.logger = logger;
         this.openxrDllPath = openxrDllPath;
@@ -36,9 +36,12 @@ public unsafe class VRLifecycle : IDisposable
         this.gameGui = gameGui;
         this.clientState = clientState;
         this.targetManager = targetManager;
+        this.hookStatus = hookStatus;
     }
 
     private VRSession? vrSession;
+    private HookStatus hookStatus;
+
     public void EnableVR()
     {
         if (vrSession != null)
@@ -56,7 +59,8 @@ public unsafe class VRLifecycle : IDisposable
             renderPipelineInjector: renderPipelineInjector,
             gameGui: gameGui,
             targetManager: targetManager,
-            clientState: clientState
+            clientState: clientState,
+            hookStatus: hookStatus
         );
         try
         {

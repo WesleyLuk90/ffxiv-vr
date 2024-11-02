@@ -41,10 +41,11 @@ public unsafe class VRSession : IDisposable
         RenderPipelineInjector renderPipelineInjector,
         IGameGui gameGui,
         IClientState clientState,
-        Dalamud.Game.ClientState.Objects.ITargetManager targetManager)
+        Dalamud.Game.ClientState.Objects.ITargetManager targetManager,
+        HookStatus hookStatus)
     {
         var xr = new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath }));
-        vrSystem = new VRSystem(xr, device, logger);
+        vrSystem = new VRSystem(xr, device, logger, hookStatus);
         this.logger = logger;
         State = new VRState();
         swapchains = new VRSwapchains(xr, vrSystem, logger, device);

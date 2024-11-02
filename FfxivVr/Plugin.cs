@@ -56,11 +56,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         exceptionHandler = new ExceptionHandler(logger);
         var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
-        vrLifecycle = new VRLifecycle(logger, dllPath, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager);
+        var hookStatus = new HookStatus();
+        vrLifecycle = new VRLifecycle(logger, dllPath, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus);
         gamepadManager = new GamepadManager(GamepadState, vrLifecycle);
         GameHookService.InitializeFromAttributes(pipelineInjector);
-        gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector);
-
+        gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector, hookStatus);
         GameHookService.InitializeFromAttributes(gameHooks);
         gameHooks.Initialize();
         Framework.Update += FrameworkUpdate;

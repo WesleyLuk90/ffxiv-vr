@@ -8,7 +8,7 @@ using System;
 using static FfxivVR.RenderPipelineInjector;
 
 namespace FfxivVR;
-unsafe internal class GameHooks : IDisposable
+unsafe public class GameHooks : IDisposable
 {
     /**
      * Call order
@@ -23,12 +23,15 @@ unsafe internal class GameHooks : IDisposable
     private readonly ExceptionHandler exceptionHandler;
     private readonly Logger logger;
     private readonly RenderPipelineInjector renderPipelineInjector;
-    public GameHooks(VRLifecycle vrLifecycle, ExceptionHandler exceptionHandler, Logger logger, RenderPipelineInjector renderPipelineInjector)
+    private readonly HookStatus hookStatus;
+
+    public GameHooks(VRLifecycle vrLifecycle, ExceptionHandler exceptionHandler, Logger logger, RenderPipelineInjector renderPipelineInjector, HookStatus hookStatus)
     {
         this.vrLifecycle = vrLifecycle;
         this.exceptionHandler = exceptionHandler;
         this.logger = logger;
         this.renderPipelineInjector = renderPipelineInjector;
+        this.hookStatus = hookStatus;
     }
     public void Dispose()
     {
@@ -186,8 +189,10 @@ unsafe internal class GameHooks : IDisposable
     private delegate int CreateDXGIFactoryDg(IntPtr guid, void** ppFactory);
     [Signature(Signatures.CreateDXGIFactory, DetourName = nameof(CreateDXGIFactoryFn))]
     private Hook<CreateDXGIFactoryDg>? CreateDXGIFactoryHook = null;
+
     private unsafe int CreateDXGIFactoryFn(IntPtr guid, void** ppFactory)
     {
+        hookStatus.DXGICreateHooked = true;
         // SteamVR requires using CreateDXGIFactory1
         logger.Debug("Redirecting to CreateDXGIFactory1");
         var api = DXGI.GetApi(null);

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace FfxivVR;
-internal class ExceptionHandler
+public class ExceptionHandler
 {
     private Logger logger;
 

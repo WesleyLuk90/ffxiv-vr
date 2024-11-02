@@ -13,15 +13,17 @@ public unsafe class VRSystem : IDisposable
     internal ViewConfigurationType ViewConfigurationType = ViewConfigurationType.PrimaryStereo;
     internal ulong SystemId;
 
-    private XR xr;
-    private ID3D11Device* device;
-    private Logger logger;
+    private readonly XR xr;
+    private readonly ID3D11Device* device;
+    private readonly Logger logger;
+    private readonly HookStatus hookStatus;
 
-    public VRSystem(XR xr, ID3D11Device* device, Logger logger)
+    public VRSystem(XR xr, ID3D11Device* device, Logger logger, HookStatus hookStatus)
     {
         this.xr = xr;
         this.device = device;
         this.logger = logger;
+        this.hookStatus = hookStatus;
     }
 
     public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
@@ -56,7 +58,12 @@ public unsafe class VRSystem : IDisposable
         var instanceProperties = new InstanceProperties(next: null);
         xr.GetInstanceProperties(Instance, &instanceProperties).CheckResult("GetInstanceProperties");
 
+        var runtimeName = instanceProperties.GetRuntimeName();
         logger.Debug($"Runtime Name {instanceProperties.GetRuntimeName()} Runtime Version {instanceProperties.RuntimeVersion}");
+        if (runtimeName.Contains("SteamVR") && !hookStatus.DXGICreateHooked)
+        {
+            logger.Error("SteamVR requires Dalamud Settings > Wait for plugins before game loads to be enabled. Please enable the setting and restart the game.");
+        }
 
         var getInfo = new SystemGetInfo(next: null, formFactor: FormFactor.HeadMountedDisplay);
 
