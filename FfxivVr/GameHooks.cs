@@ -3,6 +3,7 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Silk.NET.DXGI;
 using System;
 using static FfxivVR.RenderPipelineInjector;
 
@@ -45,6 +46,8 @@ unsafe internal class GameHooks : IDisposable
         PushbackUIHook?.Dispose();
         NamePlateDrawHook?.Disable();
         NamePlateDrawHook?.Dispose();
+        CreateDXGIFactoryHook?.Disable();
+        CreateDXGIFactoryHook?.Dispose();
     }
 
     public void Initialize()
@@ -56,6 +59,7 @@ unsafe internal class GameHooks : IDisposable
         RenderSkeletonListHook?.Enable();
         PushbackUIHook?.Enable();
         NamePlateDrawHook?.Enable();
+        CreateDXGIFactoryHook?.Enable();
     }
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
     [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]
@@ -103,9 +107,19 @@ unsafe internal class GameHooks : IDisposable
         SetMatricesHook!.Original(camera, ptr);
         exceptionHandler.FaultBarrier(() =>
         {
-            if (camera == FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance()->GetActiveCamera()->SceneCamera.RenderCamera)
+            var cameraManager = FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance();
+            if (cameraManager == null)
             {
-                vrLifecycle.UpdateCamera(&FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance()->GetActiveCamera()->SceneCamera);
+                return;
+            }
+            var activeCamera = cameraManager->GetActiveCamera();
+            if (activeCamera == null)
+            {
+                return;
+            }
+            if (camera == activeCamera->SceneCamera.RenderCamera)
+            {
+                vrLifecycle.UpdateCamera(&activeCamera->SceneCamera);
             }
         });
     }
@@ -167,5 +181,19 @@ unsafe internal class GameHooks : IDisposable
             vrLifecycle.UpdateNamePlates(a);
         });
         NamePlateDrawHook!.Original(a);
+    }
+
+    private delegate int CreateDXGIFactoryDg(IntPtr guid, void** ppFactory);
+    [Signature(Signatures.CreateDXGIFactory, DetourName = nameof(CreateDXGIFactoryFn))]
+    private Hook<CreateDXGIFactoryDg>? CreateDXGIFactoryHook = null;
+    private unsafe int CreateDXGIFactoryFn(IntPtr guid, void** ppFactory)
+    {
+        // SteamVR requires using CreateDXGIFactory1
+        logger.Debug("Redirecting to CreateDXGIFactory1");
+        var api = DXGI.GetApi(null);
+        fixed (Guid* guidPtr = &IDXGIFactory1.Guid)
+        {
+            return api.CreateDXGIFactory1(guidPtr, ppFactory);
+        }
     }
 }
