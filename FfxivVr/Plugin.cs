@@ -5,13 +5,11 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Silk.NET.Direct3D11;
+using Silk.NET.Maths;
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 
 namespace FfxivVR;
 
@@ -33,6 +31,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private readonly ExceptionHandler exceptionHandler;
     private readonly VRLifecycle vrLifecycle;
+    private readonly GamepadManager gamepadManager;
     private readonly GameHooks gameHooks;
     private readonly Configuration configuration;
     private readonly GameState gameState = new GameState(ClientState);
@@ -58,6 +57,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         exceptionHandler = new ExceptionHandler(logger);
         var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
         vrLifecycle = new VRLifecycle(logger, dllPath, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager);
+        gamepadManager = new GamepadManager(GamepadState, vrLifecycle);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector);
 
@@ -105,7 +105,22 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 FirstToThirdPerson();
             }
             isFirstPerson = nextFirstPerson;
+
+            UpdateFreeCam(framework);
         });
+    }
+
+    private void UpdateFreeCam(IFramework framework)
+    {
+        gamepadManager.Update();
+        var speed = 0.05f;
+        var rotationSpeed = 2 * MathF.PI / 200;
+        var timeDelta = (float)framework.UpdateDelta.TotalSeconds;
+        vrLifecycle.GetFreeCamera()?.UpdatePosition(
+            walkDelta: new Vector2D<float>(GamepadState.LeftStick.X, GamepadState.LeftStick.Y) * timeDelta * speed,
+            heightDelta: GamepadState.RightStick.Y * timeDelta * speed,
+            rotationDelta: -GamepadState.RightStick.X * timeDelta * rotationSpeed
+        );
     }
 
     private void FirstToThirdPerson()
@@ -166,40 +181,28 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 case "stop":
                     StopVR();
                     break;
-                case "debugsetting":
-                    gameSettingsManager.SetBooleanSetting(ConfigOption.AutoFaceTargetOnAction, false);
+                case "recenter":
+                    vrLifecycle.RecenterCamera();
                     break;
-                case "toggle-gamepad":
-                    var assembly = Assembly.GetAssembly(typeof(IGamepadState)) ?? throw new Exception("Could not get assembly");
-                    var gamepad = assembly.GetType("Dalamud.Game.ClientState.GamePad.GamepadState") ?? throw new Exception("Could not get gamepad");
-                    var property = gamepad.GetProperty("NavEnableGamepad",
-                         BindingFlags.NonPublic |
-                         BindingFlags.Instance) ?? throw new Exception("Could not get NavEnableGamepad");
-                    var newState = !(bool)property.GetValue(GamepadState);
-                    property.SetValue(GamepadState, newState);
-                    logger.Info($"Set state {newState}");
-                    break;
-                case "printtextures":
-                    var renderTargetManager = RenderTargetManager.Instance();
-                    //var depthTexture = renderTargetManager->RenderTargets[10];
-                    //var renderTexture = renderTargetManager->RenderTargets2[33];
-                    for (int i = 0; i < renderTargetManager->RenderTargets2.Length; i++)
+                case "freecam":
+                    var freeCam = vrLifecycle.GetFreeCamera();
+                    if (freeCam == null)
                     {
-                        var tex = renderTargetManager->RenderTargets2[i].Value;
-                        if (tex != null)
+                        logger.Info("Free cam can only be enabled after VR has started");
+                    }
+                    else
+                    {
+                        if (freeCam.Enabled)
                         {
-                            logger.Info($"Render target {i}:{tex->ActualWidth}x{tex->ActualHeight} format ${tex->TextureFormat}");
-                            var texture = (ID3D11Texture2D*)tex->D3D11Texture2D;
-                            var desc = new Texture2DDesc();
-                            texture->GetDesc(ref desc);
-                            logger.Info($"Type is {desc.Format}");
+                            freeCam.Enabled = false;
+                            logger.Info("Disabled free cam");
                         }
                         else
                         {
-                            logger.Info($"Render target null{i}");
+                            freeCam.Enabled = true;
+                            logger.Info("Enabled free cam");
                         }
                     }
-                    //logger.Info($"depth:{depthTexture.Value->ActualWidth}x{depthTexture.Value->ActualHeight} format ${depthTexture.Value->TextureFormat}");
                     break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");

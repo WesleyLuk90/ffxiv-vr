@@ -4,9 +4,10 @@ using Silk.NET.OpenXR;
 using System;
 
 namespace FfxivVR;
-internal class VRCamera(Configuration configuration)
+internal class VRCamera(Configuration configuration, FreeCamera freeCamera)
 {
     private readonly Configuration configuration = configuration;
+    private readonly FreeCamera freeCamera = freeCamera;
 
     internal Matrix4x4 ComputeGameProjectionMatrix(View view)
     {
@@ -26,9 +27,12 @@ internal class VRCamera(Configuration configuration)
     internal Matrix4X4<float> ComputeGameViewMatrix(View view, Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition)
     {
         var forwardVector = lookAt - position;
-        var yAngle = -MathF.PI / 2 - MathF.Atan2(forwardVector.Z, forwardVector.X);
+        var yRotation = -MathF.PI / 2 - MathF.Atan2(forwardVector.Z, forwardVector.X);
+        var cameraPosition = headPosition ?? position;
 
-        var gameViewMatrix = Matrix4X4.CreateScale(1f / configuration.WorldScale) * Matrix4X4.CreateRotationY(yAngle) * Matrix4X4.CreateTranslation(headPosition ?? position);
+        freeCamera.Update(ref cameraPosition, ref yRotation);
+
+        var gameViewMatrix = Matrix4X4.CreateScale(1f / configuration.WorldScale) * Matrix4X4.CreateRotationY(yRotation) * Matrix4X4.CreateTranslation(cameraPosition);
         var vrViewMatrix = Matrix4X4.CreateFromQuaternion(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation(view.Pose.Position.ToVector3D());
 
         var viewMatrix = vrViewMatrix * gameViewMatrix;

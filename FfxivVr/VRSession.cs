@@ -23,11 +23,21 @@ public unsafe class VRSession : IDisposable
     private readonly VRSwapchains swapchains;
     private readonly GameState gameState;
     private readonly DalamudRenderer dalamudRenderer;
+    public readonly FreeCamera FreeCamera;
     private readonly VRCamera vrCamera;
     private readonly RenderPipelineInjector renderPipelineInjector;
     private readonly Configuration configuration;
     private readonly ResolutionManager resolutionManager;
-    public VRSession(string openXRLoaderDllPath, Logger logger, ID3D11Device* device, Configuration configuration, GameState gameState, RenderPipelineInjector renderPipelineInjector, IGameGui gameGui, IClientState clientState, Dalamud.Game.ClientState.Objects.ITargetManager targetManager)
+    public VRSession(
+        string openXRLoaderDllPath,
+        Logger logger,
+        ID3D11Device* device,
+        Configuration configuration,
+        GameState gameState,
+        RenderPipelineInjector renderPipelineInjector,
+        IGameGui gameGui,
+        IClientState clientState,
+        Dalamud.Game.ClientState.Objects.ITargetManager targetManager)
     {
         var xr = new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath }));
         vrSystem = new VRSystem(xr, device, logger);
@@ -39,7 +49,8 @@ public unsafe class VRSession : IDisposable
         vrSpace = new VRSpace(xr, logger, vrSystem);
         this.gameState = gameState;
         this.dalamudRenderer = new DalamudRenderer(logger);
-        vrCamera = new VRCamera(configuration);
+        FreeCamera = new FreeCamera();
+        vrCamera = new VRCamera(configuration, FreeCamera);
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera);
         gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace);

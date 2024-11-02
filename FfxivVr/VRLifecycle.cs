@@ -17,7 +17,6 @@ public unsafe class VRLifecycle : IDisposable
     private readonly IClientState clientState;
     private readonly ITargetManager targetManager;
 
-
     public VRLifecycle(
         Logger logger,
         string openxrDllPath,
@@ -70,6 +69,11 @@ public unsafe class VRLifecycle : IDisposable
             vrSession = null;
             throw;
         }
+    }
+
+    public FreeCamera? GetFreeCamera()
+    {
+        return vrSession?.FreeCamera;
     }
 
     public bool IsEnabled()
