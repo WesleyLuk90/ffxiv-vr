@@ -20,3 +20,14 @@ Still a work in progress but the basic VR rendering works with a floating UI.
 ## Tips
 * For performance, decreases the display limits in FFXIV
   * `System Configuration > ... > Display Limits > Character and Object Quantity > Minimum`
+
+## Compatibility
+
+There is a compatibility issue right now with SteamVR and it does not work in most cases.
+
+| Connection | Runtime | Works |
+| --- | --- | --- |
+| QuestLink | OpenXR/Meta Quest Link | Yes | 
+| Quest Air Link | OpenXR/Meta Quest Link | Yes | 
+| Virtual Desktop | OpenXR/VDXR | Yes | 
+| Steam Link | SteamVR | Sorta | Lots of camera issues and stuttering
