@@ -160,9 +160,8 @@ unsafe internal class Renderer(
             RenderUI(context, vrViewProjectionMatrix);
         }
 
-        var releaseInfo = new SwapchainImageReleaseInfo(next: null);
-        xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
-        xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, ref releaseInfo).CheckResult("ReleaseSwapchainImage");
+        xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
+        xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
         return compositionLayerProjectionView;
     }
 
@@ -188,7 +187,6 @@ unsafe internal class Renderer(
         dalamudRenderer.Render(resources.DalamudRenderTarget.RenderTargetView);
 
         RenderCursor(context, new Vector2D<float>(width, height));
-
     }
 
     private void RenderCursor(ID3D11DeviceContext* context, Vector2D<float> windowSize)

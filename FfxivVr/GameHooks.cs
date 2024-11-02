@@ -92,11 +92,15 @@ unsafe public class GameHooks : IDisposable
     private void DXGIPresentFn(UInt64 a, UInt64 b)
     {
         //logger.Trace("DXGIPresentFn start");
+        var shouldPresent = true;
         exceptionHandler.FaultBarrier(() =>
         {
-            vrLifecycle.PrePresent();
+            shouldPresent = vrLifecycle.PrePresent();
         });
-        DXGIPresentHook!.Original(a, b);
+        if (shouldPresent)
+        {
+            DXGIPresentHook!.Original(a, b);
+        }
         //logger.Trace("DXGIPresentFn end");
     }
 

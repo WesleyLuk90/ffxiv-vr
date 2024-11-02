@@ -123,7 +123,9 @@ public unsafe class VRLifecycle : IDisposable
             return vrSession?.ShouldSecondRender() ?? false;
         }
     }
-    public void PrePresent()
+
+    // Returns whether we should call the original present function
+    public bool PrePresent()
     {
         lock (this)
         {
@@ -131,7 +133,7 @@ public unsafe class VRLifecycle : IDisposable
             {
                 RealDisableVR();
             }
-            vrSession?.PrePresent(GetContext());
+            return vrSession?.PrePresent(GetContext()) ?? true;
         }
     }
 

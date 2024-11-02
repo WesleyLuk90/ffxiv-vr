@@ -140,8 +140,9 @@ public unsafe class VRSession : IDisposable
 
     private RenderPhase? renderPhase;
 
-    public void PrePresent(ID3D11DeviceContext* context)
+    public bool PrePresent(ID3D11DeviceContext* context)
     {
+        var shouldPresent = true;
         eventHandler.PollEvents(() =>
         {
             OnSessionEnd(context);
@@ -168,6 +169,8 @@ public unsafe class VRSession : IDisposable
             {
                 var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left);
                 renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views);
+                // Skip presenting the left view to avoid flicker when displaying the right view
+                shouldPresent = false;
             }
             else
             {
@@ -201,6 +204,7 @@ public unsafe class VRSession : IDisposable
                 default: break;
             }
         }
+        return shouldPresent;
     }
 
     private void OnSessionEnd(ID3D11DeviceContext* context)
@@ -269,7 +273,12 @@ public unsafe class VRSession : IDisposable
             logger.Trace($"Queue {phase.Eye} render");
 
             renderPipelineInjector.QueueRenderTargetCommand(phase.Eye);
-            renderPipelineInjector.QueueClearCommand();
+            // Only clear the left view to get a clean render for copying
+            // The right view we skip clearing which lets it display the VR view
+            if (phase.Eye == Eye.Left)
+            {
+                renderPipelineInjector.QueueClearCommand();
+            }
         }
     }
 
