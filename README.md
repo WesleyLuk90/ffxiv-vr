@@ -31,3 +31,6 @@ There is a compatibility issue right now with SteamVR and it does not work in mo
 | Quest Air Link | OpenXR/Meta Quest Link | Yes |   |
 | Virtual Desktop | OpenXR/VDXR | Yes |   |
 | Steam Link | SteamVR | Sorta | Lots of camera issues and stuttering |
+
+## Troubleshooting
+If you're using Quest Link and running into issues, try shutting down Meta Quest Link and restarting the Occulus VR Runtime  Service in windows.
