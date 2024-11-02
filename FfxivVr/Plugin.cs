@@ -176,9 +176,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     configWindow.Toggle();
                     break;
                 case "start":
+                case "on":
                     StartVR();
                     break;
                 case "stop":
+                case "off":
                     StopVR();
                     break;
                 case "recenter":
