@@ -3,13 +3,14 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
+using Silk.NET.OpenXR;
 using System;
 
 namespace FfxivVR;
 public unsafe class VRLifecycle : IDisposable
 {
     private Logger logger;
-    private readonly string openxrDllPath;
+    private readonly XR xr;
     private readonly Configuration configuration;
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
@@ -19,17 +20,18 @@ public unsafe class VRLifecycle : IDisposable
 
     public VRLifecycle(
         Logger logger,
-        string openxrDllPath,
+        XR xr,
         Configuration configuration,
         GameState gameState,
         RenderPipelineInjector renderPipelineInjector,
         IGameGui gameGui,
         IClientState clientState,
         ITargetManager targetManager,
-        HookStatus hookStatus)
+        HookStatus hookStatus,
+        VRInstance vrInstance)
     {
         this.logger = logger;
-        this.openxrDllPath = openxrDllPath;
+        this.xr = xr;
         this.configuration = configuration;
         this.gameState = gameState;
         this.renderPipelineInjector = renderPipelineInjector;
@@ -37,10 +39,12 @@ public unsafe class VRLifecycle : IDisposable
         this.clientState = clientState;
         this.targetManager = targetManager;
         this.hookStatus = hookStatus;
+        this.vrInstance = vrInstance;
     }
 
     private VRSession? vrSession;
     private HookStatus hookStatus;
+    private readonly VRInstance vrInstance;
 
     public void EnableVR()
     {
@@ -51,8 +55,8 @@ public unsafe class VRLifecycle : IDisposable
         }
         logger.Info("Starting VR");
         vrSession = new VRSession(
-            this.openxrDllPath,
-            logger,
+            xr: xr,
+            logger: logger,
             device: GetDevice(),
             configuration: configuration,
             gameState: gameState,
@@ -60,7 +64,8 @@ public unsafe class VRLifecycle : IDisposable
             gameGui: gameGui,
             targetManager: targetManager,
             clientState: clientState,
-            hookStatus: hookStatus
+            hookStatus: hookStatus,
+            vrInstance: vrInstance
         );
         try
         {

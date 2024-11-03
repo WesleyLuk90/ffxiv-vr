@@ -7,6 +7,7 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Silk.NET.Maths;
+using Silk.NET.OpenXR;
 using System;
 using System.IO;
 using System.Linq;
@@ -40,6 +41,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly CompanionPlugins companionPlugins = new CompanionPlugins();
 
     private readonly GameSettingsManager gameSettingsManager;
+    private readonly VRInstance vrInstance;
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -58,7 +60,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
         exceptionHandler = new ExceptionHandler(logger);
         var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
         var hookStatus = new HookStatus();
-        vrLifecycle = new VRLifecycle(logger, dllPath, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus);
+        var xr = new XR(XR.CreateDefaultContext(new string[] { dllPath }));
+        vrInstance = new VRInstance(xr, logger, hookStatus);
+        vrInstance.Initialize();
+        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus, vrInstance);
         gamepadManager = new GamepadManager(GamepadState, vrLifecycle);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector, hookStatus);
@@ -68,13 +73,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         gameSettingsManager = new GameSettingsManager(logger);
 
-        configWindow = new ConfigWindow(configuration);
+        configWindow = new ConfigWindow(configuration, vrLifecycle, ToggleVR);
         WindowSystem.AddWindow(configWindow);
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
-
-        companionPlugins.OnLoad();
     }
 
     private void ToggleConfigUI()
@@ -88,8 +91,10 @@ public unsafe sealed class Plugin : IDalamudPlugin
     }
 
     private bool? isFirstPerson = null;
+
     private void FrameworkUpdate(IFramework framework)
     {
+        MaybeOnBootStartVR();
         exceptionHandler.FaultBarrier(() =>
         {
             var nextFirstPerson = gameState.IsFirstPerson();
@@ -105,6 +110,20 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
             UpdateFreeCam(framework);
         });
+    }
+
+    private bool LaunchAtStartChecked = false;
+    private void MaybeOnBootStartVR()
+    {
+        var shouldLaunchOnStart = !LaunchAtStartChecked &&
+            configuration.StartVRAtBoot &&
+            PluginInterface.Reason == PluginLoadReason.Boot &&
+            vrInstance.IsVRAvailable();
+        LaunchAtStartChecked = true;
+        if (shouldLaunchOnStart)
+        {
+            StartVR();
+        }
     }
 
     private void UpdateFreeCam(IFramework framework)
@@ -154,6 +173,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
+        configuration.Save();
         companionPlugins.OnUnload();
         configWindow.Dispose();
         Framework.Update -= FrameworkUpdate;
@@ -162,6 +182,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler(CommandName);
 
         vrLifecycle.Dispose();
+        vrInstance.Dispose();
     }
     private unsafe void OnCommand(string command, string args)
     {
@@ -210,12 +231,24 @@ public unsafe sealed class Plugin : IDalamudPlugin
             }
         }
     }
-    public unsafe void StartVR()
+
+    public void ToggleVR()
+    {
+        if (vrLifecycle.IsEnabled())
+        {
+            StopVR();
+        }
+        else
+        {
+            StartVR();
+        }
+    }
+    public void StartVR()
     {
         vrLifecycle.EnableVR();
         companionPlugins.OnActivate();
     }
-    private unsafe void StopVR()
+    private void StopVR()
     {
         vrLifecycle.DisableVR();
         configuration.Save();

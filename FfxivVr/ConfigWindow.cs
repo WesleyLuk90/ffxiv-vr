@@ -7,15 +7,19 @@ namespace FfxivVR;
 internal class ConfigWindow : Window, IDisposable
 {
     private readonly Configuration config;
+    private readonly VRLifecycle vrLifecycle;
+    private readonly Action toggleVR;
     private readonly Configuration defaultConfig = new Configuration();
 
-    public ConfigWindow(Configuration configuration) : base("FFXIV VR Settings")
+    public ConfigWindow(Configuration configuration, VRLifecycle vrLifecycle, Action toggleVR) : base("FFXIV VR Settings")
     {
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
 
         Size = new Vector2(400, 400);
         this.config = configuration;
+        this.vrLifecycle = vrLifecycle;
+        this.toggleVR = toggleVR;
     }
 
 
@@ -25,6 +29,19 @@ internal class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
+        if (ImGui.CollapsingHeader("General"))
+        {
+            if (ImGui.Button(vrLifecycle.IsEnabled() ? "Stop VR" : "Start VR"))
+            {
+                toggleVR();
+            }
+            var startVRAtBoot = config.StartVRAtBoot;
+            if (ImGui.Checkbox("Start VR at game launch if headset is available", ref startVRAtBoot))
+            {
+                config.StartVRAtBoot = startVRAtBoot;
+                config.Save();
+            }
+        }
         if (ImGui.CollapsingHeader("View"))
         {
             var recenterOnViewChange = config.RecenterOnViewChange;

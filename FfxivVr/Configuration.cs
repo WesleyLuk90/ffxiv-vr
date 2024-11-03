@@ -14,6 +14,7 @@ public class Configuration : IPluginConfiguration
     public bool FollowCharacter = false;
     public bool RecenterOnViewChange = true;
     public bool DisableAutoFaceTargetInFirstPerson = false;
+    public bool StartVRAtBoot = false;
 
     public void Save()
     {

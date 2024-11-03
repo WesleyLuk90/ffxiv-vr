@@ -11,7 +11,6 @@ namespace FfxivVR;
 
 public unsafe class VRSession : IDisposable
 {
-
     private readonly VRSystem vrSystem;
     private readonly Logger logger;
     public readonly VRState State;
@@ -33,7 +32,7 @@ public unsafe class VRSession : IDisposable
     private readonly FramePrediction framePrediction;
 
     public VRSession(
-        string openXRLoaderDllPath,
+        XR xr,
         Logger logger,
         ID3D11Device* device,
         Configuration configuration,
@@ -42,13 +41,14 @@ public unsafe class VRSession : IDisposable
         IGameGui gameGui,
         IClientState clientState,
         Dalamud.Game.ClientState.Objects.ITargetManager targetManager,
-        HookStatus hookStatus)
+        HookStatus hookStatus,
+        VRInstance vrInstance
+    )
     {
-        var xr = new XR(XR.CreateDefaultContext(new string[] { openXRLoaderDllPath }));
-        vrSystem = new VRSystem(xr, device, logger, hookStatus);
+        vrSystem = new VRSystem(xr, device, logger, hookStatus, vrInstance);
         this.logger = logger;
         State = new VRState();
-        swapchains = new VRSwapchains(xr, vrSystem, logger, device);
+        swapchains = new VRSwapchains(xr, vrSystem, logger, device, vrInstance);
         resources = new Resources(device, logger);
         vrShaders = new VRShaders(device, logger);
         vrSpace = new VRSpace(xr, logger, vrSystem);
@@ -59,7 +59,7 @@ public unsafe class VRSession : IDisposable
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera);
         gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         waitFrameService = new WaitFrameService(vrSystem, xr);
-        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService);
+        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService, vrInstance);
         this.renderPipelineInjector = renderPipelineInjector;
         this.configuration = configuration;
         resolutionManager = new ResolutionManager(logger);
