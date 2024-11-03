@@ -1,6 +1,7 @@
 ﻿using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.DXGI;
@@ -114,19 +115,19 @@ unsafe public class GameHooks : IDisposable
         SetMatricesHook!.Original(camera, ptr);
         exceptionHandler.FaultBarrier(() =>
         {
-            var cameraManager = FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance();
-            if (cameraManager == null)
+            var manager = CameraManager.Instance();
+            if (manager == null)
             {
                 return;
             }
-            var activeCamera = cameraManager->GetActiveCamera();
-            if (activeCamera == null)
+            var currentCamera = manager->CurrentCamera;
+            if (currentCamera == null)
             {
                 return;
             }
-            if (camera == activeCamera->SceneCamera.RenderCamera)
+            if (currentCamera->RenderCamera == camera)
             {
-                vrLifecycle.UpdateCamera(&activeCamera->SceneCamera);
+                vrLifecycle.UpdateCamera(currentCamera);
             }
         });
     }
