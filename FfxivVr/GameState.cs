@@ -16,7 +16,8 @@ unsafe public class GameState
 
     public bool IsFirstPerson()
     {
-        return SceneCameraExtensions.GetCameraMode() == CameraMode.FirstPerson;
+        // Some cutscenes this flag is set, e.g. Logging in and out of the inn
+        return SceneCameraExtensions.GetCameraMode() == CameraMode.FirstPerson && !Conditions.IsOccupiedInCutSceneEvent;
     }
 
     public bool IsGPosing()

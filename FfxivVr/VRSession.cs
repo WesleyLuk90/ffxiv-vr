@@ -228,6 +228,9 @@ public unsafe class VRSession : IDisposable
         return cameraPhase?.Eye == Eye.Right;
     }
 
+    // Test Cases
+    // * Dungeon start cutscene
+    // * Inn login/logout
     internal void UpdateCamera(Camera* camera)
     {
         if (State.SessionRunning && cameraPhase is CameraPhase phase)
