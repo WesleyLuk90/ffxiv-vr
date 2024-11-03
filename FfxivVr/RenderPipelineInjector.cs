@@ -2,8 +2,9 @@
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Windows.Win32;
+using Windows.Win32.System.Memory;
 
 namespace FfxivVR;
 public unsafe class RenderPipelineInjector
@@ -30,19 +31,16 @@ public unsafe class RenderPipelineInjector
             };
     private nint tls_index;
 
-    [DllImport("kernel32.dll")]
-    static extern bool VirtualProtectEx(IntPtr hProcess, IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
-    [DllImport("kernel32.dll")]
-    static extern bool FlushInstructionCache(IntPtr hProcess, IntPtr lpBaseAddress, UIntPtr dwSize);
     public RenderPipelineInjector(ISigScanner sigScanner, Logger logger)
     {
         tls_index = sigScanner.GetStaticAddressFromSig(Signatures.g_tls_index);
         getThreadedDataHandle = GCHandle.Alloc(GetThreadedDataASM, GCHandleType.Pinned);
-        if (!VirtualProtectEx(Process.GetCurrentProcess().Handle, getThreadedDataHandle.AddrOfPinnedObject(), (UIntPtr)GetThreadedDataASM.Length, 0x40 /* EXECUTE_READWRITE */, out uint _))
+        var processHandle = PInvoke.GetCurrentProcess_SafeHandle();
+        if (!PInvoke.VirtualProtectEx(processHandle, (void*)getThreadedDataHandle.AddrOfPinnedObject(), (UIntPtr)GetThreadedDataASM.Length, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out PAGE_PROTECTION_FLAGS _))
         {
             throw new Exception("Failed to VirtualProtectEx");
         }
-        if (!FlushInstructionCache(Process.GetCurrentProcess().Handle, getThreadedDataHandle.AddrOfPinnedObject(), (UIntPtr)GetThreadedDataASM.Length))
+        if (!PInvoke.FlushInstructionCache(processHandle, (void*)getThreadedDataHandle.AddrOfPinnedObject(), (UIntPtr)GetThreadedDataASM.Length))
         {
             throw new Exception("Failed to FlushInstructionCache");
         }

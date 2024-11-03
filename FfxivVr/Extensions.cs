@@ -17,7 +17,7 @@ namespace FfxivVR
         {
             if (result != Result.Success)
             {
-                logger.Error($"Failed to {action} got result {result}");
+                logger.Debug($"Failed to {action} got result {result}");
             }
         }
 
