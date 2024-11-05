@@ -12,8 +12,9 @@ Still a work in progress but the basic VR rendering works with a floating UI.
 2. Add `https://raw.githubusercontent.com/WesleyLuk90/ffxiv-vr/refs/heads/master/PluginRepo/pluginmaster.json` as a custom plugin repo in Dalamud settings
 3. Install the FFXIV VR plugin
 4. If you're using SteamVR enable `Dalamud Settings > Wait for plugins before game loads` and restart the game
-5. Run `/vr start` to start VR, run `/vr stop` to stop
-6. Run `/vr` to access settings
+5. Switch the game to borderless window mode if not already
+6. Run `/vr start` to start VR, run `/vr stop` to stop
+7. Run `/vr` to access settings
 
 ## Features
 * VR in FFXIV
