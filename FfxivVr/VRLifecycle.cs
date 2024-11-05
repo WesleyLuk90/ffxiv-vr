@@ -18,6 +18,7 @@ public unsafe class VRLifecycle : IDisposable
     private readonly IClientState clientState;
     private readonly ITargetManager targetManager;
     private VRSession? vrSession;
+    private GameSettingsManager gameSettingsManager;
     private readonly HookStatus hookStatus;
     private readonly VRDiagnostics diagnostics;
 
@@ -31,7 +32,8 @@ public unsafe class VRLifecycle : IDisposable
         IClientState clientState,
         ITargetManager targetManager,
         HookStatus hookStatus,
-        VRDiagnostics diagnostics)
+        VRDiagnostics diagnostics,
+        GameSettingsManager gameSettingsManager)
     {
         this.logger = logger;
         this.xr = xr;
@@ -43,6 +45,7 @@ public unsafe class VRLifecycle : IDisposable
         this.targetManager = targetManager;
         this.hookStatus = hookStatus;
         this.diagnostics = diagnostics;
+        this.gameSettingsManager = gameSettingsManager;
     }
 
     public void EnableVR()
@@ -64,7 +67,8 @@ public unsafe class VRLifecycle : IDisposable
             targetManager: targetManager,
             clientState: clientState,
             hookStatus: hookStatus,
-            diagnostics: diagnostics
+            diagnostics: diagnostics,
+            gameSettingsManager: gameSettingsManager
         );
         try
         {

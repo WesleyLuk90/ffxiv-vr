@@ -30,6 +30,7 @@ public unsafe class VRSession : IDisposable
     private readonly ResolutionManager resolutionManager;
     private readonly WaitFrameService waitFrameService;
     private readonly FramePrediction framePrediction;
+    private readonly GameSettingsManager gameSettingsManager;
 
     public VRSession(
         XR xr,
@@ -42,7 +43,8 @@ public unsafe class VRSession : IDisposable
         IClientState clientState,
         Dalamud.Game.ClientState.Objects.ITargetManager targetManager,
         HookStatus hookStatus,
-        VRDiagnostics diagnostics)
+        VRDiagnostics diagnostics,
+        GameSettingsManager gameSettingsManager)
     {
         vrSystem = new VRSystem(xr, device, logger, hookStatus);
         this.logger = logger;
@@ -61,8 +63,9 @@ public unsafe class VRSession : IDisposable
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService);
         this.renderPipelineInjector = renderPipelineInjector;
         this.configuration = configuration;
-        resolutionManager = new ResolutionManager(logger);
+        resolutionManager = new ResolutionManager(logger, gameSettingsManager);
         framePrediction = new FramePrediction(vrSystem);
+        this.gameSettingsManager = gameSettingsManager;
     }
 
     public void Initialize()

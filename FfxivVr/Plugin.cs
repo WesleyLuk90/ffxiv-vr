@@ -62,7 +62,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
         var hookStatus = new HookStatus();
         var xr = new XR(XR.CreateDefaultContext(new string[] { dllPath }));
         diagnostics = new VRDiagnostics(logger);
-        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus, diagnostics);
+        gameSettingsManager = new GameSettingsManager(logger);
+        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus, diagnostics, gameSettingsManager);
         gamepadManager = new GamepadManager(GamepadState, vrLifecycle);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector, hookStatus);
@@ -70,7 +71,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
         gameHooks.Initialize();
         Framework.Update += FrameworkUpdate;
 
-        gameSettingsManager = new GameSettingsManager(logger);
 
         configWindow = new ConfigWindow(configuration, vrLifecycle, ToggleVR);
         WindowSystem.AddWindow(configWindow);
@@ -156,7 +156,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         }
         if (configuration.DisableAutoFaceTargetInFirstPerson)
         {
-            gameSettingsManager.SetBooleanSetting(ConfigOption.AutoFaceTargetOnAction, true);
+            gameSettingsManager.SetUIBooleanSetting(ConfigOption.AutoFaceTargetOnAction, true);
         }
     }
 
@@ -172,7 +172,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         }
         if (configuration.DisableAutoFaceTargetInFirstPerson)
         {
-            gameSettingsManager.SetBooleanSetting(ConfigOption.AutoFaceTargetOnAction, false);
+            gameSettingsManager.SetUIBooleanSetting(ConfigOption.AutoFaceTargetOnAction, false);
         }
     }
 

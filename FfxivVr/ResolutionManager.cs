@@ -1,16 +1,19 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Silk.NET.Maths;
 using System;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 
 namespace FfxivVR;
-unsafe public class ResolutionManager(Logger logger)
+unsafe public class ResolutionManager(Logger logger, GameSettingsManager gameSettingsManager)
 {
     private RECT? originalWindow = null;
     private Vector2D<uint>? original = null;
+    private uint? savedScreenMode = null;
     private readonly Logger logger = logger;
+    private readonly GameSettingsManager gameSettingsManager = gameSettingsManager;
 
     public void ChangeResolution(Vector2D<uint> resolution)
     {
@@ -40,6 +43,10 @@ unsafe public class ResolutionManager(Logger logger)
         dx11DeviceInstance->NewWidth = resolution.X;
         dx11DeviceInstance->NewHeight = resolution.Y;
         dx11DeviceInstance->RequestResolutionChange = 1;
+
+        // Borderless window
+        savedScreenMode = gameSettingsManager.GetSystemUIntSetting(ConfigOption.ScreenMode);
+        gameSettingsManager.SetSystemUIntSetting(ConfigOption.ScreenMode, 1);
     }
 
     private static HWND GetGameHWND()
@@ -65,6 +72,10 @@ unsafe public class ResolutionManager(Logger logger)
             dx11DeviceInstance->NewWidth = size.X;
             dx11DeviceInstance->NewHeight = size.Y;
             dx11DeviceInstance->RequestResolutionChange = 1;
+        }
+        if (savedScreenMode is uint saved)
+        {
+            gameSettingsManager.SetSystemUIntSetting(ConfigOption.ScreenMode, saved);
         }
         originalWindow = null;
         original = null;
