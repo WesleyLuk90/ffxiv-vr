@@ -41,21 +41,21 @@ public unsafe class VRSession : IDisposable
         IGameGui gameGui,
         IClientState clientState,
         Dalamud.Game.ClientState.Objects.ITargetManager targetManager,
-        HookStatus hookStatus
-    )
+        HookStatus hookStatus,
+        VRDiagnostics diagnostics)
     {
         vrSystem = new VRSystem(xr, device, logger, hookStatus);
         this.logger = logger;
         State = new VRState();
         swapchains = new VRSwapchains(xr, vrSystem, logger, device);
-        resources = new Resources(device, logger);
+        resources = new Resources(device, logger, diagnostics);
         vrShaders = new VRShaders(device, logger);
         vrSpace = new VRSpace(xr, logger, vrSystem);
         this.gameState = gameState;
         this.dalamudRenderer = new DalamudRenderer(logger);
         FreeCamera = new FreeCamera();
         vrCamera = new VRCamera(configuration, FreeCamera);
-        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera);
+        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera, diagnostics);
         gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         waitFrameService = new WaitFrameService(vrSystem, xr);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService);

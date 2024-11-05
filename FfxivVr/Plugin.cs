@@ -31,6 +31,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private Logger logger { get; init; }
 
     private readonly ExceptionHandler exceptionHandler;
+    private readonly VRDiagnostics diagnostics;
     private readonly VRLifecycle vrLifecycle;
     private readonly GamepadManager gamepadManager;
     private readonly GameHooks gameHooks;
@@ -60,7 +61,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
         var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
         var hookStatus = new HookStatus();
         var xr = new XR(XR.CreateDefaultContext(new string[] { dllPath }));
-        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus);
+        diagnostics = new VRDiagnostics(logger);
+        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus, diagnostics);
         gamepadManager = new GamepadManager(GamepadState, vrLifecycle);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector, hookStatus);
@@ -204,6 +206,9 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 case "off":
                     StopVR();
                     break;
+                case "info":
+                    diagnostics.Print();
+                    break;
                 case "recenter":
                     vrLifecycle.RecenterCamera();
                     break;
@@ -247,11 +252,13 @@ public unsafe sealed class Plugin : IDalamudPlugin
     }
     public void StartVR()
     {
+        diagnostics.OnStart();
         vrLifecycle.EnableVR();
         companionPlugins.OnActivate();
     }
     private void StopVR()
     {
+        diagnostics.OnStop();
         vrLifecycle.DisableVR();
         configuration.Save();
         companionPlugins.OnDeactivate();

@@ -9,7 +9,7 @@ using System;
 namespace FfxivVR;
 public unsafe class VRLifecycle : IDisposable
 {
-    private Logger logger;
+    private readonly Logger logger;
     private readonly XR xr;
     private readonly Configuration configuration;
     private readonly GameState gameState;
@@ -17,6 +17,9 @@ public unsafe class VRLifecycle : IDisposable
     private readonly IGameGui gameGui;
     private readonly IClientState clientState;
     private readonly ITargetManager targetManager;
+    private VRSession? vrSession;
+    private readonly HookStatus hookStatus;
+    private readonly VRDiagnostics diagnostics;
 
     public VRLifecycle(
         Logger logger,
@@ -27,7 +30,8 @@ public unsafe class VRLifecycle : IDisposable
         IGameGui gameGui,
         IClientState clientState,
         ITargetManager targetManager,
-        HookStatus hookStatus)
+        HookStatus hookStatus,
+        VRDiagnostics diagnostics)
     {
         this.logger = logger;
         this.xr = xr;
@@ -38,10 +42,8 @@ public unsafe class VRLifecycle : IDisposable
         this.clientState = clientState;
         this.targetManager = targetManager;
         this.hookStatus = hookStatus;
+        this.diagnostics = diagnostics;
     }
-
-    private VRSession? vrSession;
-    private HookStatus hookStatus;
 
     public void EnableVR()
     {
@@ -61,7 +63,8 @@ public unsafe class VRLifecycle : IDisposable
             gameGui: gameGui,
             targetManager: targetManager,
             clientState: clientState,
-            hookStatus: hookStatus
+            hookStatus: hookStatus,
+            diagnostics: diagnostics
         );
         try
         {

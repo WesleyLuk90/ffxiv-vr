@@ -32,6 +32,7 @@ unsafe public class Resources : IDisposable
     private D3DBuffer? vertexBuffer;
     private readonly ID3D11Device* device;
     private readonly Logger logger;
+    private readonly VRDiagnostics diagnostics;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
     private ID3D11DepthStencilState* depthStencilStateOff = null;
     private ID3D11BlendState* uiBlendState = null;
@@ -44,10 +45,11 @@ unsafe public class Resources : IDisposable
     public RenderTarget CursorRenderTarget = null!;
     public RenderTarget[] SceneRenderTargets = [];
 
-    public Resources(ID3D11Device* device, Logger logger)
+    public Resources(ID3D11Device* device, Logger logger, VRDiagnostics diagnostics)
     {
         this.device = device;
         this.logger = logger;
+        this.diagnostics = diagnostics;
     }
 
     public struct Vertex
@@ -135,6 +137,7 @@ unsafe public class Resources : IDisposable
         );
         ID3D11ShaderResourceView* shaderResourceView = null;
         device->CreateShaderResourceView((ID3D11Resource*)texture, ref shaderResourceViewDescription, ref shaderResourceView).D3D11Check("CreateShaderResourceView");
+        diagnostics.LogTextures($"Created textures {size.X}x{size.Y} {format}");
         return new RenderTarget(
             texture,
             renderTargetView,

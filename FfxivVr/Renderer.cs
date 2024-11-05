@@ -18,7 +18,8 @@ unsafe internal class Renderer(
     VRSpace vrSpace,
     Configuration configuration,
     DalamudRenderer dalamudRenderer,
-    VRCamera vrCamera)
+    VRCamera vrCamera,
+    VRDiagnostics diagnostics)
 {
     private readonly XR xr = xr;
     private readonly VRSystem system = system;
@@ -31,6 +32,7 @@ unsafe internal class Renderer(
     private readonly Configuration configuration = configuration;
     private readonly DalamudRenderer dalamudRenderer = dalamudRenderer;
     private readonly VRCamera vrCamera = vrCamera;
+    private readonly VRDiagnostics diagnostics = diagnostics;
 
     private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false)
     {
@@ -162,6 +164,7 @@ unsafe internal class Renderer(
 
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
         xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
+        diagnostics.OnRender(eye);
         return compositionLayerProjectionView;
     }
 
@@ -256,5 +259,6 @@ unsafe internal class Renderer(
         logger.Trace($"Copy resource {eye} render target");
         var texture = resources.SceneRenderTargets[eye.ToIndex()].Texture;
         context->CopyResource((ID3D11Resource*)texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
+        diagnostics.OnCopy(eye);
     }
 }
