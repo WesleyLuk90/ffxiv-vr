@@ -93,9 +93,9 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private void FrameworkUpdate(IFramework framework)
     {
-        MaybeOnBootStartVR();
         exceptionHandler.FaultBarrier(() =>
         {
+            MaybeOnBootStartVR();
             var nextFirstPerson = gameState.IsFirstPerson();
             if (nextFirstPerson && isFirstPerson == false)
             {

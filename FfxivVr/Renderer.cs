@@ -83,6 +83,7 @@ unsafe internal class Renderer(
     internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, FrameState frameState, View[] views, Eye eye)
     {
         var swapchainView = swapchains.Views[eye.ToIndex()];
+        CheckResolution(swapchainView);
         var view = views[eye.ToIndex()];
         uint colorImageIndex = 0;
         xr.AcquireSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null, ref colorImageIndex).CheckResult("AcquireSwapchainImage");
@@ -168,6 +169,25 @@ unsafe internal class Renderer(
         return compositionLayerProjectionView;
     }
 
+    private bool resolutionErrorChecked = false;
+    private void CheckResolution(SwapchainView swapchainView)
+    {
+        if (resolutionErrorChecked)
+        {
+            return;
+        }
+        var width = swapchainView.ViewConfigurationView.RecommendedImageRectWidth;
+        var height = swapchainView.ViewConfigurationView.RecommendedImageRectHeight;
+
+        var render = GameTextures.GetGameRenderTexture();
+        if (render->ActualWidth != width || render->ActualHeight != height)
+        {
+            logger.Error($"Unexpected window size, expected {width}x{height} but got {render->ActualWidth}x{render->ActualHeight}");
+            logger.Error($"If you resized the window, please restart VR");
+            resolutionErrorChecked = true;
+        }
+    }
+
     private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj)
     {
         var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));
@@ -182,7 +202,8 @@ unsafe internal class Renderer(
     private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)
     {
         var gameRenderTexture = GameTextures.GetGameRenderTexture();
-        context->CopyResource((ID3D11Resource*)resources.UIRenderTarget.Texture, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D);
+        Box box = ComputeCopyBox(gameRenderTexture, resources.UIRenderTarget);
+        context->CopySubresourceRegion((ID3D11Resource*)resources.UIRenderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D, 0, ref box);
 
         resources.SetUIBlendState(context);
         var color = new float[] { 0f, 0f, 0f, 1f };
@@ -190,6 +211,11 @@ unsafe internal class Renderer(
         dalamudRenderer.Render(resources.DalamudRenderTarget.RenderTargetView);
 
         RenderCursor(context, new Vector2D<float>(width, height));
+    }
+
+    private Box ComputeCopyBox(FFXIVClientStructs.FFXIV.Client.Graphics.Kernel.Texture* gameRenderTexture, RenderTarget renderTarget)
+    {
+        return new Box(0, 0, 0, Math.Min(gameRenderTexture->ActualWidth, renderTarget.Size.X), Math.Min(gameRenderTexture->ActualHeight, renderTarget.Size.Y), 1);
     }
 
     private void RenderCursor(ID3D11DeviceContext* context, Vector2D<float> windowSize)
@@ -257,8 +283,9 @@ unsafe internal class Renderer(
         var renderTexture = GameTextures.GetGameRenderTexture();
 
         logger.Trace($"Copy resource {eye} render target");
-        var texture = resources.SceneRenderTargets[eye.ToIndex()].Texture;
-        context->CopyResource((ID3D11Resource*)texture, (ID3D11Resource*)renderTexture->D3D11Texture2D);
+        var renderTarget = resources.SceneRenderTargets[eye.ToIndex()];
+        var box = ComputeCopyBox(renderTexture, renderTarget);
+        context->CopySubresourceRegion((ID3D11Resource*)renderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)renderTexture->D3D11Texture2D, 0, ref box);
         diagnostics.OnCopy(eye);
     }
 }

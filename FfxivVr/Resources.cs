@@ -81,17 +81,20 @@ unsafe public class Resources : IDisposable
         public RenderTarget(
             ID3D11Texture2D* texture,
             ID3D11RenderTargetView* renderTargetView,
-            ID3D11ShaderResourceView* shaderResourceView
+            ID3D11ShaderResourceView* shaderResourceView,
+            Vector2D<uint> size
         )
         {
             Texture = texture;
             RenderTargetView = renderTargetView;
             ShaderResourceView = shaderResourceView;
+            Size = size;
         }
 
         public ID3D11Texture2D* Texture { get; }
         public ID3D11RenderTargetView* RenderTargetView { get; }
         public ID3D11ShaderResourceView* ShaderResourceView { get; }
+        public Vector2D<uint> Size { get; }
 
         public void Dispose()
         {
@@ -141,7 +144,8 @@ unsafe public class Resources : IDisposable
         return new RenderTarget(
             texture,
             renderTargetView,
-            shaderResourceView
+            shaderResourceView,
+            size
         );
     }
 

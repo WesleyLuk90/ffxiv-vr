@@ -1,6 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Silk.NET.Maths;
 using System;
 using Windows.Win32;
@@ -17,6 +16,13 @@ unsafe public class ResolutionManager(Logger logger, GameSettingsManager gameSet
 
     public void ChangeResolution(Vector2D<uint> resolution)
     {
+        var dx11DeviceInstance = Device.Instance();
+
+        original = new Vector2D<uint>(dx11DeviceInstance->Width, dx11DeviceInstance->Height);
+        dx11DeviceInstance->NewWidth = resolution.X;
+        dx11DeviceInstance->NewHeight = resolution.Y;
+        dx11DeviceInstance->RequestResolutionChange = 1;
+
         HWND handle = GetGameHWND();
         if (handle != 0)
         {
@@ -36,17 +42,10 @@ unsafe public class ResolutionManager(Logger logger, GameSettingsManager gameSet
             }
             originalWindow = windowRect;
         }
-
-        var dx11DeviceInstance = Device.Instance();
-
-        original = new Vector2D<uint>(dx11DeviceInstance->Width, dx11DeviceInstance->Height);
-        dx11DeviceInstance->NewWidth = resolution.X;
-        dx11DeviceInstance->NewHeight = resolution.Y;
-        dx11DeviceInstance->RequestResolutionChange = 1;
-
-        // Borderless window
-        savedScreenMode = gameSettingsManager.GetSystemUIntSetting(ConfigOption.ScreenMode);
-        gameSettingsManager.SetSystemUIntSetting(ConfigOption.ScreenMode, 1);
+        else
+        {
+            logger.Error("Failed to resize game window");
+        }
     }
 
     private static HWND GetGameHWND()
@@ -72,10 +71,6 @@ unsafe public class ResolutionManager(Logger logger, GameSettingsManager gameSet
             dx11DeviceInstance->NewWidth = size.X;
             dx11DeviceInstance->NewHeight = size.Y;
             dx11DeviceInstance->RequestResolutionChange = 1;
-        }
-        if (savedScreenMode is uint saved)
-        {
-            gameSettingsManager.SetSystemUIntSetting(ConfigOption.ScreenMode, saved);
         }
         originalWindow = null;
         original = null;

@@ -12,16 +12,4 @@ public unsafe class GameSettingsManager(
         var optionIndex = (int)option;
         framework->SystemConfig.UiControlGamepadConfig.ConfigEntry[optionIndex].SetValue(value ? 1 : 0);
     }
-    public uint GetSystemUIntSetting(ConfigOption option)
-    {
-        var framework = Framework.Instance();
-        var optionIndex = (int)option;
-        return framework->SystemConfig.ConfigEntry[optionIndex].Value.UInt;
-    }
-    public void SetSystemUIntSetting(ConfigOption option, uint value)
-    {
-        var framework = Framework.Instance();
-        var optionIndex = (int)option;
-        framework->SystemConfig.ConfigEntry[optionIndex].SetValueUInt(value);
-    }
 }
