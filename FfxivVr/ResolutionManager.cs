@@ -10,7 +10,6 @@ unsafe public class ResolutionManager(Logger logger, GameSettingsManager gameSet
 {
     private RECT? originalWindow = null;
     private Vector2D<uint>? original = null;
-    private uint? savedScreenMode = null;
     private readonly Logger logger = logger;
     private readonly GameSettingsManager gameSettingsManager = gameSettingsManager;
 

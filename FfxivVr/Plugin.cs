@@ -77,6 +77,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
+
+        if (PluginInterface.Reason == PluginLoadReason.Boot && configuration.StartVRAtBoot)
+        {
+            Framework.RunOnTick(TryStartVR, TimeSpan.FromSeconds(10));
+        }
     }
 
     private void ToggleConfigUI()
@@ -95,7 +100,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     {
         exceptionHandler.FaultBarrier(() =>
         {
-            MaybeOnBootStartVR();
             var nextFirstPerson = gameState.IsFirstPerson();
             if (nextFirstPerson && isFirstPerson == false)
             {
@@ -111,23 +115,19 @@ public unsafe sealed class Plugin : IDalamudPlugin
         });
     }
 
-    private bool LaunchAtStartChecked = false;
-    private void MaybeOnBootStartVR()
+    private void TryStartVR()
     {
-        var shouldLaunchOnStart = !LaunchAtStartChecked &&
-            configuration.StartVRAtBoot &&
-            PluginInterface.Reason == PluginLoadReason.Boot;
-        LaunchAtStartChecked = true;
-        if (shouldLaunchOnStart)
+        try
         {
-            try
-            {
-                StartVR();
-            }
-            catch (VRSystem.FormFactorUnavailableException)
-            {
-                logger.Debug("No vr headset connected, skipping start at boot");
-            }
+            StartVR();
+        }
+        catch (VRSystem.FormFactorUnavailableException)
+        {
+            logger.Debug("No vr headset connected, skipping start at boot");
+        }
+        catch (Exception e)
+        {
+            logger.Debug($"Failed to start VR at boot {e}");
         }
     }
 
