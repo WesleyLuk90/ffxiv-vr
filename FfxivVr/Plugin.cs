@@ -41,7 +41,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly CompanionPlugins companionPlugins = new CompanionPlugins();
 
     private readonly GameSettingsManager gameSettingsManager;
-    private readonly VRInstance vrInstance;
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -61,9 +60,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
         var hookStatus = new HookStatus();
         var xr = new XR(XR.CreateDefaultContext(new string[] { dllPath }));
-        vrInstance = new VRInstance(xr, logger, hookStatus);
-        vrInstance.Initialize();
-        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus, vrInstance);
+        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus);
         gamepadManager = new GamepadManager(GamepadState, vrLifecycle);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector, hookStatus);
@@ -117,12 +114,18 @@ public unsafe sealed class Plugin : IDalamudPlugin
     {
         var shouldLaunchOnStart = !LaunchAtStartChecked &&
             configuration.StartVRAtBoot &&
-            PluginInterface.Reason == PluginLoadReason.Boot &&
-            vrInstance.IsVRAvailable();
+            PluginInterface.Reason == PluginLoadReason.Boot;
         LaunchAtStartChecked = true;
         if (shouldLaunchOnStart)
         {
-            StartVR();
+            try
+            {
+                StartVR();
+            }
+            catch (VRSystem.FormFactorUnavailableException)
+            {
+                logger.Debug("No vr headset connected, skipping start at boot");
+            }
         }
     }
 
@@ -182,7 +185,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler(CommandName);
 
         vrLifecycle.Dispose();
-        vrInstance.Dispose();
     }
     private unsafe void OnCommand(string command, string args)
     {

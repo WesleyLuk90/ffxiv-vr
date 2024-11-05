@@ -27,8 +27,7 @@ public unsafe class VRLifecycle : IDisposable
         IGameGui gameGui,
         IClientState clientState,
         ITargetManager targetManager,
-        HookStatus hookStatus,
-        VRInstance vrInstance)
+        HookStatus hookStatus)
     {
         this.logger = logger;
         this.xr = xr;
@@ -39,12 +38,10 @@ public unsafe class VRLifecycle : IDisposable
         this.clientState = clientState;
         this.targetManager = targetManager;
         this.hookStatus = hookStatus;
-        this.vrInstance = vrInstance;
     }
 
     private VRSession? vrSession;
     private HookStatus hookStatus;
-    private readonly VRInstance vrInstance;
 
     public void EnableVR()
     {
@@ -64,8 +61,7 @@ public unsafe class VRLifecycle : IDisposable
             gameGui: gameGui,
             targetManager: targetManager,
             clientState: clientState,
-            hookStatus: hookStatus,
-            vrInstance: vrInstance
+            hookStatus: hookStatus
         );
         try
         {

@@ -41,14 +41,13 @@ public unsafe class VRSession : IDisposable
         IGameGui gameGui,
         IClientState clientState,
         Dalamud.Game.ClientState.Objects.ITargetManager targetManager,
-        HookStatus hookStatus,
-        VRInstance vrInstance
+        HookStatus hookStatus
     )
     {
-        vrSystem = new VRSystem(xr, device, logger, hookStatus, vrInstance);
+        vrSystem = new VRSystem(xr, device, logger, hookStatus);
         this.logger = logger;
         State = new VRState();
-        swapchains = new VRSwapchains(xr, vrSystem, logger, device, vrInstance);
+        swapchains = new VRSwapchains(xr, vrSystem, logger, device);
         resources = new Resources(device, logger);
         vrShaders = new VRShaders(device, logger);
         vrSpace = new VRSpace(xr, logger, vrSystem);
@@ -59,7 +58,7 @@ public unsafe class VRSession : IDisposable
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera);
         gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         waitFrameService = new WaitFrameService(vrSystem, xr);
-        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService, vrInstance);
+        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService);
         this.renderPipelineInjector = renderPipelineInjector;
         this.configuration = configuration;
         resolutionManager = new ResolutionManager(logger);

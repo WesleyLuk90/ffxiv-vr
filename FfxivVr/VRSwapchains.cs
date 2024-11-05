@@ -20,20 +20,18 @@ unsafe internal class VRSwapchains : IDisposable
     private readonly VRSystem system;
     private readonly Logger logger;
     private readonly ID3D11Device* d11Device;
-    private readonly VRInstance vrInstance;
     public const ViewConfigurationType ViewConfigType = ViewConfigurationType.PrimaryStereo;
     public List<SwapchainView> Views = null!;
-    public VRSwapchains(XR xr, VRSystem system, Logger logger, ID3D11Device* d11Device, VRInstance vrInstance)
+    public VRSwapchains(XR xr, VRSystem system, Logger logger, ID3D11Device* d11Device)
     {
         this.xr = xr;
         this.system = system;
         this.logger = logger;
         this.d11Device = d11Device;
-        this.vrInstance = vrInstance;
     }
     public Vector2D<uint> Initialize()
     {
-        var viewConfigurationViews = xr.GetViewConfigurationViews(vrInstance.Instance, vrInstance.SystemId, ViewConfigType);
+        var viewConfigurationViews = xr.GetViewConfigurationViews(system.Instance, system.SystemId, ViewConfigType);
         if (viewConfigurationViews.Count != 2)
         {
             throw new Exception($"Invalid number of views, expected 2");

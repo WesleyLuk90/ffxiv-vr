@@ -11,9 +11,8 @@ namespace FfxivVR
         private readonly VRState vrState;
         private readonly VRSpace vrSpace;
         private readonly WaitFrameService waitFrameService;
-        private readonly VRInstance vrInstance;
 
-        internal EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState, VRSpace vrSpace, WaitFrameService waitFrameService, VRInstance vrInstance)
+        internal EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState, VRSpace vrSpace, WaitFrameService waitFrameService)
         {
             this.xr = xr;
             this.vrSystem = vrSystem;
@@ -21,14 +20,13 @@ namespace FfxivVR
             this.vrState = vrState;
             this.vrSpace = vrSpace;
             this.waitFrameService = waitFrameService;
-            this.vrInstance = vrInstance;
         }
         internal unsafe void PollEvents(System.Action onSessionEnd)
         {
             while (true)
             {
                 var eventDataBuffer = new EventDataBuffer(next: null);
-                var result = xr.PollEvent(vrInstance.Instance, ref eventDataBuffer);
+                var result = xr.PollEvent(vrSystem.Instance, ref eventDataBuffer);
                 if (result == Result.EventUnavailable)
                 {
                     return;
