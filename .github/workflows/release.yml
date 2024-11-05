@@ -44,6 +44,9 @@ jobs:
       run: |
         dotnet build --configuration Release --nologo
 
+    - name: Test
+      run: dotnet test
+
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4
       with:
