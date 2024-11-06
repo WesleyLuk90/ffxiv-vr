@@ -252,6 +252,15 @@ public unsafe sealed class Plugin : IDalamudPlugin
     }
     public void StartVR()
     {
+        if (gameSettingsManager.GetIntSystemSetting(ConfigOption.ScreenMode) == 1)
+        {
+            logger.Error("VR does not work in full screen. Please switch to windowed or borderless window.");
+            return;
+        }
+        if (gameSettingsManager.GetIntSystemSetting(ConfigOption.Gamma) == 50) // Gamma of 50 breaks the render, adjust it slightly
+        {
+            gameSettingsManager.SetIntSystemSetting(ConfigOption.Gamma, 51);
+        }
         diagnostics.OnStart();
         vrLifecycle.EnableVR();
         companionPlugins.OnActivate();
