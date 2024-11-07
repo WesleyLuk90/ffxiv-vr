@@ -19,7 +19,8 @@ unsafe internal class Renderer(
     Configuration configuration,
     DalamudRenderer dalamudRenderer,
     VRCamera vrCamera,
-    VRDiagnostics diagnostics)
+    VRDiagnostics diagnostics,
+    ResolutionManager resolutionManager)
 {
     private readonly XR xr = xr;
     private readonly VRSystem system = system;
@@ -33,6 +34,7 @@ unsafe internal class Renderer(
     private readonly DalamudRenderer dalamudRenderer = dalamudRenderer;
     private readonly VRCamera vrCamera = vrCamera;
     private readonly VRDiagnostics diagnostics = diagnostics;
+    private readonly ResolutionManager resolutionManager = resolutionManager;
 
     private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false)
     {
@@ -194,9 +196,9 @@ unsafe internal class Renderer(
         var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
 
         resources.SetCompositingBlendState(context);
-        RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, modelViewProjection, false);
-        RenderViewport(context, resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection, true);
-        RenderViewport(context, resources.CursorRenderTarget.ShaderResourceView, modelViewProjection, false);
+        RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, resources.UIRenderTarget.Scale() * modelViewProjection, false);
+        RenderViewport(context, resources.DalamudRenderTarget.ShaderResourceView, resolutionManager.GetDalamudScale() * resources.UIRenderTarget.Scale() * modelViewProjection, true);
+        RenderViewport(context, resources.CursorRenderTarget.ShaderResourceView, resources.UIRenderTarget.Scale() * modelViewProjection, false);
     }
 
     private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)

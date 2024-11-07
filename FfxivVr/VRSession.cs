@@ -5,6 +5,7 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.Drawing;
 using System.Threading.Tasks;
 
 namespace FfxivVR;
@@ -30,7 +31,6 @@ public unsafe class VRSession : IDisposable
     private readonly ResolutionManager resolutionManager;
     private readonly WaitFrameService waitFrameService;
     private readonly FramePrediction framePrediction;
-    private readonly GameSettingsManager gameSettingsManager;
 
     public VRSession(
         XR xr,
@@ -43,8 +43,7 @@ public unsafe class VRSession : IDisposable
         IClientState clientState,
         Dalamud.Game.ClientState.Objects.ITargetManager targetManager,
         HookStatus hookStatus,
-        VRDiagnostics diagnostics,
-        GameSettingsManager gameSettingsManager)
+        VRDiagnostics diagnostics)
     {
         vrSystem = new VRSystem(xr, device, logger, hookStatus);
         this.logger = logger;
@@ -57,15 +56,14 @@ public unsafe class VRSession : IDisposable
         this.dalamudRenderer = new DalamudRenderer(logger);
         FreeCamera = new FreeCamera();
         vrCamera = new VRCamera(configuration, FreeCamera);
-        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera, diagnostics);
+        resolutionManager = new ResolutionManager(logger, configuration);
+        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera, diagnostics, resolutionManager);
         gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         waitFrameService = new WaitFrameService(vrSystem, xr);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService);
         this.renderPipelineInjector = renderPipelineInjector;
         this.configuration = configuration;
-        resolutionManager = new ResolutionManager(logger, gameSettingsManager);
         framePrediction = new FramePrediction(vrSystem);
-        this.gameSettingsManager = gameSettingsManager;
     }
 
     public void Initialize()
@@ -167,12 +165,12 @@ public unsafe class VRSession : IDisposable
             framePrediction.MarkPredictedFrameTime(frameState.PredictedDisplayTime);
             logger.Trace("Start frame");
             renderer.StartFrame(context);
+            // Skip presenting the left view to avoid flicker when displaying the right view
+            shouldPresent = false;
             if (frameState.ShouldRender == 1)
             {
                 var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left);
                 renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views);
-                // Skip presenting the left view to avoid flicker when displaying the right view
-                shouldPresent = false;
             }
             else
             {
@@ -317,5 +315,10 @@ public unsafe class VRSession : IDisposable
             return;
         }
         gameVisibility.UpdateNamePlates(namePlate);
+    }
+
+    internal Point? ComputeMousePosition(Point point)
+    {
+        return resolutionManager.ComputeMousePosition(point);
     }
 }

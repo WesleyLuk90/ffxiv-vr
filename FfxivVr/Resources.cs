@@ -96,6 +96,10 @@ unsafe public class Resources : IDisposable
         public ID3D11ShaderResourceView* ShaderResourceView { get; }
         public Vector2D<uint> Size { get; }
 
+        public Matrix4X4<float> Scale()
+        {
+            return Matrix4X4.CreateScale(1, (float)Size.Y / Size.X, 1);
+        }
         public void Dispose()
         {
             Texture->Release();

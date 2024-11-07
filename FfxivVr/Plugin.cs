@@ -63,7 +63,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         var xr = new XR(XR.CreateDefaultContext(new string[] { dllPath }));
         diagnostics = new VRDiagnostics(logger);
         gameSettingsManager = new GameSettingsManager(logger);
-        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus, diagnostics, gameSettingsManager);
+        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus, diagnostics);
         gamepadManager = new GamepadManager(GamepadState, vrLifecycle);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector, hookStatus);
@@ -74,6 +74,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         configWindow = new ConfigWindow(configuration, vrLifecycle, ToggleVR);
         WindowSystem.AddWindow(configWindow);
+        debugWindow = new DebugWindow();
+        WindowSystem.AddWindow(debugWindow);
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
@@ -112,6 +114,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     }
 
     private bool LaunchAtStartChecked = false;
+    private DebugWindow debugWindow;
+
     private void MaybeOnBootStartVR()
     {
         var shouldLaunchOnStart = !LaunchAtStartChecked &&
@@ -180,7 +184,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     {
         configuration.Save();
         companionPlugins.OnUnload();
-        configWindow.Dispose();
         Framework.Update -= FrameworkUpdate;
         gameHooks.Dispose();
 
@@ -211,6 +214,9 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "recenter":
                     vrLifecycle.RecenterCamera();
+                    break;
+                case "debug":
+                    debugWindow.Toggle();
                     break;
                 case "freecam":
                     var freeCam = vrLifecycle.GetFreeCamera();

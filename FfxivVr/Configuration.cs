@@ -15,6 +15,7 @@ public class Configuration : IPluginConfiguration
     public bool RecenterOnViewChange = true;
     public bool DisableAutoFaceTargetInFirstPerson = false;
     public bool StartVRAtBoot = false;
+    public bool FitWindowOnScreen = true;
 
     public void Save()
     {

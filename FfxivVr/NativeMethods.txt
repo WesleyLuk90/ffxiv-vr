@@ -1,6 +1,13 @@
-﻿MoveWindow
-GetClientRect
+﻿GetClientRect
 GetWindowRect
 VirtualProtectEx
 FlushInstructionCache
 GetCurrentProcess
+GetMonitorInfo
+MonitorFromWindow
+SetWindowPos
+SendMessage
+GetCursorPos
+AdjustWindowRectEx
+GetWindowLong
+DwmGetWindowAttribute

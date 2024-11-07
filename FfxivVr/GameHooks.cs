@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.DXGI;
 using System;
+using System.Drawing;
 using static FfxivVR.RenderPipelineInjector;
 
 namespace FfxivVR;
@@ -52,6 +53,8 @@ unsafe public class GameHooks : IDisposable
         NamePlateDrawHook?.Dispose();
         CreateDXGIFactoryHook?.Disable();
         CreateDXGIFactoryHook?.Dispose();
+        MousePointScreenToClientHook?.Disable();
+        MousePointScreenToClientHook?.Dispose();
     }
 
     public void Initialize()
@@ -64,6 +67,7 @@ unsafe public class GameHooks : IDisposable
         PushbackUIHook?.Enable();
         NamePlateDrawHook?.Enable();
         CreateDXGIFactoryHook?.Enable();
+        MousePointScreenToClientHook?.Enable();
     }
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
     [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]
@@ -205,5 +209,21 @@ unsafe public class GameHooks : IDisposable
         {
             return api.CreateDXGIFactory1(guidPtr, ppFactory);
         }
+    }
+
+    private delegate void MousePointScreenToClientDg(UInt64 frameworkInstance, Point* mousePos);
+    [Signature(Signatures.MousePointScreenToClient, DetourName = nameof(MousePointScreenToClientFn))]
+    private Hook<MousePointScreenToClientDg>? MousePointScreenToClientHook = null;
+    private void MousePointScreenToClientFn(UInt64 frameworkInstance, Point* mousePos)
+    {
+        MousePointScreenToClientHook!.Original(frameworkInstance, mousePos);
+        exceptionHandler.FaultBarrier(() =>
+        {
+            var newPosition = vrLifecycle.ComputeMousePosition(*mousePos);
+            if (newPosition is Point point)
+            {
+                *mousePos = point;
+            }
+        });
     }
 }

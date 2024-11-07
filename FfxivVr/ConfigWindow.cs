@@ -4,7 +4,7 @@ using System;
 using System.Numerics;
 
 namespace FfxivVR;
-internal class ConfigWindow : Window, IDisposable
+internal class ConfigWindow : Window
 {
     private readonly Configuration config;
     private readonly VRLifecycle vrLifecycle;
@@ -20,11 +20,6 @@ internal class ConfigWindow : Window, IDisposable
         this.config = configuration;
         this.vrLifecycle = vrLifecycle;
         this.toggleVR = toggleVR;
-    }
-
-
-    public void Dispose()
-    {
     }
 
     public override void Draw()
@@ -99,6 +94,12 @@ internal class ConfigWindow : Window, IDisposable
             if (ImGui.SmallButton("Reset##uidistance"))
             {
                 config.UIDistance = defaultConfig.UIDistance;
+                config.Save();
+            }
+            var fitWindowOnScreen = config.FitWindowOnScreen;
+            if (ImGui.Checkbox("Scale the game window to fit on screen", ref fitWindowOnScreen))
+            {
+                config.FitWindowOnScreen = fitWindowOnScreen;
                 config.Save();
             }
         }
