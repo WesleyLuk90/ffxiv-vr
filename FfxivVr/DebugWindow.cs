@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using System.Numerics;
 
 namespace FfxivVR;
 internal class DebugWindow : Window
@@ -14,7 +15,8 @@ internal class DebugWindow : Window
 
     public override void Draw()
     {
-        ImGui.Text(Debugging.DebugInfo);
+        var input = Debugging.DebugInfo;
+        ImGui.InputTextMultiline("Debug", ref input, 10000, new Vector2(400, 400));
     }
 }
 

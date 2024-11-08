@@ -162,6 +162,7 @@ public unsafe class VRLifecycle : IDisposable
             vrSession?.RecenterCamera();
         }
     }
+
     internal void UpdateVisibility()
     {
         lock (this)
@@ -201,12 +202,19 @@ public unsafe class VRLifecycle : IDisposable
             vrSession?.UpdateNamePlates(namePlate);
         }
     }
-
     internal Point? ComputeMousePosition(Point point)
     {
         lock (this)
         {
             return vrSession?.ComputeMousePosition(point);
+        }
+    }
+
+    internal string DebugText()
+    {
+        lock (this)
+        {
+            return vrSession?.debugString ?? "";
         }
     }
 }

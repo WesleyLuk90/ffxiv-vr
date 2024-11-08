@@ -82,7 +82,7 @@ unsafe internal class Renderer(
         return views;
     }
 
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, FrameState frameState, View[] views, Eye eye)
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, FrameState frameState, View[] views, Eye eye, HandTrackerExtension.HandData? hands)
     {
         var swapchainView = swapchains.Views[eye.ToIndex()];
         CheckResolution(swapchainView);
@@ -153,6 +153,7 @@ unsafe internal class Renderer(
             RenderUITexture(context, width, height);
 
             context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
+            RenderHands(context, hands, vrViewProjectionMatrix);
 
             RenderUI(context, vrViewProjectionMatrix);
         }
@@ -161,6 +162,7 @@ unsafe internal class Renderer(
             logger.Trace("Rendering right eye");
             resources.SetSceneBlendState(context);
             RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
+            RenderHands(context, hands, vrViewProjectionMatrix);
 
             RenderUI(context, vrViewProjectionMatrix);
         }
@@ -187,6 +189,21 @@ unsafe internal class Renderer(
             logger.Error($"Unexpected window size, expected {width}x{height} but got {render->ActualWidth}x{render->ActualHeight}");
             logger.Error($"If you resized the window, please restart VR");
             resolutionErrorChecked = true;
+        }
+    }
+    private void RenderHands(ID3D11DeviceContext* context, HandTrackerExtension.HandData? hands, Matrix4X4<float> vrViewProjectionMatrix)
+    {
+        if (hands == null)
+        {
+            return;
+        }
+        foreach (var joint in hands.LeftHand)
+        {
+            RenderPoint(context, 0.01f, joint.Pose.Position.ToVector3D(), vrViewProjectionMatrix);
+        }
+        foreach (var joint in hands.RightHand)
+        {
+            RenderPoint(context, 0.01f, joint.Pose.Position.ToVector3D(), vrViewProjectionMatrix);
         }
     }
 
@@ -241,6 +258,19 @@ unsafe internal class Renderer(
             mode: 1,
             gamma: 1f,
             color: new Vector4f(1, 0, 0, 1f)));
+        resources.Draw(context);
+    }
+    private void RenderPoint(ID3D11DeviceContext* context, float size, Vector3D<float> position, Matrix4X4<float> viewProjectionMatrix)
+    {
+        var scale = Matrix4X4.CreateScale(size) * Matrix4X4.CreateTranslation(position) * viewProjectionMatrix;
+        resources.UpdateCamera(context, new CameraConstants(
+            modelViewProjection: scale
+
+        ));
+        resources.SetPixelShaderConstants(context, new PixelShaderConstants(
+            mode: 1,
+            gamma: 1f,
+            color: new Vector4f(0, 1, 0, 1f)));
         resources.Draw(context);
     }
 

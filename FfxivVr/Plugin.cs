@@ -119,7 +119,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private bool LaunchAtStartChecked = false;
     private DebugWindow debugWindow;
-
+    internal static float Scale = 1;
     private void MaybeOnBootStartVR()
     {
         var shouldLaunchOnStart = !LaunchAtStartChecked &&
