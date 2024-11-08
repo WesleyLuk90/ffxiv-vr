@@ -42,3 +42,7 @@ If you're using Quest Link and running into issues, try shutting down Meta Quest
 Sometimes SteamVR will get stuck waiting for the game or just take a minute. Try waiting a bit longer or stop VR, toggle the plugin and start VR again.
 
 If you're running into crashes try disabling GShade and ReShade as they have been reported to cause crashes.
+
+## Known Issues
+* No support for VR controllers
+* Mouse interaction with the game world is not aligned/does not work, UI interaction should work
