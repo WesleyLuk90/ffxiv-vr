@@ -5,6 +5,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
@@ -98,16 +99,19 @@ public unsafe sealed class Plugin : IDalamudPlugin
         exceptionHandler.FaultBarrier(() =>
         {
             MaybeOnBootStartVR();
-            var nextFirstPerson = gameState.IsFirstPerson();
-            if (nextFirstPerson && isFirstPerson == false)
+            if (!Conditions.IsOccupiedInCutSceneEvent)
             {
-                ThirdToFirstPerson();
+                var nextFirstPerson = gameState.IsFirstPerson();
+                if (nextFirstPerson && isFirstPerson == false)
+                {
+                    ThirdToFirstPerson();
+                }
+                if (!nextFirstPerson && isFirstPerson == true)
+                {
+                    FirstToThirdPerson();
+                }
+                isFirstPerson = nextFirstPerson;
             }
-            if (!nextFirstPerson && isFirstPerson == true)
-            {
-                FirstToThirdPerson();
-            }
-            isFirstPerson = nextFirstPerson;
 
             UpdateFreeCam(framework);
         });
