@@ -155,14 +155,19 @@ unsafe internal class GameVisibility
         skeletonModifier.HideHead(skeleton);
     }
 
-    public Vector3D<float>? GetHeadPosition()
+    public CharacterBase* GetCharacterBase()
     {
         Character* character = getCharacterOrGpose();
         if (character == null)
         {
             return null;
         }
-        var characterBase = (CharacterBase*)character->GameObject.DrawObject;
+        return (CharacterBase*)character->GameObject.DrawObject;
+    }
+
+    public Vector3D<float>? GetHeadPosition()
+    {
+        var characterBase = GetCharacterBase();
         if (characterBase == null)
         {
             return null;
@@ -173,6 +178,7 @@ unsafe internal class GameVisibility
         var rot = characterBase->Rotation;
         var rotQuat = new Quaternion<float>(rot.X, rot.Y, rot.Z, rot.W);
         var headPosition = skeletonModifier.GetHeadPosition(skeleton);
+
         if (headPosition == null)
         {
             return null;

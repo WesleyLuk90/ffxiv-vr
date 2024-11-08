@@ -1,4 +1,6 @@
 using FFXIVClientStructs.FFXIV.Common.Math;
+using FFXIVClientStructs.Havok.Common.Base.Math.Quaternion;
+using FFXIVClientStructs.Havok.Common.Base.Math.Vector;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 
@@ -20,6 +22,15 @@ public static class MathExtensions
     {
         return new Vector3D<float>(vec.X, vec.Y, vec.Z);
     }
+    public static hkVector4f ToHkVector4(this Vector3D<float> vec)
+    {
+        var hk = new hkVector4f();
+        hk.X = vec.X;
+        hk.Y = vec.Y;
+        hk.Z = vec.Z;
+        hk.W = 0;
+        return hk;
+    }
 
     public static Quaternion<float> ToQuaternion(this Quaternionf quat)
     {
@@ -30,6 +41,10 @@ public static class MathExtensions
         return new Quaternionf(quat.X, quat.Y, quat.Z, quat.W);
     }
 
+    public static Quaternion<float> ToQuaternion(this Quaternion quat)
+    {
+        return new Quaternion<float>(quat.X, quat.Y, quat.Z, quat.W);
+    }
     public static Matrix4x4 ToMatrix4x4(this Matrix4X4<float> m)
     {
         var matrix = new Matrix4x4();
@@ -59,5 +74,30 @@ public static class MathExtensions
             m.M21, m.M22, m.M23, m.M24,
             m.M31, m.M32, m.M33, m.M34,
             m.M41, m.M42, m.M43, m.M44);
+    }
+
+    public static Matrix4X4<float> ToMatrix4X4(this Posef pose)
+    {
+        return Matrix4X4.CreateFromQuaternion(pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation(pose.Position.ToVector3D());
+    }
+
+    public static Quaternion<float> ToQuaternion(this hkQuaternionf quat)
+    {
+        return new Quaternion<float>(quat.X, quat.Y, quat.Z, quat.W);
+    }
+    public static hkQuaternionf ToQuaternion(this Quaternion<float> quat)
+    {
+        var outQuat = new hkQuaternionf();
+        outQuat.X = quat.X;
+        outQuat.Y = quat.Y;
+        outQuat.Z = quat.Z;
+        outQuat.W = quat.W;
+        return outQuat;
+
+    }
+
+    public static Vector3D<float> ToVector3D(this hkVector4f vec)
+    {
+        return new Vector3D<float>(vec.X, vec.Y, vec.Z);
     }
 }
