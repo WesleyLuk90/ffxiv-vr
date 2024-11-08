@@ -100,8 +100,6 @@ unsafe internal class SkeletonModifier(Logger logger)
         {
             return;
         }
-        var headPosition = structure.GetBone(BoneType.Face);
-        var transforms = headPosition.GetModelTransforms(pose);
         var spine = structure.GetBone(BoneType.SpineC);
         var spineTransform = spine.GetModelTransforms(pose);
         var neck = structure.GetBone(BoneType.Neck);
