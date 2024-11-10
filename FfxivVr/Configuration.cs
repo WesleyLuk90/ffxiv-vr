@@ -17,6 +17,8 @@ public class Configuration : IPluginConfiguration
     public bool StartVRAtBoot = false;
     public bool FitWindowOnScreen = true;
 
+    public bool HandTracking = false;
+
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);

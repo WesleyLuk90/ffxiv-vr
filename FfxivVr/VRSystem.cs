@@ -14,15 +14,17 @@ public unsafe class VRSystem : IDisposable
     private readonly ID3D11Device* device;
     private readonly Logger logger;
     private readonly HookStatus hookStatus;
+    private readonly Configuration configuration;
     public Instance Instance = new Instance();
     public ulong SystemId;
 
-    public VRSystem(XR xr, ID3D11Device* device, Logger logger, HookStatus hookStatus)
+    public VRSystem(XR xr, ID3D11Device* device, Logger logger, HookStatus hookStatus, Configuration configuration)
     {
         this.xr = xr;
         this.device = device;
         this.logger = logger;
         this.hookStatus = hookStatus;
+        this.configuration = configuration;
     }
 
     public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
@@ -44,13 +46,23 @@ public unsafe class VRSystem : IDisposable
             .Where(p => p.GetExtensionName() == "XR_KHR_win32_convert_performance_counter_time")
             .First();
 
-        var extensionsToEnable = new byte*[] { dx11Extension.ExtensionName, performanceCounterExtension.ExtensionName };
+        var handTrackingExtensionIndex = extensions.FindIndex(p => p.GetExtensionName() == "XR_EXT_hand_tracking");
+        HandTrackingExtensionEnabled = handTrackingExtensionIndex > -1;
+
+        byte*[] extensionsToEnable;
+        if (HandTrackingExtensionEnabled)
+        {
+            var handTrackingExtension = extensions[handTrackingExtensionIndex];
+            extensionsToEnable = [dx11Extension.ExtensionName, performanceCounterExtension.ExtensionName, handTrackingExtension.ExtensionName];
+        }
+        else
+        {
+            extensionsToEnable = [dx11Extension.ExtensionName, performanceCounterExtension.ExtensionName];
+        }
         fixed (byte** ptr = &extensionsToEnable[0])
         {
-            InstanceCreateInfo createInfo = new InstanceCreateInfo(createFlags: 0, enabledExtensionCount: 2, enabledExtensionNames: ptr);
+            InstanceCreateInfo createInfo = new InstanceCreateInfo(createFlags: 0, enabledExtensionCount: (uint)extensionsToEnable.Length, enabledExtensionNames: ptr);
             createInfo.ApplicationInfo = appInfo;
-
-
             xr.CreateInstance(&createInfo, ref Instance).CheckResult("CreateInstance");
         }
 
@@ -80,24 +92,65 @@ public unsafe class VRSystem : IDisposable
         getRequirements(Instance, SystemId, &requirements).CheckResult("xrGetD3D11GraphicsRequirementsKHR");
         logger.Debug($"Requirements Adapter {requirements.AdapterLuid} Feature level {requirements.MinFeatureLevel}");
 
-        var binding = new GraphicsBindingD3D11KHR(device: device);
-
         PfnVoidFunction performanceToTimePointer = new PfnVoidFunction();
         xr.GetInstanceProcAddr(Instance, "xrConvertWin32PerformanceCounterToTimeKHR", &performanceToTimePointer).CheckResult("GetInstanceProcAddr");
         performanceToTime = (delegate* unmanaged[Cdecl]<Instance, long*, long*, Result>)performanceToTimePointer.Handle;
 
+        var binding = new GraphicsBindingD3D11KHR(device: device);
         var sessionInfo = new SessionCreateInfo(systemId: SystemId, createFlags: 0, next: &binding);
         xr.CreateSession(Instance, ref sessionInfo, ref Session).CheckResult("CreateSession");
 
+        if (HandTrackingExtensionEnabled)
+        {
+            CreateHandTracking();
+        }
+        else if (configuration.HandTracking)
+        {
+            logger.Info("Hand tracking is not supported by your runtime");
+        }
+    }
+
+    private void CreateHandTracking()
+    {
+        var handTrackingProperties = new SystemHandTrackingPropertiesEXT(next: null);
+        var systemProperties = new SystemProperties(next: &handTrackingProperties);
+        xr.GetSystemProperties(Instance, SystemId, &systemProperties).CheckResult("GetSystemProperties");
+
+        logger.Debug($"Hand tracking enabled {handTrackingProperties.SupportsHandTracking}");
+
+        if (handTrackingProperties.SupportsHandTracking == 1)
+        {
+            PfnVoidFunction xrCreateHandTrackerEXT = new PfnVoidFunction();
+            xr.GetInstanceProcAddr(Instance, "xrCreateHandTrackerEXT", &xrCreateHandTrackerEXT).CheckResult("GetInstanceProcAddr");
+            PfnVoidFunction xrDestroyHandTrackerEXT = new PfnVoidFunction();
+            xr.GetInstanceProcAddr(Instance, "xrDestroyHandTrackerEXT", &xrDestroyHandTrackerEXT).CheckResult("GetInstanceProcAddr");
+            PfnVoidFunction xrLocateHandJointsEXT = new PfnVoidFunction();
+            xr.GetInstanceProcAddr(Instance, "xrLocateHandJointsEXT", &xrLocateHandJointsEXT).CheckResult("GetInstanceProcAddr");
+            HandTrackerExtension = new HandTrackerExtension(
+                xrCreateHandTrackerEXT: xrCreateHandTrackerEXT,
+                xrDestroyHandTrackerEXT: xrDestroyHandTrackerEXT,
+                xrLocateHandJointsEXT: xrLocateHandJointsEXT
+            );
+            HandTrackerExtension.Initialize(Session);
+        }
+        else if (configuration.HandTracking)
+        {
+            logger.Info("Hand tracking is not supported");
+        }
     }
 
     public void Dispose()
     {
+        HandTrackerExtension?.Dispose();
         xr.DestroySession(Session).LogResult("DestroySession", logger);
         xr.DestroyInstance(Instance).LogResult("DestroyInstance", logger);
     }
 
     private delegate* unmanaged[Cdecl]<Instance, long*, long*, Result> performanceToTime = null;
+
+    public HandTrackerExtension? HandTrackerExtension = null;
+
+    public bool HandTrackingExtensionEnabled { get; private set; }
 
     public long Now()
     {

@@ -50,7 +50,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "A useful message to display in /xlhelp"
+            HelpMessage = "Run /vr start and /vr stop to toggle VR. Run /vr to open settings."
         });
 
         ChatGui.Print("Loaded VR Plugin");
@@ -119,7 +119,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private bool LaunchAtStartChecked = false;
     private DebugWindow debugWindow;
-
     private void MaybeOnBootStartVR()
     {
         var shouldLaunchOnStart = !LaunchAtStartChecked &&
@@ -219,9 +218,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 case "recenter":
                     vrLifecycle.RecenterCamera();
                     break;
-                case "debug":
-                    debugWindow.Toggle();
-                    break;
                 case "freecam":
                     var freeCam = vrLifecycle.GetFreeCamera();
                     if (freeCam == null)
@@ -241,6 +237,18 @@ public unsafe sealed class Plugin : IDalamudPlugin
                             logger.Info("Enabled free cam");
                         }
                     }
+                    break;
+                // Development commands
+                case "handtracking":
+                    configuration.HandTracking = !configuration.HandTracking;
+                    logger.Info($"Handtracking enabled: {configuration.HandTracking}");
+                    break;
+                case "debugmode":
+                    Debugging.DebugMode = !Debugging.DebugMode;
+                    logger.Info($"DebugMode enabled: {Debugging.DebugMode}");
+                    break;
+                case "debug":
+                    debugWindow.Toggle();
                     break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");

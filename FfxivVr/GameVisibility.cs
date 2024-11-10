@@ -191,6 +191,23 @@ unsafe internal class GameVisibility
     {
         nameplateModifier.UpdateNamePlates(namePlate);
     }
+
+    internal void UpdateMotionControls(HandTrackerExtension.HandData hands)
+    {
+        Character* character = getCharacterOrGpose();
+        if (character == null)
+        {
+            return;
+        }
+        var characterBase = (CharacterBase*)character->GameObject.DrawObject;
+        if (characterBase == null)
+        {
+            return;
+        }
+        var actorModel = (ActorModel*)characterBase;
+        var skeleton = characterBase->Skeleton;
+        skeletonModifier.UpdateHands(skeleton, hands);
+    }
 }
 
 [StructLayout(LayoutKind.Explicit)]

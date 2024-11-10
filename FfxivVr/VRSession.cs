@@ -93,12 +93,14 @@ public unsafe class VRSession : IDisposable
         public Eye Eye;
         public View[] Views;
         public Task<FrameState> WaitFrameTask { get; }
+        public HandTrackerExtension.HandData? Hands { get; }
 
-        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask)
+        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask, HandTrackerExtension.HandData? hands)
         {
             Eye = eye;
             Views = views;
             WaitFrameTask = waitFrameTask;
+            Hands = hands;
         }
 
 
@@ -114,26 +116,32 @@ public unsafe class VRSession : IDisposable
     class LeftRenderPhase : RenderPhase
     {
         public View[] Views;
+        public HandTrackerExtension.HandData? Hands;
+
         public Task<FrameState> WaitFrameTask { get; }
 
-        public LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask)
+        public LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask, HandTrackerExtension.HandData? hands)
         {
             Views = views;
             WaitFrameTask = waitFrameTask;
+            this.Hands = hands;
         }
-
     }
     class RightRenderPhase : RenderPhase
     {
         public FrameState FrameState;
         public CompositionLayerProjectionView LeftLayer;
+
+        public HandTrackerExtension.HandData? Hands { get; }
+
         public View[] Views;
 
-        public RightRenderPhase(FrameState frameState, CompositionLayerProjectionView leftLayer, View[] views)
+        public RightRenderPhase(FrameState frameState, CompositionLayerProjectionView leftLayer, View[] views, HandTrackerExtension.HandData? hands)
         {
             FrameState = frameState;
             Views = views;
             LeftLayer = leftLayer;
+            Hands = hands;
         }
 
     }
@@ -169,8 +177,8 @@ public unsafe class VRSession : IDisposable
             shouldPresent = false;
             if (frameState.ShouldRender == 1)
             {
-                var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left);
-                renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views);
+                var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left, leftRenderPhase.Hands);
+                renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views, leftRenderPhase.Hands);
             }
             else
             {
@@ -181,7 +189,7 @@ public unsafe class VRSession : IDisposable
         }
         else if (renderPhase is RightRenderPhase rightRenderPhase)
         {
-            var rightLayer = renderer.RenderEye(context, rightRenderPhase.FrameState, rightRenderPhase.Views, Eye.Right);
+            var rightLayer = renderer.RenderEye(context, rightRenderPhase.FrameState, rightRenderPhase.Views, Eye.Right, rightRenderPhase.Hands);
             renderer.EndFrame(context, rightRenderPhase.FrameState, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
             logger.Trace("End frame");
             renderPhase = null;
@@ -193,7 +201,7 @@ public unsafe class VRSession : IDisposable
                 case Eye.Left:
                     {
                         phase.Eye = Eye.Right;
-                        renderPhase = new LeftRenderPhase(phase.Views, cameraPhase.WaitFrameTask);
+                        renderPhase = new LeftRenderPhase(phase.Views, cameraPhase.WaitFrameTask, phase.Hands);
                         break;
                     }
                 case Eye.Right:
@@ -266,6 +274,11 @@ public unsafe class VRSession : IDisposable
             gameVisibility.ForceFirstPersonBodyVisible();
 
             gameVisibility.HideHeadMesh();
+
+            if (cameraPhase is CameraPhase phase && phase.Hands is HandTrackerExtension.HandData hands)
+            {
+                gameVisibility.UpdateMotionControls(hands);
+            }
         }
     }
 
@@ -298,14 +311,29 @@ public unsafe class VRSession : IDisposable
         if (State.SessionRunning)
         {
             logger.Trace("Starting cycle");
-            var views = renderer.LocateView(framePrediction.GetPredictedFrameTime());
+            var predictedTime = framePrediction.GetPredictedFrameTime();
+            var views = renderer.LocateView(predictedTime);
+            var hands = MaybeGetHandTrackingData(predictedTime);
             Task<FrameState> waitFrameTask = Task.Run(() =>
             {
                 var frameState = waitFrameService.WaitFrame();
                 return frameState;
             });
-            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask);
+            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, hands);
         }
+    }
+
+    private HandTrackerExtension.HandData? MaybeGetHandTrackingData(long predictedTime)
+    {
+        if (!configuration.HandTracking)
+        {
+            return null;
+        }
+        if (!gameState.IsFirstPerson())
+        {
+            return null;
+        }
+        return vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
     }
 
     internal void UpdateNamePlates(AddonNamePlate* namePlate)

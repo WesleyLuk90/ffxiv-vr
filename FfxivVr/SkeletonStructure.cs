@@ -15,8 +15,9 @@ public unsafe class SkeletonStructure
         { "j_sebo_c", BoneType.SpineC },
 
         { "j_ude_a_l", BoneType.ArmLeft },
-        { "j_ude_b_l", BoneType.ForeArmLeft },
+        { "j_ude_b_l", BoneType.ForearmLeft },
         { "j_te_l", BoneType.HandLeft },
+        { "n_hte_l", BoneType.WristLeft },
         { "j_oya_a_l", BoneType.ThumbLeftA },
         { "j_oya_b_l", BoneType.ThumbLeftB },
         { "j_hito_a_l", BoneType.IndexFingerLeftA },
@@ -29,8 +30,9 @@ public unsafe class SkeletonStructure
         { "j_ko_b_l", BoneType.PinkyFingerLeftB },
 
         { "j_ude_a_r", BoneType.ArmRight },
-        { "j_ude_b_r", BoneType.ForeArmRight },
+        { "j_ude_b_r", BoneType.ForearmRight },
         { "j_te_r", BoneType.HandRight },
+        { "n_hte_r", BoneType.WristRight },
         { "j_oya_a_r", BoneType.ThumbRightA },
         { "j_oya_b_r", BoneType.ThumbRightB },
         { "j_hito_a_r", BoneType.IndexFingerRightA },
@@ -127,8 +129,9 @@ public enum BoneType
     SpineC,
 
     ArmLeft,
-    ForeArmLeft,
+    ForearmLeft,
     HandLeft,
+    WristLeft,
     ThumbLeftA,
     ThumbLeftB,
     IndexFingerLeftA,
@@ -141,8 +144,9 @@ public enum BoneType
     PinkyFingerLeftB,
 
     ArmRight,
-    ForeArmRight,
+    ForearmRight,
     HandRight,
+    WristRight,
     ThumbRightA,
     ThumbRightB,
     IndexFingerRightA,
