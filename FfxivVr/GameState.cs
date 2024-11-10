@@ -3,6 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client;
 
 namespace FfxivVR;
 unsafe public class GameState
@@ -17,7 +18,7 @@ unsafe public class GameState
     public bool IsFirstPerson()
     {
         // Some cutscenes this flag is set, e.g. Logging in and out of the inn
-        return SceneCameraExtensions.GetCameraMode() == CameraMode.FirstPerson && !Conditions.IsOccupiedInCutSceneEvent;
+        return GetRawSceneCamera()->CameraMode == CameraMode.FirstPerson && !Conditions.IsOccupiedInCutSceneEvent;
     }
 
     public bool IsGPosing()
@@ -49,5 +50,46 @@ unsafe public class GameState
         return Conditions.IsWatchingCutscene ||
             Conditions.IsOccupied ||
             Conditions.IsOccupiedInCutSceneEvent;
+    }
+
+    // Returns the game camera distance regardless of walls
+    public float? GetGameCameraDistance()
+    {
+        var currentCamera = GetActiveCamera();
+        if (currentCamera == null)
+        {
+            return null;
+        }
+        return currentCamera->Distance;
+    }
+
+    public FFXIVClientStructs.FFXIV.Client.Game.Camera* GetActiveCamera()
+    {
+        var manager = FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance();
+        if (manager == null)
+        {
+            return null;
+        }
+        return manager->GetActiveCamera();
+    }
+
+    public FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* GetCurrentCamera()
+    {
+        var manager = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.CameraManager.Instance();
+        if (manager == null)
+        {
+            return null;
+        }
+        return manager->CurrentCamera;
+    }
+
+    public RawCamera* GetRawCamera()
+    {
+        return (RawCamera*)GetCurrentCamera();
+    }
+
+    public RawSceneCamera* GetRawSceneCamera()
+    {
+        return (RawSceneCamera*)GetActiveCamera();
     }
 }

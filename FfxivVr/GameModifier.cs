@@ -9,10 +9,10 @@ using Silk.NET.Maths;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
-unsafe internal class GameVisibility
+unsafe public class GameModifier
 {
     private readonly Logger logger;
-    private GameState gameState;
+    private readonly GameState gameState;
     private readonly IGameGui gameGui;
     private readonly ITargetManager targetManager;
     private readonly IClientState clientState;
@@ -27,7 +27,7 @@ unsafe internal class GameVisibility
         Visible = 75
     }
 
-    public GameVisibility(Logger logger, GameState gameState, IGameGui gameGui, ITargetManager targetManager, IClientState clientState)
+    public GameModifier(Logger logger, GameState gameState, IGameGui gameGui, ITargetManager targetManager, IClientState clientState)
     {
         this.logger = logger;
         this.gameState = gameState;

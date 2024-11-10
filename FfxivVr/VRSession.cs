@@ -1,6 +1,7 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Lumina.Data.Parsing.Layer;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
@@ -16,7 +17,7 @@ public unsafe class VRSession : IDisposable
     private readonly Logger logger;
     public readonly VRState State;
     private readonly Renderer renderer;
-    private readonly GameVisibility gameVisibility;
+    private readonly GameModifier gameModifier;
     private readonly VRSpace vrSpace;
     private readonly EventHandler eventHandler;
     private readonly VRShaders vrShaders;
@@ -39,11 +40,9 @@ public unsafe class VRSession : IDisposable
         Configuration configuration,
         GameState gameState,
         RenderPipelineInjector renderPipelineInjector,
-        IGameGui gameGui,
-        IClientState clientState,
-        Dalamud.Game.ClientState.Objects.ITargetManager targetManager,
         HookStatus hookStatus,
-        VRDiagnostics diagnostics)
+        VRDiagnostics diagnostics,
+        GameModifier gameModifier)
     {
         vrSystem = new VRSystem(xr, device, logger, hookStatus, configuration);
         this.logger = logger;
@@ -53,17 +52,17 @@ public unsafe class VRSession : IDisposable
         vrShaders = new VRShaders(device, logger);
         vrSpace = new VRSpace(xr, logger, vrSystem);
         this.gameState = gameState;
-        this.dalamudRenderer = new DalamudRenderer(logger);
+        dalamudRenderer = new DalamudRenderer(logger);
         FreeCamera = new FreeCamera();
         vrCamera = new VRCamera(configuration, FreeCamera);
         resolutionManager = new ResolutionManager(logger, configuration);
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera, diagnostics, resolutionManager);
-        gameVisibility = new GameVisibility(logger, gameState, gameGui, targetManager, clientState);
         waitFrameService = new WaitFrameService(vrSystem, xr);
         eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService);
         this.renderPipelineInjector = renderPipelineInjector;
         this.configuration = configuration;
         framePrediction = new FramePrediction(vrSystem);
+        this.gameModifier = gameModifier;
     }
 
     public void Initialize()
@@ -94,13 +93,15 @@ public unsafe class VRSession : IDisposable
         public View[] Views;
         public Task<FrameState> WaitFrameTask { get; }
         public HandTrackerExtension.HandData? Hands { get; }
+        public float? LocalSpaceHeight { get; }
 
-        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask, HandTrackerExtension.HandData? hands)
+        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask, HandTrackerExtension.HandData? hands, float? localSpaceHeight)
         {
             Eye = eye;
             Views = views;
             WaitFrameTask = waitFrameTask;
             Hands = hands;
+            LocalSpaceHeight = localSpaceHeight;
         }
 
 
@@ -249,17 +250,50 @@ public unsafe class VRSession : IDisposable
             camera->RenderCamera->ProjectionMatrix = vrCamera.ComputeGameProjectionMatrix(view);
             camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
 
-            Vector3D<float>? headPos = null;
-            if (gameState.IsFirstPerson() && configuration.FollowCharacter)
-            {
-                headPos = gameVisibility.GetHeadPosition();
-            }
+            var gamePosition = camera->Position.ToVector3D();
+            var gameCameraLookAt = camera->LookAtVector.ToVector3D();
 
-            camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, camera->Position.ToVector3D(), camera->LookAtVector.ToVector3D(), headPos).ToMatrix4x4();
+            VRCameraType cameraType = GetVRCameraType(phase, gamePosition, gameCameraLookAt);
+
+            camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, cameraType).ToMatrix4x4();
             camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
 
             camera->RenderCamera->FoV = view.Fov.AngleRight - view.Fov.AngleLeft;
         }
+    }
+
+    private VRCameraType GetVRCameraType(CameraPhase phase, Vector3D<float> gamePosition, Vector3D<float> gameCameraLookAt)
+    {
+        VRCameraType cameraType;
+        var characterBase = gameModifier.GetCharacterBase();
+        var distance = gameState.GetGameCameraDistance();
+        if (gameState.IsFirstPerson() && configuration.FollowCharacter && gameModifier.GetHeadPosition() is Vector3D<float> head)
+        {
+            cameraType = new FollowingFirstPersonCamera(
+                gameCameraPosition: gamePosition,
+                gameCameraLookAt: gameCameraLookAt,
+                headPosition: head);
+        }
+        else if (gameState.IsFirstPerson())
+        {
+            cameraType = new FirstPersonCamera(gamePosition, gameCameraLookAt);
+        }
+        else if (phase.LocalSpaceHeight is float height && characterBase != null && distance is float d)
+        {
+            cameraType = new LockedFloorCamera(
+                gameCameraPosition: gamePosition,
+                gameCameraLookAt: gameCameraLookAt,
+                groundPosition: characterBase->Position.Y,
+                height: height,
+                distance: d,
+                worldScale: configuration.WorldScale);
+        }
+        else
+        {
+            cameraType = new OrbitCamera(gamePosition, gameCameraLookAt);
+        }
+
+        return cameraType;
     }
 
     internal void RecenterCamera()
@@ -271,13 +305,13 @@ public unsafe class VRSession : IDisposable
     {
         if (State.SessionRunning)
         {
-            gameVisibility.ForceFirstPersonBodyVisible();
+            gameModifier.ForceFirstPersonBodyVisible();
 
-            gameVisibility.HideHeadMesh();
+            gameModifier.HideHeadMesh();
 
             if (cameraPhase is CameraPhase phase && phase.Hands is HandTrackerExtension.HandData hands)
             {
-                gameVisibility.UpdateMotionControls(hands);
+                gameModifier.UpdateMotionControls(hands);
             }
         }
     }
@@ -313,13 +347,14 @@ public unsafe class VRSession : IDisposable
             logger.Trace("Starting cycle");
             var predictedTime = framePrediction.GetPredictedFrameTime();
             var views = renderer.LocateView(predictedTime);
+            var localSpaceHeight = configuration.MatchFloorPosition ? vrSpace.GetLocalSpaceHeight(predictedTime) : null;
             var hands = MaybeGetHandTrackingData(predictedTime);
             Task<FrameState> waitFrameTask = Task.Run(() =>
             {
                 var frameState = waitFrameService.WaitFrame();
                 return frameState;
             });
-            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, hands);
+            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, hands, localSpaceHeight);
         }
     }
 
@@ -342,7 +377,7 @@ public unsafe class VRSession : IDisposable
         {
             return;
         }
-        gameVisibility.UpdateNamePlates(namePlate);
+        gameModifier.UpdateNamePlates(namePlate);
     }
 
     internal Point? ComputeMousePosition(Point point)

@@ -24,16 +24,16 @@ unsafe public class GameHooks : IDisposable
     private readonly VRLifecycle vrLifecycle;
     private readonly ExceptionHandler exceptionHandler;
     private readonly Logger logger;
-    private readonly RenderPipelineInjector renderPipelineInjector;
     private readonly HookStatus hookStatus;
+    private readonly GameState gameState;
 
-    public GameHooks(VRLifecycle vrLifecycle, ExceptionHandler exceptionHandler, Logger logger, RenderPipelineInjector renderPipelineInjector, HookStatus hookStatus)
+    public GameHooks(VRLifecycle vrLifecycle, ExceptionHandler exceptionHandler, Logger logger, HookStatus hookStatus, GameState gameState)
     {
         this.vrLifecycle = vrLifecycle;
         this.exceptionHandler = exceptionHandler;
         this.logger = logger;
-        this.renderPipelineInjector = renderPipelineInjector;
         this.hookStatus = hookStatus;
+        this.gameState = gameState;
     }
     public void Dispose()
     {
@@ -122,12 +122,7 @@ unsafe public class GameHooks : IDisposable
         SetMatricesHook!.Original(camera, ptr);
         exceptionHandler.FaultBarrier(() =>
         {
-            var manager = CameraManager.Instance();
-            if (manager == null)
-            {
-                return;
-            }
-            var currentCamera = manager->CurrentCamera;
+            var currentCamera = gameState.GetCurrentCamera();
             if (currentCamera == null)
             {
                 return;

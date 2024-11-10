@@ -8,7 +8,8 @@ unsafe public class VRSpace
     private readonly Logger logger;
     private readonly VRSystem system;
     public Space LocalSpace = new Space();
-    public Space ViewSpace = new Space();
+    private Space ViewSpace = new Space();
+    private Space? StageReferenceSpace = null;
     public VRSpace(XR xr, Logger logger, VRSystem system)
     {
         this.xr = xr;
@@ -36,12 +37,28 @@ unsafe public class VRSpace
             poseInReferenceSpace: new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0))
         );
         xr.CreateReferenceSpace(system.Session, ref viewSpaceCreateInfo, ref ViewSpace).CheckResult("CreateReferenceSpace");
+        var referenceSpaceTypes = xr.GetAvailableReferenceSpaceTypes(system.Session);
+        if (referenceSpaceTypes.Contains(ReferenceSpaceType.Stage))
+        {
+            var stageCreateInfo = new ReferenceSpaceCreateInfo(
+                referenceSpaceType: ReferenceSpaceType.Stage,
+                poseInReferenceSpace: GetCurrentPose()
+            );
+            var stage = new Space();
+            xr.CreateReferenceSpace(system.Session, ref stageCreateInfo, ref stage).CheckResult("CreateReferenceSpace");
+            StageReferenceSpace = stage;
+            logger.Debug($"Stage reference space available {stage.Handle}");
+        }
     }
 
     public void Dispose()
     {
         xr.DestroySpace(LocalSpace).LogResult("DestroySpace", logger);
         xr.DestroySpace(ViewSpace).LogResult("DestroySpace", logger);
+        if (StageReferenceSpace is Space stage)
+        {
+            xr.DestroySpace(stage).LogResult("DestroySpace", logger);
+        }
     }
     internal void ResetCamera()
     {
@@ -92,5 +109,16 @@ unsafe public class VRSpace
         );
         xr.CreateReferenceSpace(system.Session, ref localSpaceCreateInfo, ref LocalSpace).CheckResult("CreateReferenceSpace");
         xr.DestroySpace(oldSpace).CheckResult("DestroySpace");
+    }
+
+    public float? GetLocalSpaceHeight(long predictedDisplayTime)
+    {
+        if (StageReferenceSpace is Space stage)
+        {
+            var location = new SpaceLocation(next: null);
+            xr.LocateSpace(LocalSpace, stage, predictedDisplayTime, ref location).CheckResult("LocateSpace");
+            return location.Pose.Position.Y;
+        }
+        return null;
     }
 }

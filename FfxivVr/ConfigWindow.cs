@@ -57,6 +57,12 @@ internal class ConfigWindow : Window
                 config.DisableAutoFaceTargetInFirstPerson = recenter;
                 config.Save();
             }
+            var matchFloor = config.MatchFloorPosition;
+            if (ImGui.Checkbox("Match game to real floor position", ref matchFloor))
+            {
+                config.MatchFloorPosition = matchFloor;
+                config.Save();
+            }
             var worldScale = config.WorldScale;
             if (ImGui.SliderFloat("World Scale", ref worldScale, 0.1f, 10f))
             {

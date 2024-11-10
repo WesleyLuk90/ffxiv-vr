@@ -6,12 +6,14 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 
@@ -43,6 +45,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly CompanionPlugins companionPlugins = new CompanionPlugins();
 
     private readonly GameSettingsManager gameSettingsManager;
+
+    private readonly GameModifier gameModifier;
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -61,13 +65,14 @@ public unsafe sealed class Plugin : IDalamudPlugin
         exceptionHandler = new ExceptionHandler(logger);
         var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
         var hookStatus = new HookStatus();
-        var xr = new XR(XR.CreateDefaultContext(new string[] { dllPath }));
+        var xr = new XR(XR.CreateDefaultContext([dllPath]));
         diagnostics = new VRDiagnostics(logger);
         gameSettingsManager = new GameSettingsManager(logger);
-        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, GameGui, ClientState, TargetManager, hookStatus, diagnostics);
+        gameModifier = new GameModifier(logger, gameState, GameGui, TargetManager, ClientState);
+        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, hookStatus, diagnostics, gameModifier);
         gamepadManager = new GamepadManager(GamepadState, vrLifecycle);
         GameHookService.InitializeFromAttributes(pipelineInjector);
-        gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, pipelineInjector, hookStatus);
+        gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, hookStatus, gameState);
         GameHookService.InitializeFromAttributes(gameHooks);
         gameHooks.Initialize();
         Framework.Update += FrameworkUpdate;
@@ -250,13 +255,22 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 case "debug":
                     debugWindow.Toggle();
                     break;
+                case "resetcamera":
+                    var currentCamera = gameState.GetRawCamera();
+                    if (currentCamera == null)
+                    {
+                        return;
+                    }
+                    logger.Info($"Hrotation {currentCamera->CurrentHRotation}");
+                    logger.Info($"CurrentVRotation {currentCamera->CurrentVRotation}");
+                    currentCamera->CurrentVRotation = 0;
+                    break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");
                     break;
             }
         }
     }
-
     public void ToggleVR()
     {
         if (vrLifecycle.IsEnabled())

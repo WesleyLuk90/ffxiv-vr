@@ -19,6 +19,8 @@ public class Configuration : IPluginConfiguration
 
     public bool HandTracking = false;
 
+    public bool MatchFloorPosition = false;
+
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);

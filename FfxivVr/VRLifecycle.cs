@@ -15,12 +15,10 @@ public unsafe class VRLifecycle : IDisposable
     private readonly Configuration configuration;
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
-    private readonly IGameGui gameGui;
-    private readonly IClientState clientState;
-    private readonly ITargetManager targetManager;
     private VRSession? vrSession;
     private readonly HookStatus hookStatus;
     private readonly VRDiagnostics diagnostics;
+    private readonly GameModifier gameModifier;
 
     public VRLifecycle(
         Logger logger,
@@ -28,22 +26,18 @@ public unsafe class VRLifecycle : IDisposable
         Configuration configuration,
         GameState gameState,
         RenderPipelineInjector renderPipelineInjector,
-        IGameGui gameGui,
-        IClientState clientState,
-        ITargetManager targetManager,
         HookStatus hookStatus,
-        VRDiagnostics diagnostics)
+        VRDiagnostics diagnostics,
+        GameModifier gameModifier)
     {
         this.logger = logger;
         this.xr = xr;
         this.configuration = configuration;
         this.gameState = gameState;
         this.renderPipelineInjector = renderPipelineInjector;
-        this.gameGui = gameGui;
-        this.clientState = clientState;
-        this.targetManager = targetManager;
         this.hookStatus = hookStatus;
         this.diagnostics = diagnostics;
+        this.gameModifier = gameModifier;
     }
 
     public void EnableVR()
@@ -61,11 +55,9 @@ public unsafe class VRLifecycle : IDisposable
             configuration: configuration,
             gameState: gameState,
             renderPipelineInjector: renderPipelineInjector,
-            gameGui: gameGui,
-            targetManager: targetManager,
-            clientState: clientState,
             hookStatus: hookStatus,
-            diagnostics: diagnostics
+            diagnostics: diagnostics,
+            gameModifier: gameModifier
         );
         try
         {
