@@ -45,7 +45,7 @@ public unsafe class VRSession : IDisposable
         HookStatus hookStatus,
         VRDiagnostics diagnostics)
     {
-        vrSystem = new VRSystem(xr, device, logger, hookStatus, logger);
+        vrSystem = new VRSystem(xr, device, logger, hookStatus, configuration);
         this.logger = logger;
         State = new VRState();
         swapchains = new VRSwapchains(xr, vrSystem, logger, device);
