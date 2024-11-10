@@ -76,7 +76,10 @@ unsafe public class GameHooks : IDisposable
     private UInt64 FrameworkTickFn(Framework* FrameworkInstance)
     {
         //logger.Trace("FrameworkTickFn start");
-        vrLifecycle.PrepareVRRender();
+        exceptionHandler.FaultBarrier(() =>
+        {
+            vrLifecycle.PrepareVRRender();
+        });
         var returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         var shouldSecondRender = false;
         exceptionHandler.FaultBarrier(() =>

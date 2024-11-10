@@ -8,7 +8,7 @@ unsafe public class VRSpace
     private readonly Logger logger;
     private readonly VRSystem system;
     public Space LocalSpace = new Space();
-    private Space viewSpace = new Space();
+    public Space ViewSpace = new Space();
     public VRSpace(XR xr, Logger logger, VRSystem system)
     {
         this.xr = xr;
@@ -35,13 +35,13 @@ unsafe public class VRSpace
             referenceSpaceType: ReferenceSpaceType.View,
             poseInReferenceSpace: new Posef(orientation: new Quaternionf(0, 0, 0, 1), position: new Vector3f(0, 0, 0))
         );
-        xr.CreateReferenceSpace(system.Session, ref viewSpaceCreateInfo, ref viewSpace).CheckResult("CreateReferenceSpace");
+        xr.CreateReferenceSpace(system.Session, ref viewSpaceCreateInfo, ref ViewSpace).CheckResult("CreateReferenceSpace");
     }
 
     public void Dispose()
     {
         xr.DestroySpace(LocalSpace).LogResult("DestroySpace", logger);
-        xr.DestroySpace(viewSpace).LogResult("DestroySpace", logger);
+        xr.DestroySpace(ViewSpace).LogResult("DestroySpace", logger);
     }
     internal void ResetCamera()
     {
@@ -60,10 +60,7 @@ unsafe public class VRSpace
 
     private Posef GetCurrentPose()
     {
-        Vector3D<float> scale;
-        Vector3D<float> translation;
-        Quaternion<float> rotation;
-        Matrix4X4.Decompose(currentSpaceTransform, out scale, out rotation, out translation);
+        Matrix4X4.Decompose(currentSpaceTransform, out _, out Quaternion<float> rotation, out Vector3D<float> translation);
 
         var pose = new Posef(
             orientation: rotation.ToQuaternionf(),
@@ -76,7 +73,7 @@ unsafe public class VRSpace
     {
         logger.Info("Recentering camera");
         var spaceLocation = new SpaceLocation(next: null);
-        xr.LocateSpace(viewSpace, LocalSpace, xrTime, ref spaceLocation).CheckResult("LocateSpace");
+        xr.LocateSpace(ViewSpace, LocalSpace, xrTime, ref spaceLocation).CheckResult("LocateSpace");
         var oldSpace = LocalSpace;
         var pose = spaceLocation.Pose;
         var positionMatrix = Matrix4X4.CreateTranslation(pose.Position.ToVector3D());

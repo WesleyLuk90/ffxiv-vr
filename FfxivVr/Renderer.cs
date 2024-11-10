@@ -1,8 +1,11 @@
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.Diagnostics;
 using static FfxivVR.Resources;
 
 namespace FfxivVR;
@@ -61,18 +64,15 @@ unsafe internal class Renderer(
         xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
     }
 
-    private long lastLocateDelay = 0;
-    private long? lastLocateView = null;
     internal View[] LocateView(long predictedDisplayTime)
     {
         var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
         var viewState = new ViewState(next: null);
         var viewLocateInfo = new ViewLocateInfo(
             viewConfigurationType: ViewConfigurationType.PrimaryStereo,
-            displayTime: predictedDisplayTime + lastLocateDelay,
+            displayTime: predictedDisplayTime,
             space: vrSpace.LocalSpace
         );
-        lastLocateView = predictedDisplayTime;
         uint viewCount = 0;
         xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
         if (viewCount != 2)

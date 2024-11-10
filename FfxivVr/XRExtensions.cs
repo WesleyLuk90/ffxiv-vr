@@ -28,6 +28,14 @@ internal unsafe static class XRExtensions
             new ExtensionProperties(next: null), "EnumerateInstanceExtensionProperties").ToList();
     }
 
+
+    internal static List<ReferenceSpaceType> GetAvailableReferenceSpaceTypes(this XR xr, Session session)
+    {
+        return EnumerateListValue((capacity, countOut, outArray) =>
+            xr.EnumerateReferenceSpaces(session, capacity, countOut, outArray),
+            ReferenceSpaceType.Local, "EnumerateReferenceSpaces").ToList();
+    }
+
     internal static List<SwapchainImageD3D11KHR> GetSwapchainImages(this XR xr, Swapchain swapchain)
     {
         uint count = 0;
