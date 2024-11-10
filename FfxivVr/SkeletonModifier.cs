@@ -172,8 +172,8 @@ unsafe internal class SkeletonModifier(Logger logger)
 
             foreach (var joint in HandJoints)
             {
-                UpdateHandBone(hands.LeftHand, joint.Joint, joint.Parent, joint.LeftBone, pose, structure);
-                UpdateHandBone(hands.RightHand, joint.Joint, joint.Parent, joint.RightBone, pose, structure);
+                UpdateHandBone(hands.LeftHand, joint.Joint, joint.Parent, joint.LeftBone, pose, structure, joint.LeftRotationOffset);
+                UpdateHandBone(hands.RightHand, joint.Joint, joint.Parent, joint.RightBone, pose, structure, joint.RightRotationOffset);
             }
         }
     }
@@ -184,21 +184,25 @@ unsafe internal class SkeletonModifier(Logger logger)
         new HandJoint(HandJointEXT.RingProximalExt, HandJointEXT.PalmExt, BoneType.RingFingerLeftA, BoneType.RingFingerRightA),
         new HandJoint(HandJointEXT.MiddleProximalExt, HandJointEXT.PalmExt, BoneType.MiddleFingerLeftA, BoneType.MiddleFingerRightA),
         new HandJoint(HandJointEXT.IndexProximalExt, HandJointEXT.PalmExt, BoneType.IndexFingerLeftA, BoneType.IndexFingerRightA),
-        new HandJoint(HandJointEXT.ThumbProximalExt, HandJointEXT.PalmExt, BoneType.ThumbLeftA, BoneType.ThumbRightA),
+        new HandJoint(HandJointEXT.ThumbProximalExt, HandJointEXT.PalmExt, BoneType.ThumbLeftA, BoneType.ThumbRightA,
+         Quaternion<float>.CreateFromYawPitchRoll(float.DegreesToRadians(50), float.DegreesToRadians(-50), float.DegreesToRadians(-40)),
+         Quaternion<float>.CreateFromYawPitchRoll(float.DegreesToRadians(-50), float.DegreesToRadians(50), float.DegreesToRadians(-40))),
 
-        new HandJoint(HandJointEXT.LittleDistalExt, HandJointEXT.LittleProximalExt, BoneType.PinkyFingerLeftB, BoneType.PinkyFingerRightB),
-        new HandJoint(HandJointEXT.RingDistalExt, HandJointEXT.RingProximalExt, BoneType.RingFingerLeftB, BoneType.RingFingerRightB),
-        new HandJoint(HandJointEXT.MiddleDistalExt, HandJointEXT.MiddleProximalExt, BoneType.MiddleFingerLeftB, BoneType.MiddleFingerRightB),
-        new HandJoint(HandJointEXT.IndexDistalExt, HandJointEXT.IndexProximalExt, BoneType.IndexFingerLeftB, BoneType.IndexFingerRightB),
+        new HandJoint(HandJointEXT.LittleIntermediateExt, HandJointEXT.LittleProximalExt, BoneType.PinkyFingerLeftB, BoneType.PinkyFingerRightB),
+        new HandJoint(HandJointEXT.RingIntermediateExt, HandJointEXT.RingProximalExt, BoneType.RingFingerLeftB, BoneType.RingFingerRightB),
+        new HandJoint(HandJointEXT.MiddleIntermediateExt, HandJointEXT.MiddleProximalExt, BoneType.MiddleFingerLeftB, BoneType.MiddleFingerRightB),
+        new HandJoint(HandJointEXT.IndexIntermediateExt, HandJointEXT.IndexProximalExt, BoneType.IndexFingerLeftB, BoneType.IndexFingerRightB),
         new HandJoint(HandJointEXT.ThumbDistalExt, HandJointEXT.ThumbProximalExt, BoneType.ThumbLeftB, BoneType.ThumbRightB),
     };
 
-    class HandJoint(HandJointEXT joint, HandJointEXT parent, BoneType leftBone, BoneType rightBone)
+    class HandJoint(HandJointEXT joint, HandJointEXT parent, BoneType leftBone, BoneType rightBone, Quaternion<float>? leftRotationOffset = null, Quaternion<float>? rightRotationOffset = null)
     {
         public HandJointEXT Joint { get; } = joint;
         public HandJointEXT Parent { get; } = parent;
         public BoneType LeftBone { get; } = leftBone;
         public BoneType RightBone { get; } = rightBone;
+        public Quaternion<float> LeftRotationOffset { get; } = leftRotationOffset ?? Quaternion<float>.Identity;
+        public Quaternion<float> RightRotationOffset { get; } = rightRotationOffset ?? Quaternion<float>.Identity;
     }
 
     private void ResetPoseTree(hkaPose* pose, SkeletonStructure structure, Bone armBone)
@@ -267,22 +271,17 @@ unsafe internal class SkeletonModifier(Logger logger)
 
     private InverseKinematics ik = new InverseKinematics();
 
-    private void UpdateHandBone(HandJointLocationEXT[] hand, HandJointEXT joint, HandJointEXT relativeParent, BoneType type, hkaPose* pose, SkeletonStructure skeletonStructure)
+    private void UpdateHandBone(HandJointLocationEXT[] hand, HandJointEXT joint, HandJointEXT relativeParent, BoneType type, hkaPose* pose, SkeletonStructure skeletonStructure, Quaternion<float> rotationOffset)
     {
         var jointRotation = hand[(int)joint].Pose.Orientation.ToQuaternion();
         var parentRotation = hand[(int)relativeParent].Pose.Orientation.ToQuaternion();
         var relativeRotation = parentRotation.Inverse() * jointRotation;
-
-        if (type == BoneType.IndexFingerRightA)
-        {
-            Debugging.DebugInfo = $"{relativeRotation.ToYawPitchRoll()}";
-        }
 
         var bone = skeletonStructure.GetBone(type);
         var localTransforms = bone.GetLocalTransforms(pose);
 
         var swapped = new Quaternion<float>(-relativeRotation.Z, relativeRotation.Y, relativeRotation.X, relativeRotation.W);
         var swapXZ = MathFactory.AxisAngle(1, 0, 1, 180);
-        localTransforms->Rotation = (localTransforms->Rotation.ToQuaternion() * swapped * Debugging.GetRotation()).ToQuaternion();
+        localTransforms->Rotation = (localTransforms->Rotation.ToQuaternion() * rotationOffset * swapped).ToQuaternion();
     }
 }
