@@ -1,4 +1,5 @@
 
+using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Data.Parsing.Layer;
 using Silk.NET.Maths;
 using System;
@@ -60,7 +61,13 @@ class FollowingFirstPersonCamera : VRCameraType
 
     public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
     {
-        return HeadPosition;
+        var position = HeadPosition;
+        // Push the head a bit more forward to prevent clipping
+        if (Conditions.IsMounted)
+        {
+            position += Vector3D.Transform(new Vector3D<float>(0, 0, -0.1f), MathFactory.YRotation(gameCamera.GetYRotation()));
+        }
+        return position;
     }
 }
 
