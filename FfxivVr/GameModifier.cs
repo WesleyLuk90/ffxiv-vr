@@ -114,7 +114,7 @@ unsafe public class GameModifier
         realObject->DrawObject->Flags = visible ? (byte)ModelCullTypes.Visible : (byte)ModelCullTypes.InsideCamera;
     }
 
-    private Character* getCharacterOrGpose()
+    public Character* getCharacterOrGpose()
     {
         Character* character = gameState.GetGposeTarget();
         if (gameState.IsGPosing() && character == null)
@@ -143,12 +143,7 @@ unsafe public class GameModifier
         {
             return;
         }
-        Character* character = getCharacterOrGpose();
-        if (character == null)
-        {
-            return;
-        }
-        var characterBase = (CharacterBase*)character->GameObject.DrawObject;
+        var characterBase = GetCharacterBase();
         if (characterBase == null)
         {
             return;

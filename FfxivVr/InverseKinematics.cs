@@ -44,7 +44,7 @@ public class InverseKinematics
         var rotation1 = CreateFromAxisAngle(axis0, deltaRotation1);
         var rotation2 = CreateFromAxisAngle(axis1, angle1ACAT);
 
-        return Tuple.Create(rotation0 * rotation2, rotation1);
+        return Tuple.Create(rotation2 * rotation0, rotation1);
     }
 
     private Quaternion<float> CreateFromAxisAngle(Vector3D<float> axis, float angle)

@@ -247,8 +247,8 @@ unsafe internal class SkeletonModifier(Logger logger)
 
     private void UpdateArmIK(HandJointLocationEXT[] joints, hkaPose* pose, SkeletonStructure structure, Vector3D<float> head, BoneType arm, BoneType forearm, BoneType hand)
     {
-        var palm = joints[(int)HandJointEXT.PalmExt];
-        var targetHandPosition = Vector3D.Transform(palm.Pose.Position.ToVector3D(), MathFactory.YRotation(float.DegreesToRadians(180))) + head;
+        var wrist = joints[(int)HandJointEXT.WristExt];
+        var targetHandPosition = Vector3D.Transform(wrist.Pose.Position.ToVector3D(), MathFactory.YRotation(float.DegreesToRadians(180))) + head;
 
         var armBone = structure.GetBone(arm);
         var forearmBone = structure.GetBone(forearm);
@@ -260,12 +260,15 @@ unsafe internal class SkeletonModifier(Logger logger)
 
         var globalArmRotation = armTransforms->Rotation.ToQuaternion();
         var globalForearmRotation = forearmTransforms->Rotation.ToQuaternion();
-        var currentHandPosition = handTransforms->Translation.ToVector3D();
+
+        var armPosition = armTransforms->Translation.ToVector3D();
+        var forearmPosition = forearmTransforms->Translation.ToVector3D();
+        var handPosition = handTransforms->Translation.ToVector3D();
 
         var (rotation1, rotation2) = ik.Calculate2Bone(
-            armTransforms->Translation.ToVector3D(),
-            forearmTransforms->Translation.ToVector3D(),
-            currentHandPosition,
+            armPosition,
+            forearmPosition,
+            handPosition,
             targetHandPosition,
             new Vector3D<float>(0, 0, -1));
 

@@ -74,6 +74,17 @@ public class InverseKinematicsTests
             new Vector3D<float>(-0.13013679f, 1.2479662f, 0.33252394f));
     }
 
+    [TestMethod()]
+    public void Calculate2BoneTest6()
+    {
+        Test2BoneIK(
+            new Vector3D<float>(0.07797372f, 1.4141837f, -0.15328033f),
+            new Vector3D<float>(0.2835403f, 1.2345111f, -0.24176377f),
+            new Vector3D<float>(0.4794166f, 1.066514f, -0.26614535f),
+            new Vector3D<float>(0.2669642f, 1.5886016f, -0.04036241f));
+    }
+
+
     private void Test2BoneIK(Vector3D<float> a, Vector3D<float> b, Vector3D<float> c, Vector3D<float> target)
     {
         var (r1, r2) = new InverseKinematics().Calculate2Bone(
@@ -98,6 +109,7 @@ public class InverseKinematicsTests
         Assert.IsTrue((c - b).Length + (b - a).Length >= (target - a).Length);
         // Check the final rotation is at the target
         AssertClose(a + Vector3D.Transform(baCbRotated, r1), target);
+        AssertClose(a + Vector3D.Transform(ba, r1) + Vector3D.Transform(cb, r1 * r2), target);
     }
 
     private const float Epsilon = 0.005f;
