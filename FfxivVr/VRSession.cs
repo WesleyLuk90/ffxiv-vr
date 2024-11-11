@@ -9,6 +9,7 @@ using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace FfxivVR;
@@ -114,6 +115,8 @@ public unsafe class VRSession : IDisposable
         }
     }
 
+    // Stores the hands data from the last frame so we keep the hands in the same spot of we lose tracking
+    private HandTrackerExtension.HandData? lastHands;
     private CameraPhase? cameraPhase;
 
     abstract class RenderPhase;
@@ -210,11 +213,16 @@ public unsafe class VRSession : IDisposable
                     }
                 case Eye.Right:
                     {
+                        lastHands = cameraPhase?.Hands;
                         cameraPhase = null;
                         break;
                     }
                 default: break;
             }
+        }
+        else
+        {
+            lastHands = null;
         }
         return shouldPresent;
     }
@@ -346,7 +354,7 @@ public unsafe class VRSession : IDisposable
             var predictedTime = framePrediction.GetPredictedFrameTime();
             var views = renderer.LocateView(predictedTime);
             var localSpaceHeight = configuration.MatchFloorPosition ? vrSpace.GetLocalSpaceHeight(predictedTime) : null;
-            var hands = MaybeGetHandTrackingData(predictedTime);
+            var hands = MaybeGetHandTrackingData(predictedTime, lastHands);
             Task<FrameState> waitFrameTask = Task.Run(() =>
             {
                 var frameState = waitFrameService.WaitFrame();
@@ -374,7 +382,7 @@ public unsafe class VRSession : IDisposable
         }
     }
 
-    private HandTrackerExtension.HandData? MaybeGetHandTrackingData(long predictedTime)
+    private HandTrackerExtension.HandData? MaybeGetHandTrackingData(long predictedTime, HandTrackerExtension.HandData? lastData)
     {
         if (!configuration.HandTracking)
         {
@@ -384,7 +392,22 @@ public unsafe class VRSession : IDisposable
         {
             return null;
         }
-        return vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
+        var data = vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
+        if (data == null)
+        {
+            return null;
+        }
+        var left = data.LeftHand;
+        if (lastData != null && left.All(joint => joint.LocationFlags == 0))
+        {
+            left = lastData.LeftHand;
+        }
+        var right = data.RightHand;
+        if (lastData != null && right.All(joint => joint.LocationFlags == 0))
+        {
+            right = lastData.RightHand;
+        }
+        return new HandTrackerExtension.HandData(left, right);
     }
 
     internal void UpdateNamePlates(AddonNamePlate* namePlate)
