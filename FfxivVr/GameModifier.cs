@@ -210,12 +210,12 @@ unsafe public class GameModifier
         skeletonModifier.UpdateHands(skeleton, hands);
     }
 
-    internal void ResetVerticalCameraRotation()
+    internal void ResetVerticalCameraRotation(float rotation)
     {
         var rawCamera = gameState.GetRawCamera();
         if (rawCamera != null)
         {
-            rawCamera->CurrentVRotation = 0;
+            rawCamera->CurrentVRotation = rotation;
         }
     }
 }

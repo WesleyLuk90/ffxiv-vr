@@ -109,5 +109,14 @@ internal class ConfigWindow : Window
                 config.Save();
             }
         }
+        if (ImGui.CollapsingHeader("Controls"))
+        {
+            var disableCameraDirectionFlying = config.DisableCameraDirectionFlying;
+            if (ImGui.Checkbox("Prevent camera from changing flying height", ref disableCameraDirectionFlying))
+            {
+                config.DisableCameraDirectionFlying = disableCameraDirectionFlying;
+                config.Save();
+            }
+        }
     }
 }

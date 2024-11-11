@@ -1,7 +1,9 @@
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Data.Parsing.Layer;
+using Lumina.Excel.GeneratedSheets;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
@@ -240,7 +242,7 @@ public unsafe class VRSession : IDisposable
     // Test Cases
     // * Dungeon start cutscene
     // * Inn login/logout
-    internal void UpdateCamera(Camera* camera)
+    internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
         if (State.SessionRunning && cameraPhase is CameraPhase phase)
         {
@@ -249,7 +251,6 @@ public unsafe class VRSession : IDisposable
 
             camera->RenderCamera->ProjectionMatrix = vrCamera.ComputeGameProjectionMatrix(view);
             camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
-
 
             camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, phase.CameraType).ToMatrix4x4();
             camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
@@ -358,9 +359,20 @@ public unsafe class VRSession : IDisposable
             VRCameraType cameraType = GetVRCameraType(localSpaceHeight, gamePosition, gameCameraLookAt);
             cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, hands, cameraType);
 
-            if (cameraType.ShouldLockCameraVerticalRotation())
+            if (Conditions.IsInFlight && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation()))
             {
-                gameModifier.ResetVerticalCameraRotation();
+                if (gameState.IsFirstPerson())
+                {
+                    gameModifier.ResetVerticalCameraRotation(0);
+                }
+                else
+                {
+                    gameModifier.ResetVerticalCameraRotation(float.DegreesToRadians(15));
+                }
+            }
+            else if (cameraType.ShouldLockCameraVerticalRotation())
+            {
+                gameModifier.ResetVerticalCameraRotation(0);
             }
         }
     }

@@ -20,6 +20,7 @@ public class Configuration : IPluginConfiguration
     public bool HandTracking = false;
 
     public bool MatchFloorPosition = false;
+    public bool DisableCameraDirectionFlying = false;
 
     public void Save()
     {
