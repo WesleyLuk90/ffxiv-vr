@@ -101,7 +101,7 @@ unsafe internal class SkeletonModifier(Logger logger)
         return handle->HavokSkeleton;
     }
 
-    internal void HideHead(Skeleton* skeleton)
+    internal void HideHead(Skeleton* skeleton, bool hideNeck)
     {
         var pose = GetPose(skeleton);
         if (pose == null)
@@ -124,6 +124,13 @@ unsafe internal class SkeletonModifier(Logger logger)
             childTransform->Scale.X = 0.001f;
             childTransform->Scale.Y = 0.001f;
             childTransform->Scale.Z = 0.001f;
+        }
+        if (hideNeck)
+        {
+            var neckLocal = neck.GetLocalTransforms(pose);
+            neckLocal->Scale.X = 0.001f;
+            neckLocal->Scale.Y = 0.001f;
+            neckLocal->Scale.Z = 0.001f;
         }
     }
     record JointBoneMapping(HandJointEXT joint, BoneType leftType, BoneType rightType) { }

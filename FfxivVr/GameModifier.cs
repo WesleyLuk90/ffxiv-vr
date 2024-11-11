@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
@@ -153,7 +154,7 @@ unsafe public class GameModifier
             return;
         }
         var skeleton = characterBase->Skeleton;
-        skeletonModifier.HideHead(skeleton);
+        skeletonModifier.HideHead(skeleton, Conditions.IsMounted);
     }
 
     public CharacterBase* GetCharacterBase()
