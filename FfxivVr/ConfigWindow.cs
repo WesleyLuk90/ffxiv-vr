@@ -117,6 +117,12 @@ internal class ConfigWindow : Window
                 config.DisableCameraDirectionFlying = disableCameraDirectionFlying;
                 config.Save();
             }
+            var handTracking = config.HandTracking;
+            if (ImGui.Checkbox("Enable hand tracking", ref handTracking))
+            {
+                config.HandTracking = handTracking;
+                config.Save();
+            }
         }
     }
 }

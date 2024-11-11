@@ -244,10 +244,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     }
                     break;
                 // Development commands
-                case "handtracking":
-                    configuration.HandTracking = !configuration.HandTracking;
-                    logger.Info($"Handtracking enabled: {configuration.HandTracking}");
-                    break;
                 case "debugmode":
                     Debugging.DebugMode = !Debugging.DebugMode;
                     logger.Info($"DebugMode enabled: {Debugging.DebugMode}");
