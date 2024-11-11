@@ -4,10 +4,9 @@ using Silk.NET.OpenXR;
 using System;
 
 namespace FfxivVR;
-internal class VRCamera(Configuration configuration, FreeCamera freeCamera)
+internal class VRCamera(Configuration configuration)
 {
     private readonly Configuration configuration = configuration;
-    private readonly FreeCamera freeCamera = freeCamera;
 
     internal Matrix4x4 ComputeGameProjectionMatrix(View view)
     {

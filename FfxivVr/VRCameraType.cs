@@ -98,11 +98,11 @@ class LockedFloorCamera : VRCameraType
     }
 }
 
-class FreeCamera2 : VRCameraType
+public class FreeCamera : VRCameraType
 {
     public Vector3D<float> Position = Vector3D<float>.Zero;
     public float YRotation = 0;
-
+    public bool Enabled = false;
     public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
     {
         return Position;
@@ -111,5 +111,19 @@ class FreeCamera2 : VRCameraType
     public override float GetYRotation(GameCamera gameCamera)
     {
         return YRotation;
+    }
+    public void UpdatePosition(Vector2D<float> walkDelta, float heightDelta, float rotationDelta)
+    {
+        Position.Y += heightDelta;
+        var walk = new Vector3D<float>(walkDelta.X, 0, -walkDelta.Y);
+        YRotation += rotationDelta;
+        var rotationMatrix = Matrix4X4.CreateRotationY(YRotation);
+        Position += Vector3D.Transform(walk, rotationMatrix);
+    }
+
+    internal void Reset(Vector3D<float> position, float yRotation)
+    {
+        this.Position = position;
+        this.YRotation = yRotation;
     }
 }

@@ -6,10 +6,11 @@ namespace FfxivVR;
 internal class GamepadManager
 {
     private readonly IGamepadState gamepadState;
-    private readonly VRLifecycle lifecycle;
     private readonly PropertyInfo NavEnableGamepadProperty;
 
-    public GamepadManager(IGamepadState gamepadState, VRLifecycle lifecycle)
+    private readonly FreeCamera freeCamera;
+
+    public GamepadManager(IGamepadState gamepadState, FreeCamera freeCamera)
     {
         var assembly = Assembly.GetAssembly(typeof(IGamepadState)) ?? throw new Exception("Could not get assembly");
         var gamepad = assembly.GetType("Dalamud.Game.ClientState.GamePad.GamepadState") ?? throw new Exception("Could not get gamepad");
@@ -17,12 +18,12 @@ internal class GamepadManager
              BindingFlags.NonPublic |
              BindingFlags.Instance) ?? throw new Exception("Could not get NavEnableGamepad");
         this.gamepadState = gamepadState;
-        this.lifecycle = lifecycle;
+        this.freeCamera = freeCamera;
     }
 
     public void Update()
     {
-        if (lifecycle.GetFreeCamera()?.Enabled == true)
+        if (freeCamera.Enabled)
         {
             SetEnableGamepad(false);
         }

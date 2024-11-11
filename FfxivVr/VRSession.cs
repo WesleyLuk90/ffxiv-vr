@@ -27,7 +27,7 @@ public unsafe class VRSession : IDisposable
     private readonly VRSwapchains swapchains;
     private readonly GameState gameState;
     private readonly DalamudRenderer dalamudRenderer;
-    public readonly FreeCamera FreeCamera;
+    private readonly FreeCamera freeCamera;
     private readonly VRCamera vrCamera;
     private readonly RenderPipelineInjector renderPipelineInjector;
     private readonly Configuration configuration;
@@ -44,7 +44,8 @@ public unsafe class VRSession : IDisposable
         RenderPipelineInjector renderPipelineInjector,
         HookStatus hookStatus,
         VRDiagnostics diagnostics,
-        GameModifier gameModifier)
+        GameModifier gameModifier,
+        FreeCamera freeCamera)
     {
         vrSystem = new VRSystem(xr, device, logger, hookStatus, configuration);
         this.logger = logger;
@@ -55,8 +56,7 @@ public unsafe class VRSession : IDisposable
         vrSpace = new VRSpace(xr, logger, vrSystem);
         this.gameState = gameState;
         dalamudRenderer = new DalamudRenderer(logger);
-        FreeCamera = new FreeCamera();
-        vrCamera = new VRCamera(configuration, FreeCamera);
+        vrCamera = new VRCamera(configuration);
         resolutionManager = new ResolutionManager(logger, configuration);
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera, diagnostics, resolutionManager);
         waitFrameService = new WaitFrameService(vrSystem, xr);
@@ -65,6 +65,7 @@ public unsafe class VRSession : IDisposable
         this.configuration = configuration;
         framePrediction = new FramePrediction(vrSystem);
         this.gameModifier = gameModifier;
+        this.freeCamera = freeCamera;
     }
 
     public void Initialize()
@@ -264,21 +265,24 @@ public unsafe class VRSession : IDisposable
 
     private VRCameraType GetVRCameraType(float? localSpaceHeight)
     {
-        VRCameraType cameraType;
         var characterBase = gameModifier.GetCharacterBase();
         var distance = gameState.GetGameCameraDistance();
-        if (gameState.IsFirstPerson() && configuration.FollowCharacter && gameModifier.GetHeadPosition() is Vector3D<float> head)
+        if (freeCamera.Enabled)
         {
-            cameraType = new FollowingFirstPersonCamera(
+            return freeCamera;
+        }
+        else if (gameState.IsFirstPerson() && configuration.FollowCharacter && gameModifier.GetHeadPosition() is Vector3D<float> head)
+        {
+            return new FollowingFirstPersonCamera(
                 headPosition: head);
         }
         else if (gameState.IsFirstPerson())
         {
-            cameraType = new FirstPersonCamera();
+            return new FirstPersonCamera();
         }
         else if (localSpaceHeight is float height && characterBase != null && distance is float d)
         {
-            cameraType = new LockedFloorCamera(
+            return new LockedFloorCamera(
                 groundPosition: characterBase->Position.Y,
                 height: height,
                 distance: d,
@@ -286,10 +290,8 @@ public unsafe class VRSession : IDisposable
         }
         else
         {
-            cameraType = new OrbitCamera();
+            return new OrbitCamera();
         }
-
-        return cameraType;
     }
 
     internal void RecenterCamera()

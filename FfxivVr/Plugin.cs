@@ -47,6 +47,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly GameSettingsManager gameSettingsManager;
 
     private readonly GameModifier gameModifier;
+
+    private readonly FreeCamera freeCamera = new FreeCamera();
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -69,8 +71,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
         diagnostics = new VRDiagnostics(logger);
         gameSettingsManager = new GameSettingsManager(logger);
         gameModifier = new GameModifier(logger, gameState, GameGui, TargetManager, ClientState);
-        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, hookStatus, diagnostics, gameModifier);
-        gamepadManager = new GamepadManager(GamepadState, vrLifecycle);
+        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, hookStatus, diagnostics, gameModifier, freeCamera);
+        gamepadManager = new GamepadManager(GamepadState, freeCamera);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, hookStatus, gameState);
         GameHookService.InitializeFromAttributes(gameHooks);
@@ -149,7 +151,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         var speed = 0.05f;
         var rotationSpeed = 2 * MathF.PI / 200;
         var timeDelta = (float)framework.UpdateDelta.TotalSeconds;
-        vrLifecycle.GetFreeCamera()?.UpdatePosition(
+        freeCamera.UpdatePosition(
             walkDelta: new Vector2D<float>(GamepadState.LeftStick.X, GamepadState.LeftStick.Y) * timeDelta * speed,
             heightDelta: GamepadState.RightStick.Y * timeDelta * speed,
             rotationDelta: -GamepadState.RightStick.X * timeDelta * rotationSpeed
@@ -224,23 +226,18 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     vrLifecycle.RecenterCamera();
                     break;
                 case "freecam":
-                    var freeCam = vrLifecycle.GetFreeCamera();
-                    if (freeCam == null)
+                    if (freeCamera.Enabled)
                     {
-                        logger.Info("Free cam can only be enabled after VR has started");
+                        freeCamera.Enabled = false;
+                        logger.Info("Disabled free cam");
                     }
                     else
                     {
-                        if (freeCam.Enabled)
-                        {
-                            freeCam.Enabled = false;
-                            logger.Info("Disabled free cam");
-                        }
-                        else
-                        {
-                            freeCam.Enabled = true;
-                            logger.Info("Enabled free cam");
-                        }
+                        var active = gameState.GetCurrentCamera();
+                        var gameCamera = new GameCamera(active->Position.ToVector3D(), active->LookAtVector.ToVector3D());
+                        freeCamera.Reset(gameCamera.Position, gameCamera.GetYRotation());
+                        freeCamera.Enabled = true;
+                        logger.Info("Enabled free cam");
                     }
                     break;
                 // Development commands

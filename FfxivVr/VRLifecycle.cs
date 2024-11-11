@@ -20,6 +20,8 @@ public unsafe class VRLifecycle : IDisposable
     private readonly VRDiagnostics diagnostics;
     private readonly GameModifier gameModifier;
 
+    private readonly FreeCamera freeCamera;
+
     public VRLifecycle(
         Logger logger,
         XR xr,
@@ -28,7 +30,8 @@ public unsafe class VRLifecycle : IDisposable
         RenderPipelineInjector renderPipelineInjector,
         HookStatus hookStatus,
         VRDiagnostics diagnostics,
-        GameModifier gameModifier)
+        GameModifier gameModifier,
+        FreeCamera freeCamera)
     {
         this.logger = logger;
         this.xr = xr;
@@ -38,6 +41,7 @@ public unsafe class VRLifecycle : IDisposable
         this.hookStatus = hookStatus;
         this.diagnostics = diagnostics;
         this.gameModifier = gameModifier;
+        this.freeCamera = freeCamera;
     }
 
     public void EnableVR()
@@ -57,7 +61,8 @@ public unsafe class VRLifecycle : IDisposable
             renderPipelineInjector: renderPipelineInjector,
             hookStatus: hookStatus,
             diagnostics: diagnostics,
-            gameModifier: gameModifier
+            gameModifier: gameModifier,
+            freeCamera: freeCamera
         );
         try
         {
@@ -70,11 +75,6 @@ public unsafe class VRLifecycle : IDisposable
             vrSession = null;
             throw;
         }
-    }
-
-    public FreeCamera? GetFreeCamera()
-    {
-        return vrSession?.FreeCamera;
     }
 
     public bool IsEnabled()
