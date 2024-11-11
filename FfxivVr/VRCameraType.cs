@@ -65,7 +65,7 @@ class FollowingFirstPersonCamera : VRCameraType
         // Push the head a bit more forward to prevent clipping
         if (Conditions.IsMounted)
         {
-            position += Vector3D.Transform(new Vector3D<float>(0, 0, -0.1f), MathFactory.YRotation(gameCamera.GetYRotation()));
+            position += Vector3D.Transform(new Vector3D<float>(0, 0, -0.2f), MathFactory.YRotation(gameCamera.GetYRotation()));
         }
         return position;
     }
