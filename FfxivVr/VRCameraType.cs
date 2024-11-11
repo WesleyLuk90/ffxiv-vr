@@ -5,7 +5,7 @@ using System;
 namespace FfxivVR;
 
 // Gets the origin view position of the VR camera, VR view offsets are applied afterwards
-abstract class VRCameraType(Vector3D<float> gameCameraPosition, Vector3D<float> gameCameraLookAt)
+public abstract class VRCameraType(Vector3D<float> gameCameraPosition, Vector3D<float> gameCameraLookAt)
 {
     public readonly Vector3D<float> GameCameraPosition = gameCameraPosition;
     public readonly Vector3D<float> GameCameraLookAt = gameCameraLookAt;
@@ -23,6 +23,11 @@ abstract class VRCameraType(Vector3D<float> gameCameraPosition, Vector3D<float> 
     public float GetYRotation()
     {
         return -MathF.PI / 2 - MathF.Atan2(GameCameraForwardVector.Z, GameCameraForwardVector.X);
+    }
+
+    public virtual bool ShouldLockCameraVerticalRotation()
+    {
+        return false;
     }
 }
 
@@ -78,5 +83,10 @@ class LockedFloorCamera : VRCameraType
         var pos = GameCameraLookAt - Vector3D.Transform(-Vector3D<float>.UnitZ * Distance, MathFactory.YRotation(GetYRotation()));
         pos.Y = GroundPosition + Height / WorldScale;
         return pos;
+    }
+
+    override public bool ShouldLockCameraVerticalRotation()
+    {
+        return true;
     }
 }

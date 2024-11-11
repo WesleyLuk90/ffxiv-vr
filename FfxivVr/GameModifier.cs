@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Maths;
+using System;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
@@ -207,6 +208,15 @@ unsafe public class GameModifier
         var actorModel = (ActorModel*)characterBase;
         var skeleton = characterBase->Skeleton;
         skeletonModifier.UpdateHands(skeleton, hands);
+    }
+
+    internal void ResetVerticalCameraRotation()
+    {
+        var rawCamera = gameState.GetRawCamera();
+        if (rawCamera != null)
+        {
+            rawCamera->CurrentVRotation = 0;
+        }
     }
 }
 
