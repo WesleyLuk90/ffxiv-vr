@@ -1,6 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.Havok.Animation.Rig;
-using FFXIVClientStructs.Havok.Common.Base.System.IO.OStream;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
@@ -10,14 +9,6 @@ using static FfxivVR.SkeletonStructure;
 
 namespace FfxivVR;
 
-public static class SkeletonExtensions
-{
-    public static Quaternion<float> ToModelQuaternion(this Quaternion<float> quaternion)
-    {
-        return new Quaternion<float>(-quaternion.X, quaternion.Z, quaternion.Y, quaternion.W);
-    }
-
-}
 unsafe internal class SkeletonModifier(Logger logger)
 {
     private readonly Logger logger = logger;
@@ -133,27 +124,6 @@ unsafe internal class SkeletonModifier(Logger logger)
             neckLocal->Scale.Z = 0.001f;
         }
     }
-    record JointBoneMapping(HandJointEXT joint, BoneType leftType, BoneType rightType) { }
-
-    // https://docs.unity3d.com/Packages/com.unity.xr.hands@1.1/manual/hand-data/xr-hand-data-model.html
-    private List<JointBoneMapping> JointToBone = [
-        new JointBoneMapping(HandJointEXT.WristExt, BoneType.HandLeft, BoneType.HandRight),
-
-        new JointBoneMapping(HandJointEXT.ThumbMetacarpalExt, BoneType.ThumbLeftA, BoneType.ThumbRightA),
-        new JointBoneMapping(HandJointEXT.ThumbDistalExt, BoneType.ThumbLeftB, BoneType.ThumbRightB),
-
-        new JointBoneMapping(HandJointEXT.IndexProximalExt, BoneType.IndexFingerLeftA, BoneType.IndexFingerRightA),
-        new JointBoneMapping(HandJointEXT.IndexDistalExt, BoneType.IndexFingerLeftB, BoneType.IndexFingerRightB),
-
-        new JointBoneMapping(HandJointEXT.MiddleProximalExt, BoneType.MiddleFingerLeftA, BoneType.MiddleFingerRightA),
-        new JointBoneMapping(HandJointEXT.MiddleDistalExt, BoneType.MiddleFingerLeftB, BoneType.MiddleFingerRightB),
-
-        new JointBoneMapping(HandJointEXT.RingProximalExt, BoneType.RingFingerLeftA, BoneType.RingFingerRightA),
-        new JointBoneMapping(HandJointEXT.RingDistalExt, BoneType.RingFingerLeftB, BoneType.RingFingerRightB),
-
-        new JointBoneMapping(HandJointEXT.LittleProximalExt, BoneType.PinkyFingerLeftA, BoneType.PinkyFingerRightA),
-        new JointBoneMapping(HandJointEXT.LittleDistalExt, BoneType.PinkyFingerLeftB, BoneType.PinkyFingerRightB),
-    ];
     internal void UpdateHands(Skeleton* skeleton, HandTrackerExtension.HandData hands)
     {
         var pose = GetPose(skeleton);
@@ -226,16 +196,17 @@ unsafe internal class SkeletonModifier(Logger logger)
     private void RotateHand(HandJointLocationEXT[] joints, BoneType handBone, BoneType wristBone, BoneType forearmBone, SkeletonStructure structure, hkaPose* pose, float pitch)
     {
         var desiredRotation = joints[(int)HandJointEXT.PalmExt].Pose.Orientation.ToQuaternion();
-        var palmRotation = // Not sure why this works
+        var swappedZY = new Quaternion<float>(-desiredRotation.X, desiredRotation.Z, desiredRotation.Y, desiredRotation.W);
+        var handRotation = // Not sure why this works
           MathFactory.XRotation(float.DegreesToRadians(-90)) *
-           desiredRotation.ToModelQuaternion() *
+           swappedZY *
             MathFactory.ZRotation(float.DegreesToRadians(-90)) *
             MathFactory.XRotation(pitch);
 
         var hand = structure.GetBone(handBone);
         var globalHandRotation = hand.GetModelTransforms(pose)->Rotation.ToQuaternion();
         var handTransforms = hand.GetLocalTransforms(pose);
-        handTransforms->Rotation = (handTransforms->Rotation.ToQuaternion() * Quaternion<float>.Inverse(globalHandRotation) * palmRotation).ToQuaternion();
+        handTransforms->Rotation = (handTransforms->Rotation.ToQuaternion() * Quaternion<float>.Inverse(globalHandRotation) * handRotation).ToQuaternion();
 
         var wrist = structure.GetBone(wristBone).GetLocalTransforms(pose);
         var forearm = structure.GetBone(forearmBone).GetLocalTransforms(pose);
@@ -291,7 +262,6 @@ unsafe internal class SkeletonModifier(Logger logger)
         var localTransforms = bone.GetLocalTransforms(pose);
 
         var swapped = new Quaternion<float>(-relativeRotation.Z, relativeRotation.Y, relativeRotation.X, relativeRotation.W);
-        var swapXZ = MathFactory.AxisAngle(1, 0, 1, 180);
         localTransforms->Rotation = (localTransforms->Rotation.ToQuaternion() * rotationOffset * swapped).ToQuaternion();
     }
 }

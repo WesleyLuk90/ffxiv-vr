@@ -102,18 +102,6 @@ public static class MathExtensions
         return new Vector3D<float>(vec.X, vec.Y, vec.Z);
     }
 
-    public static Vector3D<float> ToYawPitchRoll(this Quaternion<float> quat)
-    {
-        var x = quat.X;
-        var y = quat.Y;
-        var z = quat.Z;
-        var w = quat.W;
-        return new Vector3D<float>(
-            MathF.Atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y)),
-            MathF.Asin(2 * (w * y - x * z)),
-            MathF.Atan2(2 * (w * z - x * y), 1 - 2 * (y * y + z * z))
-        );
-    }
     public static Quaternion<float> Inverse(this Quaternion<float> quat)
     {
         return Quaternion<float>.Inverse(quat);

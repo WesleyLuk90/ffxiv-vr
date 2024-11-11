@@ -6,4 +6,5 @@ namespace FfxivVR.Tests;
 [TestClass()]
 public class QuaternionTests
 {
+
 }
