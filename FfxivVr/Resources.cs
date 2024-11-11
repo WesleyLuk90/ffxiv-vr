@@ -6,6 +6,13 @@ using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 
+public enum ShaderMode
+{
+    Texture = 0,
+    Circle = 1,
+    InvertedAlpha = 2,
+}
+
 unsafe public class Resources : IDisposable
 {
     public struct CameraConstants
@@ -19,11 +26,16 @@ unsafe public class Resources : IDisposable
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    public struct PixelShaderConstants(int mode, float gamma, Vector4f color)
+    public struct PixelShaderConstants(ShaderMode mode, float gamma, Vector4D<float> color, Vector2D<float>? uvOffset = null, Vector2D<float>? uvScale = null)
     {
-        [FieldOffset(0)] int mode = mode;
+        [FieldOffset(0)] int mode = (int)mode;
         [FieldOffset(4)] float gamma = gamma;
-        [FieldOffset(16)] Vector4f color = color;
+        [FieldOffset(8)] readonly float padding1 = 0;
+        [FieldOffset(12)] readonly float padding2 = 0;
+        [FieldOffset(16)] Vector4D<float> color = color;
+        [FieldOffset(32)] Vector2D<float> uvScale = uvScale ?? Vector2D<float>.One;
+        [FieldOffset(40)] Vector2D<float> uvOffset = uvOffset ?? Vector2D<float>.Zero;
+
     }
 
     private D3DBuffer? cameraBuffer;
@@ -38,6 +50,7 @@ unsafe public class Resources : IDisposable
     private ID3D11BlendState* uiBlendState = null;
     private ID3D11BlendState* sceneBlendState = null;
     private ID3D11BlendState* compositingBlendState = null;
+    private ID3D11BlendState* standardBlendState;
     private ID3D11RasterizerState* rasterizerState = null;
     private ID3D11SamplerState* samplerState = null;
     public RenderTarget UIRenderTarget = null!;
@@ -302,6 +315,16 @@ unsafe public class Resources : IDisposable
             blendOpAlpha: BlendOp.Add,
             renderTargetWriteMask: (byte)ColorWriteEnable.All
         ));
+        standardBlendState = CreateBlendState(new RenderTargetBlendDesc(
+            blendEnable: true,
+            srcBlend: Blend.SrcAlpha,
+            destBlend: Blend.One,
+            blendOp: BlendOp.Add,
+            srcBlendAlpha: Blend.One,
+            destBlendAlpha: Blend.One,
+            blendOpAlpha: BlendOp.Add,
+            renderTargetWriteMask: (byte)ColorWriteEnable.All
+        ));
     }
 
     class D3DBuffer : IDisposable
@@ -379,8 +402,6 @@ unsafe public class Resources : IDisposable
         SetBufferData(context, MemoryMarshal.AsBytes(cameraSpan), this.pixelShaderConstantsBuffer!);
 
         context->PSSetConstantBuffers(0, 1, ref pixelShaderConstantsBuffer!.Handle);
-
-        //context->RSSetState(rasterizerState);
     }
 
     public void SetSampler(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView)
@@ -450,5 +471,9 @@ unsafe public class Resources : IDisposable
     internal void SetCompositingBlendState(ID3D11DeviceContext* context)
     {
         context->OMSetBlendState(compositingBlendState, null, 0xffffffff);
+    }
+    internal void SetStandardBlendState(ID3D11DeviceContext* context)
+    {
+        context->OMSetBlendState(standardBlendState, null, 0xffffffff);
     }
 }

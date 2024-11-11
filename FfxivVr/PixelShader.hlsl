@@ -7,8 +7,10 @@ struct VertexShaderOutput
 cbuffer PixelShaderConstants
 {
     int mode;
-    float gamma, b, c;
+    float gamma, a, b;
     float4 constantColor;
+    float2 uvScale;
+    float2 uvOffset;
 };
 
 Texture2D tex;
@@ -17,13 +19,14 @@ SamplerState tex_sampler;
 float4 main(VertexShaderOutput vertexShaderOutput) : SV_TARGET
 {
     float4 color;
+    float2 texCoord = vertexShaderOutput.texcoord * uvScale + uvOffset;
     if (mode == 0)
     {
-        color = tex.Sample(tex_sampler, vertexShaderOutput.texcoord);
+        color = tex.Sample(tex_sampler, texCoord);
     }
     else if (mode == 1) // Draw circle
     {
-        float d2 = length(vertexShaderOutput.texcoord - float2(0.5, 0.5));
+        float d2 = length(texCoord - float2(0.5, 0.5));
         if (d2 < 0.5)
         {
             color = constantColor;
@@ -35,7 +38,7 @@ float4 main(VertexShaderOutput vertexShaderOutput) : SV_TARGET
     }
     else if (mode == 2) // Invert alpha mode, dalamud renders its UI with weird inverted alpha values
     {
-        color = tex.Sample(tex_sampler, vertexShaderOutput.texcoord);
+        color = tex.Sample(tex_sampler, texCoord);
         color.a = 1 - color.a;
     }
     else

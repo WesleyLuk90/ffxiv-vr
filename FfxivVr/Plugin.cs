@@ -126,7 +126,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
         });
     }
 
-
     private bool LaunchAtStartChecked = false;
     private DebugWindow debugWindow;
     private void MaybeOnBootStartVR()
@@ -250,16 +249,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "debug":
                     debugWindow.Toggle();
-                    break;
-                case "resetcamera":
-                    var currentCamera = gameState.GetRawCamera();
-                    if (currentCamera == null)
-                    {
-                        return;
-                    }
-                    logger.Info($"Hrotation {currentCamera->CurrentHRotation}");
-                    logger.Info($"CurrentVRotation {currentCamera->CurrentVRotation}");
-                    currentCamera->CurrentVRotation = 0;
                     break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");
