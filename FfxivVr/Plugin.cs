@@ -8,9 +8,11 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using SharpDX.Win32;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -123,6 +125,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
             UpdateFreeCam(framework);
         });
     }
+
 
     private bool LaunchAtStartChecked = false;
     private DebugWindow debugWindow;

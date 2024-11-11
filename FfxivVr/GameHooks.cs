@@ -88,6 +88,7 @@ unsafe public class GameHooks : IDisposable
         });
         if (shouldSecondRender)
         {
+            // This can cause crashes if the plugin is unloaded during while running the second tick
             returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         }
         //logger.Trace("FrameworkTickFn end");

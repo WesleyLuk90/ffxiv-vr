@@ -33,6 +33,10 @@ unsafe public class GameState
             return null;
         }
         var targetSystem = TargetSystem.Instance();
+        if (targetSystem == null)
+        {
+            return null;
+        }
         var target = targetSystem->GPoseTarget;
         if (target == null)
         {
