@@ -252,14 +252,17 @@ public unsafe class VRSession : IDisposable
             camera->RenderCamera->ProjectionMatrix = vrCamera.ComputeGameProjectionMatrix(view);
             camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
 
-            camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, phase.CameraType).ToMatrix4x4();
+            var position = camera->Position.ToVector3D();
+            var lookAt = camera->LookAtVector.ToVector3D();
+
+            camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, phase.CameraType, new GameCamera(position, lookAt)).ToMatrix4x4();
             camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
 
             camera->RenderCamera->FoV = view.Fov.AngleRight - view.Fov.AngleLeft;
         }
     }
 
-    private VRCameraType GetVRCameraType(float? localSpaceHeight, Vector3D<float> gamePosition, Vector3D<float> gameCameraLookAt)
+    private VRCameraType GetVRCameraType(float? localSpaceHeight)
     {
         VRCameraType cameraType;
         var characterBase = gameModifier.GetCharacterBase();
@@ -267,19 +270,15 @@ public unsafe class VRSession : IDisposable
         if (gameState.IsFirstPerson() && configuration.FollowCharacter && gameModifier.GetHeadPosition() is Vector3D<float> head)
         {
             cameraType = new FollowingFirstPersonCamera(
-                gameCameraPosition: gamePosition,
-                gameCameraLookAt: gameCameraLookAt,
                 headPosition: head);
         }
         else if (gameState.IsFirstPerson())
         {
-            cameraType = new FirstPersonCamera(gamePosition, gameCameraLookAt);
+            cameraType = new FirstPersonCamera();
         }
         else if (localSpaceHeight is float height && characterBase != null && distance is float d)
         {
             cameraType = new LockedFloorCamera(
-                gameCameraPosition: gamePosition,
-                gameCameraLookAt: gameCameraLookAt,
                 groundPosition: characterBase->Position.Y,
                 height: height,
                 distance: d,
@@ -287,7 +286,7 @@ public unsafe class VRSession : IDisposable
         }
         else
         {
-            cameraType = new OrbitCamera(gamePosition, gameCameraLookAt);
+            cameraType = new OrbitCamera();
         }
 
         return cameraType;
@@ -352,11 +351,7 @@ public unsafe class VRSession : IDisposable
                 return frameState;
             });
 
-            var currentCamera = gameState.GetCurrentCamera();
-            var gamePosition = currentCamera->Position.ToVector3D();
-            var gameCameraLookAt = currentCamera->LookAtVector.ToVector3D();
-
-            VRCameraType cameraType = GetVRCameraType(localSpaceHeight, gamePosition, gameCameraLookAt);
+            VRCameraType cameraType = GetVRCameraType(localSpaceHeight);
             cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, hands, cameraType);
 
             if (Conditions.IsInFlight && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation()))

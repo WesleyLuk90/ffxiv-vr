@@ -1,64 +1,64 @@
 
+using Lumina.Data.Parsing.Layer;
 using Silk.NET.Maths;
 using System;
 
 namespace FfxivVR;
 
-// Gets the origin view position of the VR camera, VR view offsets are applied afterwards
-public abstract class VRCameraType(Vector3D<float> gameCameraPosition, Vector3D<float> gameCameraLookAt)
+// Need to be careful here as the game camera values change slightly between the left and right frame rendering
+public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt)
 {
-    public readonly Vector3D<float> GameCameraPosition = gameCameraPosition;
-    public readonly Vector3D<float> GameCameraLookAt = gameCameraLookAt;
+    public readonly Vector3D<float> GameCameraForwardVector = lookAt - position;
 
-    public readonly Vector3D<float> GameCameraForwardVector = gameCameraLookAt - gameCameraPosition;
+    public Vector3D<float> Position { get; } = position;
+    public Vector3D<float> LookAt { get; } = lookAt;
 
-    public abstract Vector3D<float> GetCameraPosition();
-
-    // Most camera won't change the rotation so provide a default implementation
-    public Quaternion<float> GetCameraRotation()
-    {
-        return MathFactory.YRotation(GetYRotation());
-    }
-
-    public float GetYRotation()
+    public virtual float GetYRotation()
     {
         return -MathF.PI / 2 - MathF.Atan2(GameCameraForwardVector.Z, GameCameraForwardVector.X);
     }
 
+}
+
+// Gets the origin view position of the VR camera, VR view offsets are applied afterwards
+public abstract class VRCameraType
+{
+
+    public abstract Vector3D<float> GetCameraPosition(GameCamera gameCamera);
+
+    // Most camera won't change the rotation so provide a default implementation
+    public virtual float GetYRotation(GameCamera gameCamera)
+    {
+        return gameCamera.GetYRotation();
+    }
     public virtual bool ShouldLockCameraVerticalRotation()
     {
         return false;
     }
 }
 
-class OrbitCamera : VRCameraType
+class OrbitCamera() : VRCameraType
 {
-    public OrbitCamera(Vector3D<float> gameCameraPosition, Vector3D<float> gameCameraLookAt) : base(gameCameraPosition, gameCameraLookAt)
-    {
-    }
-
-    public override Vector3D<float> GetCameraPosition() { return GameCameraPosition; }
+    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera) { return gameCamera.Position; }
 }
 
+
+// This just works the same way as the orbit camera
 class FirstPersonCamera : OrbitCamera
 {
 
-    // This just works the same way as the orbit camera
-    public FirstPersonCamera(Vector3D<float> gameCameraPosition, Vector3D<float> gameCameraLookAt) : base(gameCameraPosition, gameCameraLookAt)
-    {
-    }
 }
 
 class FollowingFirstPersonCamera : VRCameraType
 {
-    public FollowingFirstPersonCamera(Vector3D<float> gameCameraPosition, Vector3D<float> gameCameraLookAt, Vector3D<float> headPosition) : base(gameCameraPosition, gameCameraLookAt)
+    public FollowingFirstPersonCamera(Vector3D<float> headPosition)
     {
         HeadPosition = headPosition;
     }
 
     public Vector3D<float> HeadPosition { get; }
 
-    public override Vector3D<float> GetCameraPosition()
+    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
     {
         return HeadPosition;
     }
@@ -66,7 +66,7 @@ class FollowingFirstPersonCamera : VRCameraType
 
 class LockedFloorCamera : VRCameraType
 {
-    public LockedFloorCamera(Vector3D<float> gameCameraPosition, Vector3D<float> gameCameraLookAt, float groundPosition, float height, float distance, float worldScale) : base(gameCameraPosition, gameCameraLookAt)
+    public LockedFloorCamera(float groundPosition, float height, float distance, float worldScale)
     {
         GroundPosition = groundPosition;
         Height = height;
@@ -78,9 +78,9 @@ class LockedFloorCamera : VRCameraType
     public float Distance { get; }
     public float WorldScale { get; }
 
-    public override Vector3D<float> GetCameraPosition()
+    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
     {
-        var pos = GameCameraLookAt - Vector3D.Transform(-Vector3D<float>.UnitZ * Distance, MathFactory.YRotation(GetYRotation()));
+        var pos = gameCamera.LookAt - Vector3D.Transform(-Vector3D<float>.UnitZ * Distance, MathFactory.YRotation(gameCamera.GetYRotation()));
         pos.Y = GroundPosition + Height / WorldScale;
         return pos;
     }
@@ -88,5 +88,21 @@ class LockedFloorCamera : VRCameraType
     override public bool ShouldLockCameraVerticalRotation()
     {
         return true;
+    }
+}
+
+class FreeCamera2 : VRCameraType
+{
+    public Vector3D<float> Position = Vector3D<float>.Zero;
+    public float YRotation = 0;
+
+    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
+    {
+        return Position;
+    }
+
+    public override float GetYRotation(GameCamera gameCamera)
+    {
+        return YRotation;
     }
 }
