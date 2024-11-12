@@ -1,6 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects;
-using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;

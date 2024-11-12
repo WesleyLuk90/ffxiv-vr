@@ -4,7 +4,6 @@ using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using static FfxivVR.SkeletonStructure;
 
 namespace FfxivVR;

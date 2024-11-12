@@ -1,6 +1,5 @@
 
 using FFXIVClientStructs.FFXIV.Client.Game;
-using Lumina.Data.Parsing.Layer;
 using Silk.NET.Maths;
 using System;
 

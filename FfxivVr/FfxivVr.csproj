@@ -13,7 +13,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <Target Name="CompileShaders" Inputs="VertexShader.hlsl;FragmentShader.hlsl" BeforeTargets="BeforeResGen" Outputs="VertexShader.cso">
+  <Target Name="CompileShaders" Inputs="VertexShader.hlsl;PixelShader.hlsl" BeforeTargets="BeforeResGen" Outputs="VertexShader.cso;PixelShader.cso">
     <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo VertexShader.cso /T vs_5_0 .\VertexShader.hlsl" />
     <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo PixelShader.cso /T ps_5_0 .\PixelShader.hlsl" />
   </Target>

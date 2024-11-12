@@ -3,7 +3,6 @@ using FFXIVClientStructs.Havok.Common.Base.Math.Quaternion;
 using FFXIVClientStructs.Havok.Common.Base.Math.Vector;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
-using System;
 
 namespace FfxivVR;
 

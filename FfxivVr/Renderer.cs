@@ -1,13 +1,8 @@
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using Silk.NET.Direct3D11;
-using Silk.NET.DXGI;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
-using System.Diagnostics;
 using static FfxivVR.Resources;
 
 namespace FfxivVR;
@@ -258,12 +253,14 @@ unsafe internal class Renderer(
         var color = new float[] { 0f, 0f, 0f, 0f };
         context->ClearRenderTargetView(target, ref color[0]);
         context->OMSetRenderTargets(1, ref target, null);
+        var mouseX = inputData->CursorXPosition;
+        var mouseY = inputData->CursorYPosition;
         if (cursor != null)
         {
             var position = new Vector3D<float>(
-                inputData->CursorXPosition / windowSize.X * 2 - 1,
+                mouseX / windowSize.X * 2 - 1,
                 // All the cursors are offset about 10 pixels
-                (1 - (inputData->CursorYPosition + 10) / windowSize.Y) * 2 - 1, 0
+                (1 - (mouseY + 10) / windowSize.Y) * 2 - 1, 0
             );
             var scale = Matrix4X4.CreateScale(new Vector3D<float>(cursor.Width / windowSize.X, cursor.Height / windowSize.Y, 0f)) *
                 Matrix4X4.CreateTranslation(position);
@@ -283,8 +280,8 @@ unsafe internal class Renderer(
         { // Fallback to a red circle
             var cursorSize = 10f;
             var position = new Vector3D<float>(
-                inputData->CursorXPosition / windowSize.X * 2 - 1,
-                (1 - inputData->CursorYPosition / windowSize.Y) * 2 - 1, 0
+                mouseX / windowSize.X * 2 - 1,
+                (1 - mouseY / windowSize.Y) * 2 - 1, 0
             );
             var scale = Matrix4X4.CreateScale(new Vector3D<float>(cursorSize / windowSize.X, cursorSize / windowSize.Y, 0f)) *
                 Matrix4X4.CreateTranslation(position);

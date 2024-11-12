@@ -7,7 +7,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Maths;
-using System;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;

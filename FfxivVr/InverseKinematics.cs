@@ -1,8 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Common.Lua;
-using FFXIVClientStructs.FFXIV.Component.SteamApi.Callbacks;
-using Silk.NET.Maths;
+﻿using Silk.NET.Maths;
 using System;
-using System.Diagnostics;
 
 namespace FfxivVR;
 public class InverseKinematics

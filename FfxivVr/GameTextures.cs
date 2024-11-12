@@ -2,7 +2,6 @@
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
-using System;
 
 namespace FfxivVR;
 
@@ -25,7 +24,9 @@ unsafe public static class GameTextures
 {
     public static Texture* GetGameRenderTexture()
     {
+#pragma warning disable CS0618 // This should be RenderTargetManager.Unk378 but it is internal
         return FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[33].Value;
+#pragma warning restore CS0618 
     }
 
     internal static Cursor? GetCursorTexture()

@@ -1,8 +1,6 @@
 ﻿using Dalamud.Interface.Windowing;
-using FFXIVClientStructs.FFXIV.Common.Lua;
 using ImGuiNET;
 using Silk.NET.Maths;
-using Silk.NET.OpenXR;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Numerics;
