@@ -57,7 +57,7 @@ class FollowingFirstPersonCamera : VRCameraType
         HeadPosition = headPosition;
     }
 
-    public Vector3D<float> HeadPosition { get; }
+    public Vector3D<float> HeadPosition;
 
     public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
     {

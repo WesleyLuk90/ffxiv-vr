@@ -174,16 +174,16 @@ public unsafe class VRSession : IDisposable
         if (renderPhase is LeftRenderPhase leftRenderPhase)
         {
             var task = leftRenderPhase.WaitFrameTask;
-            logger.Trace("Starting to wait for frame");
+            logger.Trace("Wait for VR frame sync");
             task.Wait();
             var frameState = task.Result;
             framePrediction.MarkPredictedFrameTime(frameState.PredictedDisplayTime);
-            logger.Trace("Start frame");
             renderer.StartFrame(context);
             // Skip presenting the left view to avoid flicker when displaying the right view
             shouldPresent = false;
             if (frameState.ShouldRender == 1)
             {
+                logger.Trace("Render left eye");
                 var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left, leftRenderPhase.Hands);
                 renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views, leftRenderPhase.Hands);
             }
@@ -196,6 +196,7 @@ public unsafe class VRSession : IDisposable
         }
         else if (renderPhase is RightRenderPhase rightRenderPhase)
         {
+            logger.Trace("Render right eye");
             var rightLayer = renderer.RenderEye(context, rightRenderPhase.FrameState, rightRenderPhase.Views, Eye.Right, rightRenderPhase.Hands);
             renderer.EndFrame(context, rightRenderPhase.FrameState, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
             logger.Trace("End frame");
@@ -207,6 +208,7 @@ public unsafe class VRSession : IDisposable
             {
                 case Eye.Left:
                     {
+                        logger.Trace("Switching camera phase to right eye");
                         phase.Eye = Eye.Right;
                         renderPhase = new LeftRenderPhase(phase.Views, cameraPhase.WaitFrameTask, phase.Hands);
                         break;
@@ -251,6 +253,7 @@ public unsafe class VRSession : IDisposable
     // Test Cases
     // * Dungeon start cutscene
     // * Inn login/logout
+
     internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
         if (State.SessionRunning && cameraPhase is CameraPhase phase)
@@ -264,7 +267,13 @@ public unsafe class VRSession : IDisposable
             var position = camera->Position.ToVector3D();
             var lookAt = camera->LookAtVector.ToVector3D();
 
-            camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, phase.CameraType, new GameCamera(position, lookAt)).ToMatrix4x4();
+            if (phase.CameraType is FollowingFirstPersonCamera follow && gameModifier.GetHeadPosition() is Vector3D<float> updatedHead)
+            {
+                follow.HeadPosition = updatedHead;
+            }
+
+            var gameCamera = new GameCamera(position, lookAt);
+            camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, phase.CameraType, gameCamera).ToMatrix4x4();
             camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
 
             camera->RenderCamera->FoV = view.Fov.AngleRight - view.Fov.AngleLeft;
