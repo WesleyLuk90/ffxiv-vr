@@ -4,10 +4,9 @@ using System.Numerics;
 
 namespace FfxivVR.Tests;
 
-[TestClass()]
 public class InverseKinematicsTests
 {
-    [TestMethod()]
+    [Test]
     public void Calculate2BoneTest1()
     {
         Test2BoneIK(
@@ -17,7 +16,7 @@ public class InverseKinematicsTests
             new Vector3D<float>(1, 0, 1));
 
     }
-    [TestMethod()]
+    [Test]
     public void Calculate2BoneTest2()
     {
         Test2BoneIK(
@@ -26,7 +25,7 @@ public class InverseKinematicsTests
             new Vector3D<float>(2, 0, 0),
             new Vector3D<float>(1, 0, 0));
     }
-    [TestMethod()]
+    [Test]
     public void Calculate2BoneTest3()
     {
         Test2BoneIK(
@@ -45,7 +44,7 @@ public class InverseKinematicsTests
             new Vector3D<float>(3, 1, 1),
             new Vector3D<float>(2, 1, 2));
     }
-    [TestMethod()]
+    [Test]
     public void Calculate2BoneTesta()
     {
         Test2BoneIK(
@@ -54,7 +53,7 @@ public class InverseKinematicsTests
             new Vector3D<float>(1, 0, 0),
             new Vector3D<float>(2, 0, 0));
     }
-    [TestMethod()]
+    [Test]
     public void Calculate2BoneTest4()
     {
         Test2BoneIK(
@@ -64,7 +63,7 @@ public class InverseKinematicsTests
             new Vector3D<float>(-0.062444247f, 1.2952111f, 0.3459903f));
     }
 
-    [TestMethod()]
+    [Test]
     public void Calculate2BoneTest5()
     {
         Test2BoneIK(
@@ -74,7 +73,7 @@ public class InverseKinematicsTests
             new Vector3D<float>(-0.13013679f, 1.2479662f, 0.33252394f));
     }
 
-    [TestMethod()]
+    [Test]
     public void Calculate2BoneTest6()
     {
         Test2BoneIK(
@@ -101,9 +100,9 @@ public class InverseKinematicsTests
         var baCbRotated = ba + cbRotated;
 
         // After applying r2, the length of AB + BC*r2 should be the same as target - a
-        Assert.AreEqual(baCbRotated.Length, (target - a).Length, Epsilon);
+        Assert.That(baCbRotated.Length, Is.EqualTo((target - a).Length).Within(Epsilon));
         // After rotating both by r1 the length is the same
-        Assert.AreEqual(Vector3D.Transform(baCbRotated, r1).Length, (target - a).Length, Epsilon);
+        Assert.That(Vector3D.Transform(baCbRotated, r1).Length, Is.EqualTo((target - a).Length).Within(Epsilon));
 
         // Make sure the total length is longer than the distance to the target
         Assert.IsTrue((c - b).Length + (b - a).Length >= (target - a).Length);
@@ -114,7 +113,7 @@ public class InverseKinematicsTests
 
     private const float Epsilon = 0.005f;
 
-    [TestMethod()]
+    [Test]
     public void Calculate2BoneTestStraight()
     {
         var (a, b) = new InverseKinematics().Calculate2Bone(
@@ -130,16 +129,16 @@ public class InverseKinematicsTests
 
     public void AssertClose(Quaternion<float> expected, Quaternion<float> actual, float? epsilon = null)
     {
-        Assert.AreEqual(expected.X, actual.X, epsilon ?? Epsilon, $"Expected {expected} to be close to {actual}");
-        Assert.AreEqual(expected.Y, actual.Y, epsilon ?? Epsilon, $"Expected {expected} to be close to {actual}");
-        Assert.AreEqual(expected.Z, actual.Z, epsilon ?? Epsilon, $"Expected {expected} to be close to {actual}");
-        Assert.AreEqual(expected.W, actual.W, epsilon ?? Epsilon, $"Expected {expected} to be close to {actual}");
+        Assert.That(expected.X, Is.EqualTo(epsilon).Within(epsilon ?? Epsilon), $"Expected {expected} to be close to {actual}");
+        Assert.That(expected.Y, Is.EqualTo(actual.Y).Within(epsilon ?? Epsilon), $"Expected {expected} to be close to {actual}");
+        Assert.That(expected.Z, Is.EqualTo(actual.Z).Within(epsilon ?? Epsilon), $"Expected {expected} to be close to {actual}");
+        Assert.That(expected.W, Is.EqualTo(actual.W).Within(epsilon ?? Epsilon), $"Expected {expected} to be close to {actual}");
     }
 
     public void AssertClose(Vector3D<float> expected, Vector3D<float> actual)
     {
-        Assert.AreEqual(expected.X, actual.X, Epsilon, $"Expected {expected} to be close to {actual}");
-        Assert.AreEqual(expected.Y, actual.Y, Epsilon, $"Expected {expected} to be close to {actual}");
-        Assert.AreEqual(expected.Z, actual.Z, Epsilon, $"Expected {expected} to be close to {actual}");
+        Assert.That(expected.X, Is.EqualTo(actual.X).Within(Epsilon), $"Expected {expected} to be close to {actual}");
+        Assert.That(expected.Y, Is.EqualTo(actual.Y).Within(Epsilon), $"Expected {expected} to be close to {actual}");
+        Assert.That(expected.Z, Is.EqualTo(actual.Z).Within(Epsilon), $"Expected {expected} to be close to {actual}");
     }
 }

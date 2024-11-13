@@ -5,7 +5,7 @@ VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfxivVR", "FfxivVr\FfxivVR.csproj", "{13C812E9-0D42-4B95-8646-40EEBF30636F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfxivVRTests", "FfxivVRTests\FfxivVRTests.csproj", "{47485B56-D089-41A5-9C31-8DE67332383C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +31,14 @@ Global
 		{47485B56-D089-41A5-9C31-8DE67332383C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{47485B56-D089-41A5-9C31-8DE67332383C}.Release|x64.ActiveCfg = Release|Any CPU
 		{47485B56-D089-41A5-9C31-8DE67332383C}.Release|x64.Build.0 = Release|Any CPU
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|x64.Build.0 = Debug|Any CPU
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|x64.ActiveCfg = Release|Any CPU
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
