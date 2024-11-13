@@ -232,7 +232,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     else
                     {
                         var active = gameState.GetCurrentCamera();
-                        var gameCamera = new GameCamera(active->Position.ToVector3D(), active->LookAtVector.ToVector3D());
+                        var gameCamera = new GameCamera(active->Position.ToVector3D(), active->LookAtVector.ToVector3D(), null);
                         freeCamera.Reset(gameCamera.Position, gameCamera.GetYRotation());
                         freeCamera.Enabled = true;
                         logger.Info("Enabled free cam");

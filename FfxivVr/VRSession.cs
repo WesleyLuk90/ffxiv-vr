@@ -263,12 +263,7 @@ public unsafe class VRSession : IDisposable
             var position = camera->Position.ToVector3D();
             var lookAt = camera->LookAtVector.ToVector3D();
 
-            if (phase.CameraType is FollowingFirstPersonCamera follow && gameModifier.GetHeadPosition() is Vector3D<float> updatedHead)
-            {
-                follow.HeadPosition = updatedHead;
-            }
-
-            var gameCamera = new GameCamera(position, lookAt);
+            var gameCamera = new GameCamera(position, lookAt, gameModifier.GetHeadPosition());
             camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, phase.CameraType, gameCamera).ToMatrix4x4();
             camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
 
@@ -284,10 +279,9 @@ public unsafe class VRSession : IDisposable
         {
             return freeCamera;
         }
-        else if (gameState.IsFirstPerson() && configuration.FollowCharacter && gameModifier.GetHeadPosition() is Vector3D<float> head)
+        else if (gameState.IsFirstPerson() && configuration.FollowCharacter)
         {
-            return new FollowingFirstPersonCamera(
-                headPosition: head);
+            return new FollowingFirstPersonCamera();
         }
         else if (gameState.IsFirstPerson())
         {

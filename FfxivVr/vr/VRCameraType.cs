@@ -6,12 +6,13 @@ using System;
 namespace FfxivVR;
 
 // Need to be careful here as the game camera values change slightly between the left and right frame rendering
-public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt)
+public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition)
 {
     public readonly Vector3D<float> GameCameraForwardVector = lookAt - position;
 
     public Vector3D<float> Position { get; } = position;
     public Vector3D<float> LookAt { get; } = lookAt;
+    public Vector3D<float>? HeadPosition { get; } = headPosition;
 
     public virtual float GetYRotation()
     {
@@ -51,22 +52,22 @@ class FirstPersonCamera : OrbitCamera
 
 class FollowingFirstPersonCamera : VRCameraType
 {
-    public FollowingFirstPersonCamera(Vector3D<float> headPosition)
-    {
-        HeadPosition = headPosition;
-    }
-
-    public Vector3D<float> HeadPosition;
 
     public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
     {
-        var position = HeadPosition;
-        // Push the head a bit more forward to prevent clipping
-        if (Conditions.IsMounted)
+        if (gameCamera.HeadPosition is Vector3D<float> headPosition)
         {
-            position += Vector3D.Transform(new Vector3D<float>(0, 0, -0.2f), MathFactory.YRotation(gameCamera.GetYRotation()));
+            // Push the head a bit more forward to prevent clipping
+            if (Conditions.IsMounted)
+            {
+                headPosition += Vector3D.Transform(new Vector3D<float>(0, 0, -0.2f), MathFactory.YRotation(gameCamera.GetYRotation()));
+            }
+            return headPosition;
         }
-        return position;
+        else
+        {
+            return gameCamera.Position;
+        }
     }
 }
 
