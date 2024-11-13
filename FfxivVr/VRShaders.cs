@@ -72,9 +72,9 @@ unsafe public class VRShaders
         }
         this.pixelShader = pixelShader;
 
-        Native.WithStringPointer("POSITION", (positionStr) =>
+        Native.WithAnsiStringPointer("POSITION", (positionStr) =>
         {
-            Native.WithStringPointer("TEXCOORD", (colorStr) =>
+            Native.WithAnsiStringPointer("TEXCOORD", (colorStr) =>
             {
                 InputElementDesc[] inputElementDesc = [
                     new InputElementDesc(

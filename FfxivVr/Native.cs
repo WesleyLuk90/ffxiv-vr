@@ -25,17 +25,21 @@ namespace FfxivVR
             var span = new Span<byte>(pointer, maxLength);
             Encoding.UTF8.GetBytes(value + "\0", span);
         }
+        public unsafe static void WithAnsiStringPointer(string value, Action<IntPtr> block)
+        {
+            var bytes = Encoding.ASCII.GetBytes(value + "\0");
+            fixed (byte* ptr = new Span<byte>(bytes))
+            {
+                block((IntPtr)ptr);
+            }
+        }
 
         public unsafe static void WithStringPointer(string value, Action<IntPtr> block)
         {
-            var bytes = Marshal.StringToHGlobalAnsi(value);
-            try
+            var bytes = Encoding.UTF8.GetBytes(value + "\0");
+            fixed (byte* ptr = new Span<byte>(bytes))
             {
-                block(bytes);
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(bytes);
+                block((IntPtr)ptr);
             }
         }
     }
