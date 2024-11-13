@@ -253,8 +253,8 @@ unsafe internal class Renderer(
         var color = new float[] { 0f, 0f, 0f, 0f };
         context->ClearRenderTargetView(target, ref color[0]);
         context->OMSetRenderTargets(1, ref target, null);
-        var mouseX = inputData->CursorXPosition;
-        var mouseY = inputData->CursorYPosition;
+        var mouseX = inputData->CursorInputs.PositionX;
+        var mouseY = inputData->CursorInputs.PositionY;
         if (cursor != null)
         {
             var position = new Vector3D<float>(
