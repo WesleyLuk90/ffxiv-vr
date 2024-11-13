@@ -13,13 +13,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <Target Name="CompileShaders" Inputs="VertexShader.hlsl;PixelShader.hlsl" BeforeTargets="BeforeResGen" Outputs="VertexShader.cso;PixelShader.cso">
-    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo VertexShader.cso /T vs_5_0 .\VertexShader.hlsl" />
-    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo PixelShader.cso /T ps_5_0 .\PixelShader.hlsl" />
+  <Target Name="CompileShaders" Inputs="shaders\VertexShader.hlsl;shaders\PixelShader.hlsl" BeforeTargets="BeforeResGen" Outputs="shaders\VertexShader.cso;shaders\PixelShader.cso">
+    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo shaders\VertexShader.cso /T vs_5_0 .\shaders\VertexShader.hlsl" />
+    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo shaders\PixelShader.cso /T ps_5_0 .\shaders\PixelShader.hlsl" />
   </Target>
   <ItemGroup>
-    <EmbeddedResource Include="VertexShader.cso" WithCulture="false" Type="Non-Resx" />
-    <EmbeddedResource Include="PixelShader.cso" WithCulture="false" Type="Non-Resx" />
+    <EmbeddedResource Include=".\shaders\VertexShader.cso" WithCulture="false" Type="Non-Resx" />
+    <EmbeddedResource Include=".\shaders\PixelShader.cso" WithCulture="false" Type="Non-Resx" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.106">
