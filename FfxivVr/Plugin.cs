@@ -9,7 +9,7 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Lumina.Excel.Sheets;
+using FFXIVClientStructs.Interop;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
@@ -90,15 +90,12 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
-        // NamePlateGui.OnNamePlateUpdate += OnNamePlateUpdate;
+        NamePlateGui.OnNamePlateUpdate += OnNamePlateUpdate;
     }
 
     private void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
-        if (handlers.Count() > 0)
-        {
-            logger.Info($"nameplate update {handlers[0].Name}");
-        }
+        vrLifecycle.OnNamePlateUpdate(context, handlers);
     }
 
     public void Dispose()
@@ -106,7 +103,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         configuration.Save();
         companionPlugins.OnUnload();
         Framework.Update -= FrameworkUpdate;
-        // NamePlateGui.OnNamePlateUpdate -= OnNamePlateUpdate;
+        NamePlateGui.OnNamePlateUpdate -= OnNamePlateUpdate;
         gameHooks.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
@@ -146,8 +143,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
             }
 
             UpdateFreeCam(framework);
-
-            // vrLifecycle.UpdateNamePlates();
         });
     }
 

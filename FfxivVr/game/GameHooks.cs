@@ -57,8 +57,6 @@ unsafe public class GameHooks : IDisposable
         InitializeHook(RenderThreadSetRenderTargetHook, nameof(RenderThreadSetRenderTargetHook));
         InitializeHook(RenderSkeletonListHook, nameof(RenderSkeletonListHook));
         InitializeHook(PushbackUIHook, nameof(PushbackUIHook));
-        // TODO fix signature
-        // InitializeHook(NamePlateDrawHook, nameof(NamePlateDrawHook));
         InitializeHook(CreateDXGIFactoryHook, nameof(CreateDXGIFactoryHook));
         InitializeHook(MousePointScreenToClientHook, nameof(MousePointScreenToClientHook));
     }
@@ -186,18 +184,6 @@ unsafe public class GameHooks : IDisposable
             vrLifecycle.PreUIRender();
         });
         PushbackUIHook!.Original(a, b);
-    }
-    private delegate void NamePlateDrawDg(AddonNamePlate* a);
-    [Signature(Signatures.NamePlateDraw, DetourName = nameof(NamePlateDrawFn))]
-    private Hook<NamePlateDrawDg>? NamePlateDrawHook = null;
-
-    private void NamePlateDrawFn(AddonNamePlate* a)
-    {
-        exceptionHandler.FaultBarrier(() =>
-        {
-            vrLifecycle.UpdateNamePlates(a);
-        });
-        NamePlateDrawHook!.Original(a);
     }
 
     private delegate int CreateDXGIFactoryDg(IntPtr guid, void** ppFactory);

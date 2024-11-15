@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -7,6 +8,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Maths;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
@@ -35,7 +37,7 @@ unsafe public class GameModifier
         this.gameGui = gameGui;
         this.targetManager = targetManager;
         this.clientState = clientState;
-        this.nameplateModifier = new NameplateModifier(logger, gameGui, targetManager);
+        this.nameplateModifier = new NameplateModifier(logger, targetManager);
         this.skeletonModifier = new SkeletonModifier(logger);
     }
 
@@ -183,11 +185,6 @@ unsafe public class GameModifier
         return Vector3D.Transform(head2, Matrix4X4.CreateScale<float>(actorModel->Height) * Matrix4X4.CreateFromQuaternion(rotQuat)) + new Vector3D<float>(pos.X, pos.Y, pos.Z);
     }
 
-    internal void UpdateNamePlates(AddonNamePlate* namePlate)
-    {
-        nameplateModifier.UpdateNamePlates(namePlate);
-    }
-
     internal void UpdateMotionControls(HandTrackerExtension.HandData hands)
     {
         Character* character = getCharacterOrGpose();
@@ -212,6 +209,11 @@ unsafe public class GameModifier
         {
             rawCamera->CurrentVRotation = rotation;
         }
+    }
+
+    internal void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
+    {
+        nameplateModifier.PinTargetNameplate(context, handlers);
     }
 }
 

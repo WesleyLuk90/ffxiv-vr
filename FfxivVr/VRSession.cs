@@ -1,8 +1,10 @@
+using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
@@ -408,17 +410,13 @@ public unsafe class VRSession : IDisposable
         return new HandTrackerExtension.HandData(left, right);
     }
 
-    internal void UpdateNamePlates(AddonNamePlate* namePlate)
-    {
-        if (!State.SessionRunning)
-        {
-            return;
-        }
-        gameModifier.UpdateNamePlates(namePlate);
-    }
-
     internal Point? ComputeMousePosition(Point point)
     {
         return resolutionManager.ComputeMousePosition(point);
+    }
+
+    internal void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
+    {
+        gameModifier.OnNamePlateUpdate(context, handlers);
     }
 }

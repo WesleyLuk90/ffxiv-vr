@@ -1,8 +1,10 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+﻿using Dalamud.Game.Gui.NamePlate;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace FfxivVR;
@@ -184,19 +186,19 @@ public unsafe class VRLifecycle : IDisposable
             vrSession?.PrepareVRRender();
         }
     }
-
-    internal void UpdateNamePlates(AddonNamePlate* namePlate)
-    {
-        lock (this)
-        {
-            vrSession?.UpdateNamePlates(namePlate);
-        }
-    }
     internal Point? ComputeMousePosition(Point point)
     {
         lock (this)
         {
             return vrSession?.ComputeMousePosition(point);
+        }
+    }
+
+    internal void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
+    {
+        lock (this)
+        {
+            vrSession?.OnNamePlateUpdate(context, handlers);
         }
     }
 }
