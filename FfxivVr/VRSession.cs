@@ -320,7 +320,7 @@ public unsafe class VRSession : IDisposable
                 var position = camera->Position.ToVector3D();
                 var lookAt = camera->LookAtVector.ToVector3D();
 
-                var gameCamera = new GameCamera(position, lookAt, gameModifier.GetHeadPosition());
+                var gameCamera = new GameCamera(position, lookAt, null);
                 gameModifier.UpdateMotionControls(hands, vrSystem.RuntimeAdjustments, phase.CameraType.GetYRotation(gameCamera));
             }
         }
