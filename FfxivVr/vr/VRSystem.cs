@@ -72,8 +72,8 @@ public unsafe class VRSystem : IDisposable
         xr.GetInstanceProperties(Instance, &instanceProperties).CheckResult("GetInstanceProperties");
 
         var runtimeName = instanceProperties.GetRuntimeName();
-        logger.Debug($"Runtime Name {instanceProperties.GetRuntimeName()} Runtime Version {instanceProperties.RuntimeVersion}");
-        if (instanceProperties.GetRuntimeName() == "Oculus")
+        logger.Debug($"Runtime Name {runtimeName} Runtime Version {instanceProperties.RuntimeVersion}");
+        if (runtimeName == "Oculus")
         {
             logger.Debug("Using OculusRuntimeAdjustments");
             RuntimeAdjustments = new OculusRuntimeAdjustments();
