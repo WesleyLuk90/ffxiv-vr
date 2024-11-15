@@ -37,7 +37,7 @@ unsafe public class GameModifier
         this.gameGui = gameGui;
         this.targetManager = targetManager;
         this.clientState = clientState;
-        this.nameplateModifier = new NameplateModifier(logger, targetManager);
+        this.nameplateModifier = new NameplateModifier(logger, gameGui, targetManager);
         this.skeletonModifier = new SkeletonModifier(logger);
     }
 

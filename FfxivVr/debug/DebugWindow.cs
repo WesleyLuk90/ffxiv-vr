@@ -17,7 +17,7 @@ internal class DebugWindow : Window
     public override void Draw()
     {
         var input = Debugging.DebugInfo;
-        var toShow = string.Join("\n", input.Select((k, v) => $"{k}: {v}"));
+        var toShow = string.Join("\n", input.Select((entry) => $"{entry.Key}: {entry.Value}"));
         ImGui.InputTextMultiline("Debug", ref toShow, 10000, new Vector2(400, 400));
         var xRotation = Debugging.XRotation;
         if (ImGui.SliderAngle("X Rotation", ref xRotation, -180, 180))
