@@ -257,11 +257,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     }
                     break;
                 // Development commands
-                case "nameplates":
-
-                //     var addon = (AddonNamePlate*)GameGui.GetAddonByName("NamePlate");
-                // logger.Info($"nameplate {(IntPtr)addon}");
-                // break;
                 case "debugmode":
                     Debugging.DebugMode = !Debugging.DebugMode;
                     logger.Info($"DebugMode enabled: {Debugging.DebugMode}");
