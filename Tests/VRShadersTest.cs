@@ -1,8 +1,4 @@
-﻿using Silk.NET.Maths;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-
-namespace FfxivVR.Tests;
+﻿namespace FfxivVR.Tests;
 public class VRShadersTest
 {
     [Test()]

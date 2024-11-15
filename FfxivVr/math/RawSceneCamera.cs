@@ -1,6 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 

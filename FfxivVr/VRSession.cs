@@ -1,7 +1,6 @@
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
-using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.Drawing;

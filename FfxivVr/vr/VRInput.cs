@@ -1,7 +1,5 @@
-using SharpDX.Win32;
 using Silk.NET.OpenXR;
 using System;
-using System.Text;
 
 namespace FfxivVR;
 

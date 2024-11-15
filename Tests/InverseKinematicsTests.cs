@@ -1,6 +1,4 @@
 ﻿using Silk.NET.Maths;
-using System.Diagnostics;
-using System.Numerics;
 
 namespace FfxivVR.Tests;
 
