@@ -1,15 +1,12 @@
 {
-  "Author": "Steelgunner90",
-  "Name": "FFXIV VR",
-  "Punchline": "A VR mod for FFXIV",
-  "Description": "A VR mod for FFXIV",
-  "ApplicableVersion": "any",
-  "Tags": [
-    "sample",
-    "plugin",
-    "goats"
-  ],
-  "LoadPriority": 69420,
-  "LoadState": 2,
-  "LoadSync": true
+    "Author": "Steelgunner90",
+    "Name": "FFXIV VR",
+    "Punchline": "A VR mod for FFXIV",
+    "Description": "A VR mod for FFXIV",
+    "ApplicableVersion": "any",
+    "Tags": ["vr"],
+    "LoadPriority": 69420,
+    "LoadState": 2,
+    "LoadRequiredState": 2,
+    "LoadSync": true
 }

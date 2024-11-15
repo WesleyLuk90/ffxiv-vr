@@ -67,7 +67,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         exceptionHandler = new ExceptionHandler(logger);
         var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
-        var hookStatus = new HookStatus();
+        var hookStatus = new HookStatus(PluginInterface);
+        this.hookStatus = hookStatus;
         var xr = new XR(XR.CreateDefaultContext([dllPath]));
         diagnostics = new VRDiagnostics(logger);
         gameSettingsManager = new GameSettingsManager(logger);
@@ -117,6 +118,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private void DrawUI()
     {
         WindowSystem.Draw();
+        // We require dalamud ui to be ready so wait for the draw call
+        exceptionHandler.FaultBarrier(() =>
+        {
+            MaybeOnBootStartVR();
+        });
     }
 
     private bool? isFirstPerson = null;
@@ -125,7 +131,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     {
         exceptionHandler.FaultBarrier(() =>
         {
-            MaybeOnBootStartVR();
             if (!Conditions.IsOccupiedInCutSceneEvent)
             {
                 var nextFirstPerson = gameState.IsFirstPerson();
@@ -147,6 +152,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private bool LaunchAtStartChecked = false;
     private DebugWindow debugWindow;
+    private HookStatus hookStatus;
+
     private void MaybeOnBootStartVR()
     {
         var shouldLaunchOnStart = !LaunchAtStartChecked &&

@@ -78,7 +78,7 @@ public unsafe class VRSystem : IDisposable
             logger.Debug("Using OculusRuntimeAdjustments");
             RuntimeAdjustments = new OculusRuntimeAdjustments();
         }
-        if (runtimeName.Contains("SteamVR") && !hookStatus.DXGICreateHooked)
+        if (runtimeName.Contains("SteamVR") && !hookStatus.IsHookAdded())
         {
             logger.Error("SteamVR requires Dalamud Settings > Wait for plugins before game loads to be enabled. Please enable the setting and restart the game.");
         }

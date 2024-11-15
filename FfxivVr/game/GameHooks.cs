@@ -191,7 +191,7 @@ unsafe public class GameHooks : IDisposable
 
     private unsafe int CreateDXGIFactoryFn(IntPtr guid, void** ppFactory)
     {
-        hookStatus.DXGICreateHooked = true;
+        hookStatus.MarkHookAdded();
         // SteamVR requires using CreateDXGIFactory1
         logger.Debug("Redirecting to CreateDXGIFactory1");
         var api = DXGI.GetApi(null);
