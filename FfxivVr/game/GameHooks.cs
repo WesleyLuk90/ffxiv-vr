@@ -36,38 +36,44 @@ unsafe public class GameHooks : IDisposable
     }
     public void Dispose()
     {
-        FrameworkTickHook?.Disable();
-        FrameworkTickHook?.Dispose();
-        DXGIPresentHook?.Disable();
-        DXGIPresentHook?.Dispose();
-        SetMatricesHook?.Disable();
-        SetMatricesHook?.Dispose();
-        RenderThreadSetRenderTargetHook?.Disable();
-        RenderThreadSetRenderTargetHook?.Dispose();
-        RenderSkeletonListHook?.Disable();
-        RenderSkeletonListHook?.Dispose();
-        PushbackUIHook?.Disable();
-        PushbackUIHook?.Dispose();
-        NamePlateDrawHook?.Disable();
-        NamePlateDrawHook?.Dispose();
-        CreateDXGIFactoryHook?.Disable();
-        CreateDXGIFactoryHook?.Dispose();
-        MousePointScreenToClientHook?.Disable();
-        MousePointScreenToClientHook?.Dispose();
+        DisposeHook(FrameworkTickHook);
+        DisposeHook(DXGIPresentHook);
+        DisposeHook(SetMatricesHook);
+        DisposeHook(RenderThreadSetRenderTargetHook);
+        DisposeHook(RenderSkeletonListHook);
+        DisposeHook(PushbackUIHook);
+        DisposeHook(NamePlateDrawHook);
+        DisposeHook(CreateDXGIFactoryHook);
+        DisposeHook(MousePointScreenToClientHook);
+    }
+
+    private void DisposeHook<T>(Hook<T>? hook) where T : Delegate
+    {
+        hook?.Disable();
+        hook?.Dispose();
     }
 
     public void Initialize()
     {
-        FrameworkTickHook!.Enable();
-        DXGIPresentHook!.Enable();
-        SetMatricesHook!.Enable();
-        RenderThreadSetRenderTargetHook!.Enable();
-        RenderSkeletonListHook?.Enable();
-        PushbackUIHook?.Enable();
-        NamePlateDrawHook?.Enable();
-        CreateDXGIFactoryHook?.Enable();
-        MousePointScreenToClientHook?.Enable();
+        InitializeHook(FrameworkTickHook, nameof(FrameworkTickHook));
+        InitializeHook(DXGIPresentHook, nameof(DXGIPresentHook));
+        InitializeHook(SetMatricesHook, nameof(SetMatricesHook));
+        InitializeHook(RenderThreadSetRenderTargetHook, nameof(RenderThreadSetRenderTargetHook));
+        InitializeHook(RenderSkeletonListHook, nameof(RenderSkeletonListHook));
+        InitializeHook(PushbackUIHook, nameof(PushbackUIHook));
+        InitializeHook(NamePlateDrawHook, nameof(NamePlateDrawHook));
+        InitializeHook(CreateDXGIFactoryHook, nameof(CreateDXGIFactoryHook));
+        InitializeHook(MousePointScreenToClientHook, nameof(MousePointScreenToClientHook));
     }
+    private void InitializeHook<T>(Hook<T>? hook, string name) where T : Delegate
+    {
+        if (hook == null)
+        {
+            logger.Error($"Failed to initialize hook {name}, signature not found");
+        }
+        hook?.Enable();
+    }
+
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
     [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]
     public Hook<FrameworkTickDg>? FrameworkTickHook = null;
