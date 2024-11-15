@@ -2,7 +2,6 @@
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.DXGI;
 using System;
 using System.Collections.Generic;

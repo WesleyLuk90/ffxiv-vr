@@ -7,17 +7,13 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using FFXIVClientStructs.Interop;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using static FFXIVClientStructs.FFXIV.Client.UI.AddonNamePlate;
 
 namespace FfxivVR;
 

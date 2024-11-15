@@ -1,6 +1,5 @@
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
@@ -317,7 +316,7 @@ public unsafe class VRSession : IDisposable
 
             if (cameraPhase is CameraPhase phase && phase.Hands is HandTrackerExtension.HandData hands)
             {
-                gameModifier.UpdateMotionControls(hands);
+                gameModifier.UpdateMotionControls(hands, vrSystem.RuntimeAdjustments);
             }
         }
     }

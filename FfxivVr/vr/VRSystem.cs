@@ -18,6 +18,8 @@ public unsafe class VRSystem : IDisposable
     public Instance Instance = new Instance();
     public ulong SystemId;
 
+    public RuntimeAdjustments RuntimeAdjustments = new RuntimeAdjustments();
+
     public VRSystem(XR xr, ID3D11Device* device, Logger logger, HookStatus hookStatus, Configuration configuration)
     {
         this.xr = xr;
@@ -71,6 +73,11 @@ public unsafe class VRSystem : IDisposable
 
         var runtimeName = instanceProperties.GetRuntimeName();
         logger.Debug($"Runtime Name {instanceProperties.GetRuntimeName()} Runtime Version {instanceProperties.RuntimeVersion}");
+        if (instanceProperties.GetRuntimeName() == "Oculus")
+        {
+            logger.Debug("Using OculusRuntimeAdjustments");
+            RuntimeAdjustments = new OculusRuntimeAdjustments();
+        }
         if (runtimeName.Contains("SteamVR") && !hookStatus.DXGICreateHooked)
         {
             logger.Error("SteamVR requires Dalamud Settings > Wait for plugins before game loads to be enabled. Please enable the setting and restart the game.");
