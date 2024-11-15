@@ -35,6 +35,7 @@ unsafe internal class NameplateModifier(Logger logger, IGameGui gameGui, ITarget
         for (byte i = 0; i < 50; i++)
         {
             NamePlateObject* npObj = &namePlate->NamePlateObjectArray[i];
+            // Crash is here
             AtkComponentBase* npComponent = npObj->RootComponentNode->Component;
 
             for (int j = 0; j < npComponent->UldManager.NodeListCount; j++)
