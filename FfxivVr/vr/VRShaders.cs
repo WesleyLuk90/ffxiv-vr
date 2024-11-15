@@ -1,6 +1,7 @@
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace FfxivVR;
@@ -17,7 +18,7 @@ unsafe public class VRShaders
 
     public static byte[] LoadVertexShader()
     {
-        using (var stream = typeof(VRShaders).Assembly.GetManifestResourceStream("FfxivVR.VertexShader.cso"))
+        using (var stream = typeof(VRShaders).Assembly.GetManifestResourceStream("FfxivVR.shaders.VertexShader.cso"))
         {
             if (stream == null)
             {
@@ -32,7 +33,7 @@ unsafe public class VRShaders
     }
     public static byte[] LoadPixelShader()
     {
-        using (var stream = typeof(VRShaders).Assembly.GetManifestResourceStream("FfxivVR.PixelShader.cso"))
+        using (var stream = typeof(VRShaders).Assembly.GetManifestResourceStream("FfxivVR.shaders.PixelShader.cso"))
         {
             if (stream == null)
             {
