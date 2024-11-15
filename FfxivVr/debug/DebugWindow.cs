@@ -47,6 +47,14 @@ static class Debugging
 
     public static void DebugShow(string key, object value)
     {
+        if (value is Vector3D<float> vec)
+        {
+            value = $"<{vec.X:n3}, {vec.Y:n3}, {vec.Z:n3}>";
+        }
+        else if (value is Quaternion<float> quat)
+        {
+            value = $"<{quat.X:n3}, {quat.Y:n3}, {quat.Z:n3}, {quat.W:n3}>";
+        }
         DebugInfo[key] = value?.ToString() ?? "null";
     }
     public static Quaternion<float> GetRotation()

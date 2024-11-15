@@ -4,6 +4,7 @@ using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using static FfxivVR.SkeletonStructure;
 
 namespace FfxivVR;
@@ -192,20 +193,24 @@ unsafe internal class SkeletonModifier(Logger logger)
         *local = bone.ReferencePose;
     }
 
+    // Palm identity is down from open
     private void RotateHand(HandJointLocationEXT[] joints, BoneType handBone, BoneType wristBone, BoneType forearmBone, SkeletonStructure structure, hkaPose* pose, float pitch)
     {
         var desiredRotation = joints[(int)HandJointEXT.PalmExt].Pose.Orientation.ToQuaternion();
-        var swappedZY = new Quaternion<float>(-desiredRotation.X, desiredRotation.Z, desiredRotation.Y, desiredRotation.W);
-        var handRotation = // Not sure why this works
-          MathFactory.XRotation(float.DegreesToRadians(-90)) *
-           swappedZY *
-            MathFactory.ZRotation(float.DegreesToRadians(-90)) *
-            MathFactory.XRotation(pitch);
+
+        Debugging.DebugShow("Palm", desiredRotation);
 
         var hand = structure.GetBone(handBone);
         var globalHandRotation = hand.GetModelTransforms(pose)->Rotation.ToQuaternion();
+        var flipHand = handBone == BoneType.HandLeft ? -90 : 90;
         var handTransforms = hand.GetLocalTransforms(pose);
-        handTransforms->Rotation = (handTransforms->Rotation.ToQuaternion() * Quaternion<float>.Inverse(globalHandRotation) * handRotation).ToQuaternion();
+        handTransforms->Rotation = (handTransforms->Rotation.ToQuaternion()
+            * Quaternion<float>.Inverse(globalHandRotation)
+            * MathFactory.YRotation(float.DegreesToRadians(180))
+            * desiredRotation
+            * MathFactory.YRotation(float.DegreesToRadians(180))
+            * MathFactory.YRotation(float.DegreesToRadians(-90))
+            * MathFactory.XRotation(float.DegreesToRadians(flipHand))).ToQuaternion();
 
         var wrist = structure.GetBone(wristBone).GetLocalTransforms(pose);
         var forearm = structure.GetBone(forearmBone).GetLocalTransforms(pose);
