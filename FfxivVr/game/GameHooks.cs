@@ -5,6 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Silk.NET.DXGI;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using static FfxivVR.RenderPipelineInjector;
 
@@ -34,17 +35,12 @@ unsafe public class GameHooks : IDisposable
         this.hookStatus = hookStatus;
         this.gameState = gameState;
     }
+
+    private List<Action> DisposeActions = new List<Action>();
     public void Dispose()
     {
-        DisposeHook(FrameworkTickHook);
-        DisposeHook(DXGIPresentHook);
-        DisposeHook(SetMatricesHook);
-        DisposeHook(RenderThreadSetRenderTargetHook);
-        DisposeHook(RenderSkeletonListHook);
-        DisposeHook(PushbackUIHook);
-        DisposeHook(NamePlateDrawHook);
-        DisposeHook(CreateDXGIFactoryHook);
-        DisposeHook(MousePointScreenToClientHook);
+        DisposeActions.ForEach(dispose => dispose());
+        DisposeActions.Clear();
     }
 
     private void DisposeHook<T>(Hook<T>? hook) where T : Delegate
@@ -61,7 +57,8 @@ unsafe public class GameHooks : IDisposable
         InitializeHook(RenderThreadSetRenderTargetHook, nameof(RenderThreadSetRenderTargetHook));
         InitializeHook(RenderSkeletonListHook, nameof(RenderSkeletonListHook));
         InitializeHook(PushbackUIHook, nameof(PushbackUIHook));
-        InitializeHook(NamePlateDrawHook, nameof(NamePlateDrawHook));
+        // TODO fix signature
+        // InitializeHook(NamePlateDrawHook, nameof(NamePlateDrawHook));
         InitializeHook(CreateDXGIFactoryHook, nameof(CreateDXGIFactoryHook));
         InitializeHook(MousePointScreenToClientHook, nameof(MousePointScreenToClientHook));
     }
@@ -71,7 +68,11 @@ unsafe public class GameHooks : IDisposable
         {
             logger.Error($"Failed to initialize hook {name}, signature not found");
         }
-        hook?.Enable();
+        else
+        {
+            hook.Enable();
+            DisposeActions.Add(() => DisposeHook(hook));
+        }
     }
 
     public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);

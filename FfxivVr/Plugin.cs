@@ -1,15 +1,19 @@
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
+using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using Lumina.Excel.Sheets;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -27,6 +31,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
     [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
     [PluginService] internal static IGamepadState GamepadState { get; private set; } = null!;
+    [PluginService] internal static INamePlateGui NamePlateGui { get; private set; } = null!;
 
     private const string CommandName = "/vr";
     private Logger logger { get; init; }
@@ -85,6 +90,28 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
+        // NamePlateGui.OnNamePlateUpdate += OnNamePlateUpdate;
+    }
+
+    private void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
+    {
+        if (handlers.Count() > 0)
+        {
+            logger.Info($"nameplate update {handlers[0].Name}");
+        }
+    }
+
+    public void Dispose()
+    {
+        configuration.Save();
+        companionPlugins.OnUnload();
+        Framework.Update -= FrameworkUpdate;
+        // NamePlateGui.OnNamePlateUpdate -= OnNamePlateUpdate;
+        gameHooks.Dispose();
+
+        CommandManager.RemoveHandler(CommandName);
+
+        vrLifecycle.Dispose();
     }
 
     private void ToggleConfigUI()
@@ -119,6 +146,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
             }
 
             UpdateFreeCam(framework);
+
+            // vrLifecycle.UpdateNamePlates();
         });
     }
 
@@ -188,17 +217,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
         }
     }
 
-    public void Dispose()
-    {
-        configuration.Save();
-        companionPlugins.OnUnload();
-        Framework.Update -= FrameworkUpdate;
-        gameHooks.Dispose();
-
-        CommandManager.RemoveHandler(CommandName);
-
-        vrLifecycle.Dispose();
-    }
     private unsafe void OnCommand(string command, string args)
     {
         var arguments = args.Split(" ");
@@ -239,6 +257,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     }
                     break;
                 // Development commands
+                case "nameplates":
+
+                //     var addon = (AddonNamePlate*)GameGui.GetAddonByName("NamePlate");
+                // logger.Info($"nameplate {(IntPtr)addon}");
+                // break;
                 case "debugmode":
                     Debugging.DebugMode = !Debugging.DebugMode;
                     logger.Info($"DebugMode enabled: {Debugging.DebugMode}");
