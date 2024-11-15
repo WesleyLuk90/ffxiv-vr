@@ -45,7 +45,7 @@ static class Debugging
     public static float ZRotation = 0;
     public static bool DebugMode = false;
 
-    public static void DebugShow(string key, object value)
+    public static void DebugShow(string key, object? value)
     {
         if (value is Vector3D<float> vec)
         {

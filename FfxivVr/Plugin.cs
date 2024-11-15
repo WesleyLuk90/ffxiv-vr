@@ -141,6 +141,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
             }
 
             UpdateFreeCam(framework);
+
         });
     }
 

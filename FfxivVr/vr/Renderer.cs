@@ -242,58 +242,37 @@ unsafe internal class Renderer(
 
     private void RenderCursor(ID3D11DeviceContext* context, Vector2D<float> windowSize)
     {
-        var cursor = GameTextures.GetCursorTexture();
-        if (cursor?.Visible == false)
-        {
-            return;
-        }
-
-        var inputData = UIInputData.Instance();
         var target = resources.CursorRenderTarget.RenderTargetView;
         var color = new float[] { 0f, 0f, 0f, 0f };
         context->ClearRenderTargetView(target, ref color[0]);
         context->OMSetRenderTargets(1, ref target, null);
-        var mouseX = inputData->CursorInputs.PositionX;
-        var mouseY = inputData->CursorInputs.PositionY;
-        if (cursor != null)
+
+        var maybeCursor = GameTextures.GetCursorTexture();
+        if (maybeCursor is Cursor cursor && cursor.Visible)
         {
+            var inputData = UIInputData.Instance();
+            var mouseX = inputData->CursorInputs.PositionX;
+            var mouseY = inputData->CursorInputs.PositionY;
             var position = new Vector3D<float>(
                 mouseX / windowSize.X * 2 - 1,
                 // All the cursors are offset about 10 pixels
                 (1 - (mouseY + 10) / windowSize.Y) * 2 - 1, 0
             );
-            var scale = Matrix4X4.CreateScale(new Vector3D<float>(cursor.Width / windowSize.X, cursor.Height / windowSize.Y, 0f)) *
+            var scale = Matrix4X4.CreateScale(new Vector3D<float>(maybeCursor.Width / windowSize.X, maybeCursor.Height / windowSize.Y, 0f)) *
                 Matrix4X4.CreateTranslation(position);
             resources.UpdateCamera(context, new CameraConstants(
                 modelViewProjection: scale
             ));
             resources.SetStandardBlendState(context);
-            resources.SetSampler(context, cursor.ShaderResourceView);
+            resources.SetSampler(context, maybeCursor.ShaderResourceView);
             resources.SetPixelShaderConstants(context, new PixelShaderConstants(
                 mode: 0,
                 gamma: 1f,
                 color: new Vector4D<float>(1, 0, 0, 1f),
-                uvOffset: cursor.UvOffset,
-                uvScale: cursor.UvScale));
+                uvOffset: maybeCursor.UvOffset,
+                uvScale: maybeCursor.UvScale));
+            resources.Draw(context);
         }
-        else
-        { // Fallback to a red circle
-            var cursorSize = 10f;
-            var position = new Vector3D<float>(
-                mouseX / windowSize.X * 2 - 1,
-                (1 - mouseY / windowSize.Y) * 2 - 1, 0
-            );
-            var scale = Matrix4X4.CreateScale(new Vector3D<float>(cursorSize / windowSize.X, cursorSize / windowSize.Y, 0f)) *
-                Matrix4X4.CreateTranslation(position);
-            resources.UpdateCamera(context, new CameraConstants(
-                modelViewProjection: scale
-            ));
-            resources.SetPixelShaderConstants(context, new PixelShaderConstants(
-                mode: ShaderMode.Circle,
-                gamma: 1f,
-                color: new Vector4D<float>(1, 0, 0, 1f)));
-        }
-        resources.Draw(context);
     }
 
     private void RenderPoint(ID3D11DeviceContext* context, float size, Vector3D<float> position, Matrix4X4<float> viewProjectionMatrix)
