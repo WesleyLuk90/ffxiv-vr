@@ -123,7 +123,7 @@ unsafe internal class SkeletonModifier(Logger logger)
             neckLocal->Scale.Z = 0.001f;
         }
     }
-    internal void UpdateHands(Skeleton* skeleton, HandTrackerExtension.HandData hands, RuntimeAdjustments runtimeAdjustments)
+    internal void UpdateHands(Skeleton* skeleton, HandTrackerExtension.HandData hands, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
     {
         var pose = GetPose(skeleton);
         if (pose == null)
@@ -135,7 +135,7 @@ unsafe internal class SkeletonModifier(Logger logger)
         {
             return;
         }
-        var skeletonRotation = MathFactory.YRotation(float.DegreesToRadians(180));
+        var skeletonRotation = MathFactory.YRotation(cameraYRotation) / skeleton->Transform.Rotation.ToQuaternion();
         var maybeHead = GetHeadPosition(skeleton);
         if (maybeHead is Vector3D<float> head)
         {
@@ -200,7 +200,7 @@ unsafe internal class SkeletonModifier(Logger logger)
             * Quaternion<float>.Inverse(globalHandRotation)
             * skeletonRotation
             * desiredRotation
-            * skeletonRotation.Inverse()
+            * y180
             * MathFactory.YRotation(float.DegreesToRadians(-90))
             * MathFactory.XRotation(float.DegreesToRadians(flipHand))).ToQuaternion();
 
@@ -211,6 +211,8 @@ unsafe internal class SkeletonModifier(Logger logger)
         var half2 = Quaternion<float>.Normalize(new Quaternion<float>(half.X, 0, 0, half.W));
         wrist->Rotation = half2.ToQuaternion();
     }
+
+    private Quaternion<float> y180 = MathFactory.YRotation(float.DegreesToRadians(180));
 
     private void UpdateArmIK(HandJointLocationEXT[] joints, hkaPose* pose, SkeletonStructure structure, Vector3D<float> head, BoneType arm, BoneType forearm, BoneType hand, Quaternion<float> skeletonRotation)
     {
@@ -270,7 +272,7 @@ unsafe internal class SkeletonModifier(Logger logger)
             * Quaternion<float>.Inverse(globalRotation)
             * skeletonRotation
             * jointRotation
-            * skeletonRotation.Inverse()
+            * y180
             * adjustments
             * MathFactory.YRotation(float.DegreesToRadians(-90))
             ).ToQuaternion();

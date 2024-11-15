@@ -184,7 +184,7 @@ unsafe public class GameModifier
         return Vector3D.Transform(head2, Matrix4X4.CreateScale<float>(actorModel->Height) * Matrix4X4.CreateFromQuaternion(rotQuat)) + new Vector3D<float>(pos.X, pos.Y, pos.Z);
     }
 
-    internal void UpdateMotionControls(HandTrackerExtension.HandData hands, RuntimeAdjustments runtimeAdjustments)
+    internal void UpdateMotionControls(HandTrackerExtension.HandData hands, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
     {
         Character* character = getCharacterOrGpose();
         if (character == null)
@@ -198,7 +198,7 @@ unsafe public class GameModifier
         }
         var actorModel = (ActorModel*)characterBase;
         var skeleton = characterBase->Skeleton;
-        skeletonModifier.UpdateHands(skeleton, hands, runtimeAdjustments);
+        skeletonModifier.UpdateHands(skeleton, hands, runtimeAdjustments, cameraYRotation);
     }
 
     internal void ResetVerticalCameraRotation(float rotation)

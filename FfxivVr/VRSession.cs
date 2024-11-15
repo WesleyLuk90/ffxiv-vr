@@ -316,7 +316,12 @@ public unsafe class VRSession : IDisposable
 
             if (cameraPhase is CameraPhase phase && phase.Hands is HandTrackerExtension.HandData hands)
             {
-                gameModifier.UpdateMotionControls(hands, vrSystem.RuntimeAdjustments);
+                var camera = gameState.GetCurrentCamera();
+                var position = camera->Position.ToVector3D();
+                var lookAt = camera->LookAtVector.ToVector3D();
+
+                var gameCamera = new GameCamera(position, lookAt, gameModifier.GetHeadPosition());
+                gameModifier.UpdateMotionControls(hands, vrSystem.RuntimeAdjustments, phase.CameraType.GetYRotation(gameCamera));
             }
         }
     }
