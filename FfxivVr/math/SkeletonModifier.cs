@@ -135,21 +135,22 @@ unsafe internal class SkeletonModifier(Logger logger)
         {
             return;
         }
+        var skeletonRotation = MathFactory.YRotation(float.DegreesToRadians(180));
         var maybeHead = GetHeadPosition(skeleton);
         if (maybeHead is Vector3D<float> head)
         {
             ResetPoseTree(pose, structure, structure.GetBone(BoneType.ArmLeft));
             ResetPoseTree(pose, structure, structure.GetBone(BoneType.ArmRight));
 
-            UpdateArmIK(hands.LeftHand, pose, structure, head, BoneType.ArmLeft, BoneType.ForearmLeft, BoneType.HandLeft);
-            UpdateArmIK(hands.RightHand, pose, structure, head, BoneType.ArmRight, BoneType.ForearmRight, BoneType.HandRight);
-            RotateHand(hands.LeftHand, BoneType.HandLeft, BoneType.WristLeft, BoneType.ForearmLeft, structure, pose, 0);
-            RotateHand(hands.RightHand, BoneType.HandRight, BoneType.WristRight, BoneType.ForearmRight, structure, pose, float.DegreesToRadians(180));
+            UpdateArmIK(hands.LeftHand, pose, structure, head, BoneType.ArmLeft, BoneType.ForearmLeft, BoneType.HandLeft, skeletonRotation);
+            UpdateArmIK(hands.RightHand, pose, structure, head, BoneType.ArmRight, BoneType.ForearmRight, BoneType.HandRight, skeletonRotation);
+            RotateHand(hands.LeftHand, BoneType.HandLeft, BoneType.WristLeft, BoneType.ForearmLeft, structure, pose, skeletonRotation);
+            RotateHand(hands.RightHand, BoneType.HandRight, BoneType.WristRight, BoneType.ForearmRight, structure, pose, skeletonRotation);
 
             foreach (var joint in HandJoints)
             {
-                UpdateHandBone(hands.LeftHand, joint.Joint, joint.LeftBone, pose, structure, runtimeAdjustments);
-                UpdateHandBone(hands.RightHand, joint.Joint, joint.RightBone, pose, structure, runtimeAdjustments);
+                UpdateHandBone(hands.LeftHand, joint.Joint, joint.LeftBone, pose, structure, runtimeAdjustments, skeletonRotation);
+                UpdateHandBone(hands.RightHand, joint.Joint, joint.RightBone, pose, structure, runtimeAdjustments, skeletonRotation);
             }
         }
     }
@@ -187,7 +188,7 @@ unsafe internal class SkeletonModifier(Logger logger)
         *local = bone.ReferencePose;
     }
 
-    private void RotateHand(HandJointLocationEXT[] joints, BoneType handBone, BoneType wristBone, BoneType forearmBone, SkeletonStructure structure, hkaPose* pose, float pitch)
+    private void RotateHand(HandJointLocationEXT[] joints, BoneType handBone, BoneType wristBone, BoneType forearmBone, SkeletonStructure structure, hkaPose* pose, Quaternion<float> skeletonRotation)
     {
         var desiredRotation = joints[(int)HandJointEXT.PalmExt].Pose.Orientation.ToQuaternion();
 
@@ -197,9 +198,9 @@ unsafe internal class SkeletonModifier(Logger logger)
         var handTransforms = hand.GetLocalTransforms(pose);
         handTransforms->Rotation = (handTransforms->Rotation.ToQuaternion()
             * Quaternion<float>.Inverse(globalHandRotation)
-            * MathFactory.YRotation(float.DegreesToRadians(180))
+            * skeletonRotation
             * desiredRotation
-            * MathFactory.YRotation(float.DegreesToRadians(180))
+            * skeletonRotation.Inverse()
             * MathFactory.YRotation(float.DegreesToRadians(-90))
             * MathFactory.XRotation(float.DegreesToRadians(flipHand))).ToQuaternion();
 
@@ -211,10 +212,10 @@ unsafe internal class SkeletonModifier(Logger logger)
         wrist->Rotation = half2.ToQuaternion();
     }
 
-    private void UpdateArmIK(HandJointLocationEXT[] joints, hkaPose* pose, SkeletonStructure structure, Vector3D<float> head, BoneType arm, BoneType forearm, BoneType hand)
+    private void UpdateArmIK(HandJointLocationEXT[] joints, hkaPose* pose, SkeletonStructure structure, Vector3D<float> head, BoneType arm, BoneType forearm, BoneType hand, Quaternion<float> skeletonRotation)
     {
         var wrist = joints[(int)HandJointEXT.WristExt];
-        var targetHandPosition = Vector3D.Transform(wrist.Pose.Position.ToVector3D(), MathFactory.YRotation(float.DegreesToRadians(180))) + head;
+        var targetHandPosition = Vector3D.Transform(wrist.Pose.Position.ToVector3D(), skeletonRotation) + head;
 
         var armBone = structure.GetBone(arm);
         var forearmBone = structure.GetBone(forearm);
@@ -247,7 +248,7 @@ unsafe internal class SkeletonModifier(Logger logger)
 
     private InverseKinematics ik = new InverseKinematics();
 
-    private void UpdateHandBone(HandJointLocationEXT[] hand, HandJointEXT joint, BoneType type, hkaPose* pose, SkeletonStructure skeletonStructure, RuntimeAdjustments runtimeAdjustments)
+    private void UpdateHandBone(HandJointLocationEXT[] hand, HandJointEXT joint, BoneType type, hkaPose* pose, SkeletonStructure skeletonStructure, RuntimeAdjustments runtimeAdjustments, Quaternion<float> skeletonRotation)
     {
         var jointRotation = hand[(int)joint].Pose.Orientation.ToQuaternion();
 
@@ -267,9 +268,9 @@ unsafe internal class SkeletonModifier(Logger logger)
 
         localTransforms->Rotation = (localTransforms->Rotation.ToQuaternion()
             * Quaternion<float>.Inverse(globalRotation)
-            * MathFactory.YRotation(float.DegreesToRadians(180))
+            * skeletonRotation
             * jointRotation
-            * MathFactory.YRotation(float.DegreesToRadians(180))
+            * skeletonRotation.Inverse()
             * adjustments
             * MathFactory.YRotation(float.DegreesToRadians(-90))
             ).ToQuaternion();
