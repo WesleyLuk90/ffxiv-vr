@@ -14,11 +14,7 @@ unsafe internal class NameplateModifier(Logger logger, IGameGui gameGui, ITarget
 
     public void PinTargetNameplate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
-        AtkUnitBase* targetAddon = (AtkUnitBase*)gameGui!.GetAddonByName("_TargetCursor", 1);
-        if (targetAddon != null)
-        {
-            targetAddon->Hide(true, false, 0);
-        }
+        HideTargetArrow();
         var target = targetManager.Target;
         var softTarget = targetManager.SoftTarget;
         for (int i = 0; i < handlers.Count; i++)
@@ -28,8 +24,17 @@ unsafe internal class NameplateModifier(Logger logger, IGameGui gameGui, ITarget
                 var namePlateArray = (AddonNamePlateNumberArray*)context.NumberArrayDataEntryAddress;
                 var objectData = namePlateArray->ObjectData.GetPointer(handlers[i].ArrayIndex);
                 // Set this to the normal flag to prevent the target nameplate from moving around
-                objectData->DrawFlags = 8;
+                objectData->DrawFlags |= 1 << 3;
             }
+        }
+    }
+
+    private void HideTargetArrow()
+    {
+        AtkUnitBase* targetAddon = (AtkUnitBase*)gameGui!.GetAddonByName("_TargetCursor", 1);
+        if (targetAddon != null)
+        {
+            targetAddon->Hide(true, false, 0);
         }
     }
 }
