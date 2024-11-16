@@ -89,7 +89,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
-        NamePlateGui.OnNamePlateUpdate += OnNamePlateUpdate;
+        NamePlateGui.OnDataUpdate += OnNamePlateUpdate;
     }
 
     private void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
