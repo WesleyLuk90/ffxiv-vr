@@ -1,13 +1,13 @@
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
+using Dalamud.Game.Config;
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
@@ -30,6 +30,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
     [PluginService] internal static IGamepadState GamepadState { get; private set; } = null!;
     [PluginService] internal static INamePlateGui NamePlateGui { get; private set; } = null!;
+    [PluginService] internal static IGameConfig GameConfig { get; private set; } = null!;
 
     private const string CommandName = "/vr";
     private Logger logger { get; init; }
@@ -44,8 +45,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly ConfigWindow configWindow;
     private readonly WindowSystem WindowSystem = new("FFXIV VR");
     private readonly CompanionPlugins companionPlugins = new CompanionPlugins();
-
-    private readonly GameSettingsManager gameSettingsManager;
 
     private readonly GameModifier gameModifier;
 
@@ -71,7 +70,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
         this.hookStatus = hookStatus;
         var xr = new XR(XR.CreateDefaultContext([dllPath]));
         diagnostics = new VRDiagnostics(logger);
-        gameSettingsManager = new GameSettingsManager(logger);
         gameModifier = new GameModifier(logger, gameState, GameGui, TargetManager, ClientState);
         vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, hookStatus, diagnostics, gameModifier, freeCamera);
         gamepadManager = new GamepadManager(GamepadState, freeCamera);
@@ -198,7 +196,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         }
         if (configuration.DisableAutoFaceTargetInFirstPerson)
         {
-            gameSettingsManager.SetUIBooleanSetting(ConfigOption.AutoFaceTargetOnAction, true);
+            GameConfig.Set(UiControlOption.AutoFaceTargetOnAction, true);
         }
     }
 
@@ -214,7 +212,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         }
         if (configuration.DisableAutoFaceTargetInFirstPerson)
         {
-            gameSettingsManager.SetUIBooleanSetting(ConfigOption.AutoFaceTargetOnAction, false);
+            GameConfig.Set(UiControlOption.AutoFaceTargetOnAction, false);
         }
     }
 
@@ -284,14 +282,22 @@ public unsafe sealed class Plugin : IDalamudPlugin
     }
     public void StartVR()
     {
-        if (gameSettingsManager.GetIntSystemSetting(ConfigOption.ScreenMode) == 1)
+        if (!GameConfig.TryGet(SystemConfigOption.ScreenMode, out uint screenMode))
+        {
+            logger.Error("Failed to lookup screen mode");
+        }
+        if (screenMode == 1)
         {
             logger.Error("VR does not work in full screen. Please switch to windowed or borderless window.");
             return;
         }
-        if (gameSettingsManager.GetIntSystemSetting(ConfigOption.Gamma) == 50) // Gamma of 50 breaks the render, adjust it slightly
+        if (!GameConfig.TryGet(SystemConfigOption.Gamma, out uint gamma))
         {
-            gameSettingsManager.SetIntSystemSetting(ConfigOption.Gamma, 51);
+            logger.Error("Failed to lookup screen mode");
+        }
+        if (gamma == 50) // Gamma of 50 breaks the render, adjust it slightly
+        {
+            GameConfig.Set(SystemConfigOption.Gamma, 51);
         }
         diagnostics.OnStart();
         vrLifecycle.EnableVR();
