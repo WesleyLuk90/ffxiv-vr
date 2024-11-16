@@ -2,9 +2,13 @@
 
 Implemented entirely in C# using the Silk OpenXR bindings.
 
-Heavily referenced from https://github.com/ProjectMimer/xivr-Ex
+Based on the original [xivr-Ex Plugin](https://github.com/ProjectMimer/xivr-Ex)
 
-Still a work in progress but the basic VR rendering works with a floating UI.
+## Features
+
+-   VR in FFXIV
+-   First person mode with body view
+-   Hand tracking
 
 ## Instructions
 
@@ -16,27 +20,18 @@ Still a work in progress but the basic VR rendering works with a floating UI.
 6. Run `/vr start` to start VR, run `/vr stop` to stop
 7. Run `/vr` to access settings
 
-## Features
-* VR in FFXIV
-* First person mode with body view
-
 ## Tips
-* For performance, decreases the display limits in FFXIV
-  * `System Configuration > ... > Display Limits > Character and Object Quantity > Minimum`
+
+-   For performance, decreases the display limits in FFXIV
+    -   `System Configuration > ... > Display Limits > Character and Object Quantity > Minimum`
+-   Use the [FullscreenCutscenes plugin](https://github.com/goaaats/Dalamud.FullscreenCutscenes) to remove black bars during cutscenes
 
 ## Compatibility
 
-The follow connection methods have been tried:
-
-| Connection | Runtime | Works |
-| --- | --- | --- |
-| QuestLink | OpenXR/Meta Quest Link | Yes |
-| Quest Air Link | OpenXR/Meta Quest Link | Yes |
-| Virtual Desktop | OpenXR/VDXR | Yes |
-| Wired | SteamVR | Yes |
-| Steam Link | SteamVR | Yes |
+Tested with Virtual Desktop, Occulus Link and SteamVR. OpenXR is recomended over SteamVR if available.
 
 ## Troubleshooting
+
 If you're using Quest Link and running into issues, try shutting down Meta Quest Link and restarting the Occulus VR Runtime Service in Windows.
 
 Sometimes SteamVR will get stuck waiting for the game or just take a minute. Try waiting a bit longer or stop VR, toggle the plugin and start VR again.
@@ -44,5 +39,6 @@ Sometimes SteamVR will get stuck waiting for the game or just take a minute. Try
 If you're running into crashes try disabling GShade and ReShade as they have been reported to cause crashes.
 
 ## Known Issues
-* No support for VR controllers
-* Mouse interaction with the game world is not aligned/does not work, UI interaction should work
+
+-   No support for VR controllers
+-   Mouse interaction with the game world is not aligned/does not work, UI interaction should work
