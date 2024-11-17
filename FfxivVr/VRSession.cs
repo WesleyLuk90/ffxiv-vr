@@ -156,7 +156,7 @@ public unsafe class VRSession : IDisposable
         var shouldPresent = true;
         eventHandler.PollEvents(() =>
         {
-            OnSessionEnd(context);
+            OnSessionEnd();
         });
         if (!State.SessionRunning)
         {
@@ -174,7 +174,7 @@ public unsafe class VRSession : IDisposable
             task.Wait();
             var frameState = task.Result;
             framePrediction.MarkPredictedFrameTime(frameState.PredictedDisplayTime);
-            renderer.StartFrame(context);
+            renderer.StartFrame();
             // Skip presenting the left view to avoid flicker when displaying the right view
             shouldPresent = false;
             if (frameState.ShouldRender == 1)
@@ -225,12 +225,12 @@ public unsafe class VRSession : IDisposable
         return shouldPresent;
     }
 
-    private void OnSessionEnd(ID3D11DeviceContext* context)
+    private void OnSessionEnd()
     {
         // Ensure we end the frame if we need to end the session
         if (renderPhase is LeftRenderPhase left)
         {
-            renderer.StartFrame(context);
+            renderer.StartFrame();
             renderer.SkipFrame(left.WaitFrameTask.Result);
         }
         if (renderPhase is RightRenderPhase right)

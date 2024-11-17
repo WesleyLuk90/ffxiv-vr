@@ -30,99 +30,53 @@ internal class ConfigWindow : Window
             {
                 toggleVR();
             }
-            var startVRAtBoot = config.StartVRAtBoot;
-            if (ImGui.Checkbox("Start VR at game launch if headset is available", ref startVRAtBoot))
-            {
-                config.StartVRAtBoot = startVRAtBoot;
-                config.Save();
-            }
+            Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
         }
         if (ImGui.CollapsingHeader("View"))
         {
-            var recenterOnViewChange = config.RecenterOnViewChange;
-            if (ImGui.Checkbox("Recenter Camera on View Change", ref recenterOnViewChange))
-            {
-                config.RecenterOnViewChange = recenterOnViewChange;
-                config.Save();
-            }
-            var followCharacterMovement = config.FollowCharacter;
-            if (ImGui.Checkbox("Follow Head in First Person", ref followCharacterMovement))
-            {
-                config.FollowCharacter = followCharacterMovement;
-                config.Save();
-            }
-            var recenter = config.DisableAutoFaceTargetInFirstPerson;
-            if (ImGui.Checkbox("Disable Auto Face Target in First Person", ref recenter))
-            {
-                config.DisableAutoFaceTargetInFirstPerson = recenter;
-                config.Save();
-            }
-            var matchFloor = config.MatchFloorPosition;
-            if (ImGui.Checkbox("Match game to real floor position", ref matchFloor))
-            {
-                config.MatchFloorPosition = matchFloor;
-                config.Save();
-            }
-            var worldScale = config.WorldScale;
-            if (ImGui.SliderFloat("World Scale", ref worldScale, 0.1f, 10f))
-            {
-                config.WorldScale = worldScale;
-                config.Save();
-            }
-            ImGui.SameLine();
-            if (ImGui.SmallButton("Reset##worldscale"))
-            {
-                config.WorldScale = defaultConfig.WorldScale; config.Save();
-            }
-
-            var gamma = config.Gamma;
-            if (ImGui.SliderFloat("Gamma", ref gamma, 0.1f, 10f))
-            {
-                config.Gamma = gamma;
-                config.Save();
-            }
-            ImGui.SameLine();
-            if (ImGui.SmallButton("Reset##gamma"))
-            {
-                config.Gamma = defaultConfig.Gamma;
-                config.Save();
-            }
+            Checkbox("Recenter Camera on View Change", ref config.RecenterOnViewChange);
+            Checkbox("Follow Head in First Person", ref config.FollowCharacter);
+            Checkbox("Disable Auto Face Target in First Person", ref config.DisableAutoFaceTargetInFirstPerson);
+            Checkbox("Match game to real floor position", ref config.MatchFloorPosition);
+            Slider("World Scale", ref config.WorldScale);
+            Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
         }
         if (ImGui.CollapsingHeader("UI"))
         {
-            var uiDistance = config.UIDistance;
-            if (ImGui.SliderFloat("UI Distance", ref uiDistance, 0.1f, 10f))
-            {
-                config.UIDistance = uiDistance;
-                config.Save();
-            }
-            ImGui.SameLine();
-            if (ImGui.SmallButton("Reset##uidistance"))
-            {
-                config.UIDistance = defaultConfig.UIDistance;
-                config.Save();
-            }
-            var fitWindowOnScreen = config.FitWindowOnScreen;
-            if (ImGui.Checkbox("Scale the game window to fit on screen", ref fitWindowOnScreen))
-            {
-                config.FitWindowOnScreen = fitWindowOnScreen;
-                config.Save();
-            }
+            Slider("UI Distance", ref config.UIDistance);
+            Slider("UI Size", ref config.UISize);
+            Checkbox("Keep UI In Front", ref config.KeepUIInFront);
+            Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
         }
         if (ImGui.CollapsingHeader("Controls"))
         {
-            var disableCameraDirectionFlying = config.DisableCameraDirectionFlying;
-            if (ImGui.Checkbox("Prevent camera from changing flying height", ref disableCameraDirectionFlying))
-            {
-                config.DisableCameraDirectionFlying = disableCameraDirectionFlying;
-                config.Save();
-            }
-            var handTracking = config.HandTracking;
-            if (ImGui.Checkbox("Enable hand tracking", ref handTracking))
-            {
-                config.HandTracking = handTracking;
-                config.Save();
-            }
+            Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
+            Checkbox("Enable hand tracking", ref config.HandTracking);
+        }
+    }
+
+    private void Checkbox(string label, ref bool value)
+    {
+        var tempValue = value;
+        if (ImGui.Checkbox(label, ref tempValue))
+        {
+            value = tempValue;
+            config.Save();
+        }
+    }
+    private void Slider(string label, ref float value, float defaultValue = 1.0f)
+    {
+        var tempValue = value;
+        if (ImGui.SliderFloat(label, ref tempValue, 0.1f, 10f))
+        {
+            value = tempValue;
+            config.Save();
+        }
+        ImGui.SameLine();
+        if (ImGui.SmallButton($"Reset##{label}"))
+        {
+            value = defaultValue;
+            config.Save();
         }
     }
 }

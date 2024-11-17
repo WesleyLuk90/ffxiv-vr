@@ -22,6 +22,10 @@ public class Configuration : IPluginConfiguration
     public bool MatchFloorPosition = false;
     public bool DisableCameraDirectionFlying = false;
 
+    public bool KeepUIInFront = true;
+
+    public float UISize = 1.0f;
+
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);

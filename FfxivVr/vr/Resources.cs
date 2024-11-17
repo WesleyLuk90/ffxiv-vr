@@ -57,6 +57,7 @@ unsafe public class Resources : IDisposable
     public RenderTarget DalamudRenderTarget = null!;
     public RenderTarget CursorRenderTarget = null!;
     public RenderTarget[] SceneRenderTargets = [];
+    public DepthTarget[] SceneDepthTargets = [];
 
     public Resources(ID3D11Device* device, Logger logger, VRDiagnostics diagnostics)
     {
@@ -87,6 +88,40 @@ unsafe public class Resources : IDisposable
         DalamudRenderTarget = CreateRenderTarget(size);
         CursorRenderTarget = CreateRenderTarget(size);
         SceneRenderTargets = [CreateRenderTarget(size), CreateRenderTarget(size)];
+        SceneDepthTargets = [CreateDepthTarget(size), CreateDepthTarget(size)];
+    }
+
+    private DepthTarget CreateDepthTarget(Vector2D<uint> size)
+    {
+        var textureDescription = new Texture2DDesc(
+            format: Silk.NET.DXGI.Format.FormatR24G8Typeless,
+            width: size.X,
+            height: size.Y,
+            mipLevels: 1,
+            sampleDesc: new Silk.NET.DXGI.SampleDesc(count: 1, quality: 0),
+            usage: Usage.Default,
+            cPUAccessFlags: 0,
+            arraySize: 1,
+            bindFlags: (uint)(BindFlag.DepthStencil | BindFlag.ShaderResource),
+            miscFlags: (uint)ResourceMiscFlag.Shared
+        );
+        ID3D11Texture2D* texture = null;
+        device->CreateTexture2D(ref textureDescription, null, ref texture).D3D11Check("CreateTexture2D");
+        var depthStencilViewDesc = new DepthStencilViewDesc(
+            format: Silk.NET.DXGI.Format.FormatD24UnormS8Uint,
+            viewDimension: DsvDimension.Texture2D,
+            texture2D: new Tex2DDsv(
+                mipSlice: 0
+            )
+        );
+        ID3D11DepthStencilView* depthStencilView = null;
+        device->CreateDepthStencilView((ID3D11Resource*)texture, ref depthStencilViewDesc, ref depthStencilView).D3D11Check("CreateDepthStencilView");
+
+        return new DepthTarget(
+            texture,
+            depthStencilView,
+            size
+        );
     }
 
     public class RenderTarget : IDisposable
@@ -118,6 +153,34 @@ unsafe public class Resources : IDisposable
             Texture->Release();
             RenderTargetView->Release();
             ShaderResourceView->Release();
+        }
+    }
+    public class DepthTarget : IDisposable
+    {
+        public DepthTarget(
+            ID3D11Texture2D* texture,
+            ID3D11DepthStencilView* depthStencilView,
+            Vector2D<uint> size
+        )
+        {
+            Texture = texture;
+            DepthStencilView = depthStencilView;
+            Size = size;
+        }
+
+        public ID3D11Texture2D* Texture { get; }
+        public ID3D11DepthStencilView* DepthStencilView { get; }
+        public ID3D11ShaderResourceView* ShaderResourceView { get; }
+        public Vector2D<uint> Size { get; }
+
+        public Matrix4X4<float> Scale()
+        {
+            return Matrix4X4.CreateScale(1, (float)Size.Y / Size.X, 1);
+        }
+        public void Dispose()
+        {
+            Texture->Release();
+            DepthStencilView->Release();
         }
     }
 
@@ -204,20 +267,20 @@ unsafe public class Resources : IDisposable
     {
         var depthStencilOn = new DepthStencilDesc(
             depthEnable: true,
-            depthWriteMask: DepthWriteMask.All,
-            depthFunc: ComparisonFunc.LessEqual,
-            stencilEnable: true,
+            depthWriteMask: DepthWriteMask.Zero,
+            depthFunc: ComparisonFunc.GreaterEqual,
+            stencilEnable: false,
             stencilReadMask: 0xff,
             stencilWriteMask: 0xff,
             frontFace: new DepthStencilopDesc(
                 stencilFailOp: StencilOp.Keep,
-                stencilDepthFailOp: StencilOp.Keep,
+                stencilDepthFailOp: StencilOp.Incr,
                 stencilPassOp: StencilOp.Keep,
                 stencilFunc: ComparisonFunc.Always
                 ),
             backFace: new DepthStencilopDesc(
                 stencilFailOp: StencilOp.Keep,
-                stencilDepthFailOp: StencilOp.Keep,
+                stencilDepthFailOp: StencilOp.Decr,
                 stencilPassOp: StencilOp.Keep,
                 stencilFunc: ComparisonFunc.Always
                 )
@@ -455,9 +518,14 @@ unsafe public class Resources : IDisposable
         }
     }
 
-    internal void SetDepthStencilState(ID3D11DeviceContext* context)
+    internal void DisableDepthStencil(ID3D11DeviceContext* context)
     {
         context->OMSetDepthStencilState(depthStencilStateOff, 0);
+    }
+
+    internal void EnableDepthStencil(ID3D11DeviceContext* context)
+    {
+        context->OMSetDepthStencilState(depthStencilStateOn, 0);
     }
 
     internal void SetUIBlendState(ID3D11DeviceContext* context)

@@ -120,8 +120,6 @@ unsafe internal class Renderer(
         context->ClearRenderTargetView(currentColorSwapchainImage, ref color[0]);
         context->ClearDepthStencilView(currentDepthSwapchainImage, (uint)ClearFlag.Depth, 1.0f, 0);
 
-        resources.SetDepthStencilState(context);
-        context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
         Viewport viewport = new Viewport(
             topLeftX: 0f,
             topLeftY: 0f,
@@ -139,36 +137,32 @@ unsafe internal class Renderer(
         var vrViewProjectionMatrix = vrCamera.ComputeVRViewProjectionMatrix(view);
 
         shaders.SetShaders(context);
+        resources.DisableDepthStencil(context);
 
         var currentEyeRenderTarget = resources.SceneRenderTargets[eye.ToIndex()];
         if (eye == Eye.Left)
         {
-            logger.Trace("Rendering left eye");
-            resources.SetSceneBlendState(context);
-            RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
-
+            logger.Trace("Rendering UI");
             RenderUITexture(context, width, height);
-
-            context->OMSetRenderTargets(1, ref currentColorSwapchainImage, currentDepthSwapchainImage);
-            if (Debugging.DebugMode)
-            {
-                RenderHands(context, hands, vrViewProjectionMatrix);
-            }
-
-            RenderUI(context, vrViewProjectionMatrix);
         }
-        else if (eye == Eye.Right)
+
+        logger.Trace("Rendering Game");
+        resources.SetSceneBlendState(context);
+        var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
+        context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
+        RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
+        if (Debugging.DebugMode)
         {
-            logger.Trace("Rendering right eye");
-            resources.SetSceneBlendState(context);
-            RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
-            if (Debugging.DebugMode)
-            {
-                RenderHands(context, hands, vrViewProjectionMatrix);
-            }
-
-            RenderUI(context, vrViewProjectionMatrix);
+            RenderHands(context, hands, vrViewProjectionMatrix);
         }
+
+        resources.SetCompositingBlendState(context);
+        if (!configuration.KeepUIInFront)
+        {
+            resources.EnableDepthStencil(context);
+        }
+
+        RenderUI(context, vrViewProjectionMatrix);
 
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
         xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
@@ -216,13 +210,15 @@ unsafe internal class Renderer(
         var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
 
         resources.SetCompositingBlendState(context);
-        RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, resources.UIRenderTarget.Scale() * modelViewProjection, false);
-        RenderViewport(context, resources.DalamudRenderTarget.ShaderResourceView, resolutionManager.GetDalamudScale() * resources.UIRenderTarget.Scale() * modelViewProjection, true);
-        RenderViewport(context, resources.CursorRenderTarget.ShaderResourceView, resources.UIRenderTarget.Scale() * modelViewProjection, false);
+        var uiScale = resources.UIRenderTarget.Scale() * Matrix4X4.CreateScale(configuration.UISize);
+        RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, uiScale * modelViewProjection, false);
+        RenderViewport(context, resources.DalamudRenderTarget.ShaderResourceView, resolutionManager.GetDalamudScale() * uiScale * modelViewProjection, true);
+        RenderViewport(context, resources.CursorRenderTarget.ShaderResourceView, uiScale * modelViewProjection, false);
     }
 
     private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)
     {
+        // The render texture only has the UI at this point so make a copy
         var gameRenderTexture = GameTextures.GetGameRenderTexture();
         Box box = ComputeCopyBox(gameRenderTexture, resources.UIRenderTarget);
         context->CopySubresourceRegion((ID3D11Resource*)resources.UIRenderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D, 0, ref box);
@@ -315,7 +311,7 @@ unsafe internal class Renderer(
             result.CheckResult("EndFrame");
         }
     }
-    internal void StartFrame(ID3D11DeviceContext* context)
+    internal void StartFrame()
     {
         var beginFrameInfo = new FrameBeginInfo(next: null);
         var result = xr.BeginFrame(system.Session, ref beginFrameInfo);
@@ -333,6 +329,11 @@ unsafe internal class Renderer(
         var renderTarget = resources.SceneRenderTargets[eye.ToIndex()];
         var box = ComputeCopyBox(renderTexture, renderTarget);
         context->CopySubresourceRegion((ID3D11Resource*)renderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)renderTexture->D3D11Texture2D, 0, ref box);
+
+        var depthTexture = GameTextures.GetGameDepthTexture();
+        var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
+        context->CopyResource((ID3D11Resource*)depthTarget.Texture, (ID3D11Resource*)depthTexture->D3D11Texture2D);
+
         diagnostics.OnCopy(eye);
     }
 }
