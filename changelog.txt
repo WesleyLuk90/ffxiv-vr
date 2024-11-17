@@ -1,2 +1,2 @@
-[Feature] Add depth to ui, add scale ui option
-[Fix] More nameplate improvements
+[Fix] Keep original weapon hand grip
+[Fix] Show weapon if crafting or gathering
