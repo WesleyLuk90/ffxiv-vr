@@ -74,7 +74,7 @@ unsafe public class GameModifier
                 }
             }
             var drawData = character->DrawData;
-            if (character->IsWeaponDrawn || !drawData.IsWeaponHidden)
+            if (character->IsWeaponDrawn || !drawData.IsWeaponHidden || Conditions.IsCrafting || Conditions.IsGathering)
             {
                 var mainHand = drawData.Weapon(DrawDataContainer.WeaponSlot.MainHand);
                 if (mainHand.DrawObject != null)
