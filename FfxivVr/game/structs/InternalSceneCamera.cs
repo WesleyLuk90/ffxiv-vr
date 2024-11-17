@@ -1,11 +1,11 @@
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using System.Runtime.InteropServices;
-
 namespace FfxivVR;
 
-// Cast from FFXIVClientStructs.FFXIV.Client.Graphics.Scene.CameraManager.Instance()->CurrentCamera
 [StructLayout(LayoutKind.Explicit)]
-public struct RawCamera
+public unsafe struct InternalSceneCamera
 {
+    public static InternalSceneCamera* FromCamera(Camera* camera) => (InternalSceneCamera*)camera;
     [FieldOffset(0x120)] public float CurrentHRotation;
     [FieldOffset(0x124)] public float CurrentVRotation;
 }

@@ -24,15 +24,11 @@ unsafe public static class GameTextures
 {
     public static Texture* GetGameRenderTexture()
     {
-#pragma warning disable CS0618
-        return FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets2[32].Value;
-#pragma warning restore CS0618 
+        return InternalRenderTargetManager.Instance()->DrawTexture;
     }
     public static Texture* GetGameDepthTexture()
     {
-#pragma warning disable CS0618 
-        return FFXIVClientStructs.FFXIV.Client.Graphics.Render.RenderTargetManager.Instance()->RenderTargets[10].Value;
-#pragma warning restore CS0618 
+        return InternalRenderTargetManager.Instance()->DepthStencilTexture;
     }
 
     internal static Cursor? GetCursorTexture()

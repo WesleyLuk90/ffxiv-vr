@@ -8,7 +8,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Maths;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 unsafe public class GameModifier
@@ -169,7 +168,7 @@ unsafe public class GameModifier
         {
             return null;
         }
-        var actorModel = (ActorModel*)characterBase;
+        var actorModel = InternalCharacterBase.FromCharacterBase(characterBase);
         var skeleton = characterBase->Skeleton;
         var pos = characterBase->Position;
         var rot = characterBase->Rotation;
@@ -196,14 +195,14 @@ unsafe public class GameModifier
         {
             return;
         }
-        var actorModel = (ActorModel*)characterBase;
+        var actorModel = InternalCharacterBase.FromCharacterBase(characterBase);
         var skeleton = characterBase->Skeleton;
         skeletonModifier.UpdateHands(skeleton, hands, runtimeAdjustments, cameraYRotation);
     }
 
     internal void ResetVerticalCameraRotation(float rotation)
     {
-        var rawCamera = gameState.GetRawCamera();
+        var rawCamera = gameState.GetInternalSceneCamera();
         if (rawCamera != null)
         {
             rawCamera->CurrentVRotation = rotation;
@@ -214,10 +213,4 @@ unsafe public class GameModifier
     {
         nameplateModifier.PinTargetNameplate(context, handlers);
     }
-}
-
-[StructLayout(LayoutKind.Explicit)]
-public struct ActorModel
-{
-    [FieldOffset(0x2A4)] public float Height;
 }

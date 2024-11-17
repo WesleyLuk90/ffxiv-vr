@@ -17,7 +17,7 @@ unsafe public class GameState
     public bool IsFirstPerson()
     {
         // Some cutscenes this flag is set, e.g. Logging in and out of the inn
-        return GetRawSceneCamera()->CameraMode == CameraMode.FirstPerson && !Conditions.IsOccupiedInCutSceneEvent;
+        return GetInternalGameCamera()->CameraMode == CameraMode.FirstPerson && !Conditions.IsOccupiedInCutSceneEvent;
     }
 
     public bool IsGPosing()
@@ -86,13 +86,13 @@ unsafe public class GameState
         return manager->CurrentCamera;
     }
 
-    public RawCamera* GetRawCamera()
+    public InternalSceneCamera* GetInternalSceneCamera()
     {
-        return (RawCamera*)GetCurrentCamera();
+        return InternalSceneCamera.FromCamera(GetCurrentCamera());
     }
 
-    public RawSceneCamera* GetRawSceneCamera()
+    public InternalGameCamera* GetInternalGameCamera()
     {
-        return (RawSceneCamera*)GetActiveCamera();
+        return InternalGameCamera.FromCamera(GetActiveCamera());
     }
 }
