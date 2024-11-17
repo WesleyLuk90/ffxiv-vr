@@ -34,8 +34,8 @@ $repo[0].DownloadLinkTesting = "https://github.com/WesleyLuk90/ffxiv-vr/releases
 $repo[0].DownloadLinkUpdate = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v$nextVersion/FfxivVR.zip"
 ConvertTo-Json $repo -depth 32| set-content 'PluginRepo/next.json'
 
-# git add .
-# git commit -m "Release version $nextVersion"
-# git tag v$nextVersion
-# git push origin master
-# git push origin tag v$nextVersion
+git add .
+git commit -m "Release version $nextVersion"
+git tag v$nextVersion
+git push origin master
+git push origin tag v$nextVersion
