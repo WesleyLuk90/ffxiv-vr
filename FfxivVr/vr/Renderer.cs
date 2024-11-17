@@ -330,10 +330,13 @@ unsafe internal class Renderer(
         var box = ComputeCopyBox(renderTexture, renderTarget);
         context->CopySubresourceRegion((ID3D11Resource*)renderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)renderTexture->D3D11Texture2D, 0, ref box);
 
-        var depthTexture = GameTextures.GetGameDepthTexture();
-        var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
-        context->CopyResource((ID3D11Resource*)depthTarget.Texture, (ID3D11Resource*)depthTexture->D3D11Texture2D);
-
+        if (!configuration.KeepUIInFront)
+        {
+            var depthTexture = GameTextures.GetGameDepthTexture();
+            var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
+            context->CopyResource((ID3D11Resource*)depthTarget.Texture, (ID3D11Resource*)depthTexture->D3D11Texture2D);
+        }
         diagnostics.OnCopy(eye);
+
     }
 }
