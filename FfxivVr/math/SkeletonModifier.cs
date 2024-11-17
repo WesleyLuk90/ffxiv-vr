@@ -180,7 +180,13 @@ unsafe internal class SkeletonModifier(Logger logger)
     private void ResetPoseTree(hkaPose* pose, SkeletonStructure structure, Bone armBone)
     {
         ResetPose(armBone, pose);
-        structure.GetDescendants(armBone).ForEach(b => ResetPose(b, pose));
+        structure.GetDescendants(armBone).ForEach(b =>
+        {
+            if (!b.Name.Contains("buki")) // Keep the weapon poses
+            {
+                ResetPose(b, pose);
+            }
+        });
     }
     private void ResetPose(Bone bone, hkaPose* pose)
     {
