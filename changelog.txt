@@ -1,2 +1,3 @@
-[Fix] Keep original weapon hand grip
-[Fix] Show weapon if crafting or gathering
+[Fix] Fix how world scale works
+[Fix] Disable ui depth during cutscenes
+[Feature] Add auto hudlayout switching
