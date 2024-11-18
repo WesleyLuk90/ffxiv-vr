@@ -49,6 +49,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly GameModifier gameModifier;
 
     private readonly FreeCamera freeCamera = new FreeCamera();
+
+    private readonly HudLayoutManager hudLayoutManager;
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -79,15 +81,22 @@ public unsafe sealed class Plugin : IDalamudPlugin
         gameHooks.Initialize();
         Framework.Update += FrameworkUpdate;
 
-
         configWindow = new ConfigWindow(configuration, vrLifecycle, ToggleVR);
         WindowSystem.AddWindow(configWindow);
         debugWindow = new DebugWindow();
         WindowSystem.AddWindow(debugWindow);
 
+        hudLayoutManager = new HudLayoutManager(configuration, vrLifecycle, logger);
+
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
         NamePlateGui.OnDataUpdate += OnNamePlateUpdate;
+        ClientState.Login += Login;
+    }
+
+    private void Login()
+    {
+        hudLayoutManager.RequestHudLayoutUpdate();
     }
 
     private void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
@@ -145,6 +154,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
             UpdateFreeCam(framework);
 
+            hudLayoutManager.Update();
         });
     }
 
@@ -302,6 +312,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         diagnostics.OnStart();
         vrLifecycle.EnableVR();
         companionPlugins.OnActivate();
+        hudLayoutManager.RequestHudLayoutUpdate();
     }
     private void StopVR()
     {
@@ -309,5 +320,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
         vrLifecycle.DisableVR();
         configuration.Save();
         companionPlugins.OnDeactivate();
+        hudLayoutManager.RequestHudLayoutUpdate();
     }
 }

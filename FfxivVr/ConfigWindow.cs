@@ -9,14 +9,12 @@ internal class ConfigWindow : Window
     private readonly Configuration config;
     private readonly VRLifecycle vrLifecycle;
     private readonly Action toggleVR;
-    private readonly Configuration defaultConfig = new Configuration();
-
     public ConfigWindow(Configuration configuration, VRLifecycle vrLifecycle, Action toggleVR) : base("FFXIV VR Settings")
     {
-        Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
-                ImGuiWindowFlags.NoScrollWithMouse;
+        Flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize;
 
-        Size = new Vector2(400, 400);
+        Size = new Vector2(500, 500);
+
         this.config = configuration;
         this.vrLifecycle = vrLifecycle;
         this.toggleVR = toggleVR;
@@ -47,11 +45,35 @@ internal class ConfigWindow : Window
             Slider("UI Size", ref config.UISize);
             Checkbox("Keep UI In Front", ref config.KeepUIInFront);
             Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
+            ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.vrHudLayout);
+            ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.defaultHudLayout);
         }
         if (ImGui.CollapsingHeader("Controls"))
         {
             Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
             Checkbox("Enable hand tracking", ref config.HandTracking);
+        }
+    }
+
+    private void ComboDropdown(string label, string[] options, ref int? value)
+    {
+        var index = 0;
+        if (value is int v)
+        {
+            index = v + 1;
+        }
+        ImGui.Text(label);
+        if (ImGui.Combo($"##{label}", ref index, options, options.Length))
+        {
+            if (index == 0)
+            {
+                value = null;
+            }
+            else
+            {
+                value = index - 1;
+            }
+            config.Save();
         }
     }
 

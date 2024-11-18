@@ -26,6 +26,9 @@ public class Configuration : IPluginConfiguration
 
     public float UISize = 1.0f;
 
+    public int? vrHudLayout = null;
+    public int? defaultHudLayout = null;
+
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);
