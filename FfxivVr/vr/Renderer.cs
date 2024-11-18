@@ -1,4 +1,6 @@
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Lumina.Excel.Sheets;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
@@ -157,7 +159,7 @@ unsafe internal class Renderer(
         }
 
         resources.SetCompositingBlendState(context);
-        if (!configuration.KeepUIInFront)
+        if (ShouldUseDepthTexture())
         {
             resources.EnableDepthStencil(context);
         }
@@ -330,7 +332,7 @@ unsafe internal class Renderer(
         var box = ComputeCopyBox(renderTexture, renderTarget);
         context->CopySubresourceRegion((ID3D11Resource*)renderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)renderTexture->D3D11Texture2D, 0, ref box);
 
-        if (!configuration.KeepUIInFront)
+        if (ShouldUseDepthTexture())
         {
             var depthTexture = GameTextures.GetGameDepthTexture();
             var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
@@ -338,5 +340,10 @@ unsafe internal class Renderer(
         }
         diagnostics.OnCopy(eye);
 
+    }
+
+    private bool ShouldUseDepthTexture()
+    {
+        return !configuration.KeepUIInFront && !Conditions.IsOccupiedInCutSceneEvent;
     }
 }
