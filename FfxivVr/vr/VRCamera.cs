@@ -28,8 +28,9 @@ internal class VRCamera(Configuration configuration)
         var cameraPosition = type.GetCameraPosition(gameCamera);
         var yRotation = type.GetYRotation(gameCamera);
 
-        var gameViewMatrix = Matrix4X4.CreateScale(1f / configuration.WorldScale) * Matrix4X4.CreateRotationY(yRotation) * Matrix4X4.CreateTranslation(cameraPosition);
-        var vrViewMatrix = Matrix4X4.CreateFromQuaternion(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation(view.Pose.Position.ToVector3D());
+        var gameViewMatrix = Matrix4X4.CreateRotationY(yRotation) * Matrix4X4.CreateTranslation(cameraPosition);
+        var scaledPosition = view.Pose.Position.ToVector3D() / configuration.WorldScale;
+        var vrViewMatrix = Matrix4X4.CreateFromQuaternion(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation(scaledPosition);
 
         var viewMatrix = vrViewMatrix * gameViewMatrix;
         Matrix4X4.Invert(viewMatrix, out Matrix4X4<float> invertedViewMatrix);
@@ -39,7 +40,7 @@ internal class VRCamera(Configuration configuration)
     internal Matrix4X4<float> ComputeVRViewProjectionMatrix(View view)
     {
         var rotation = Matrix4X4.CreateFromQuaternion(view.Pose.Orientation.ToQuaternion());
-        var translation = Matrix4X4.CreateTranslation(view.Pose.Position.ToVector3D());
+        var translation = Matrix4X4.CreateTranslation(view.Pose.Position.ToVector3D() / configuration.WorldScale);
         var toView = Matrix4X4.Multiply(rotation, translation);
         Matrix4X4.Invert(toView, out Matrix4X4<float> viewInverted);
 
