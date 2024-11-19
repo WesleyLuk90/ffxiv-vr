@@ -1,3 +1,1 @@
-[Fix] Fix how world scale works
-[Fix] Disable ui depth during cutscenes
-[Feature] Add auto hudlayout switching
+[Feature] Add built in support for removing letterbox
