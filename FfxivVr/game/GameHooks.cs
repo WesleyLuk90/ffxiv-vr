@@ -73,13 +73,13 @@ unsafe public class GameHooks : IDisposable
         }
     }
 
-    public delegate UInt64 FrameworkTickDg(Framework* FrameworkInstance);
-    [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickFn))]
-    public Hook<FrameworkTickDg>? FrameworkTickHook = null;
+    public delegate ulong FrameworkTickDelegate(Framework* FrameworkInstance);
+    [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickDetour))]
+    public Hook<FrameworkTickDelegate>? FrameworkTickHook = null;
 
-    private UInt64 FrameworkTickFn(Framework* FrameworkInstance)
+    private ulong FrameworkTickDetour(Framework* FrameworkInstance)
     {
-        //logger.Trace("FrameworkTickFn start");
+        //logger.Trace("FrameworkTickDetour start");
         exceptionHandler.FaultBarrier(() =>
         {
             vrLifecycle.PrepareVRRender();
@@ -95,16 +95,16 @@ unsafe public class GameHooks : IDisposable
             // This can cause crashes if the plugin is unloaded during while running the second tick
             returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         }
-        //logger.Trace("FrameworkTickFn end");
+        //logger.Trace("FrameworkTickDetour end");
         return returnValue;
     }
 
-    private delegate void DXGIPresentDg(UInt64 a, UInt64 b);
-    [Signature(Signatures.DXGIPresent, DetourName = nameof(DXGIPresentFn))]
-    private Hook<DXGIPresentDg>? DXGIPresentHook = null;
-    private void DXGIPresentFn(UInt64 a, UInt64 b)
+    private delegate void DXGIPresentDelegate(long a, long b);
+    [Signature(Signatures.DXGIPresent, DetourName = nameof(DXGIPresentDetour))]
+    private Hook<DXGIPresentDelegate>? DXGIPresentHook = null;
+    private void DXGIPresentDetour(long a, long b)
     {
-        //logger.Trace("DXGIPresentFn start");
+        //logger.Trace("DXGIPresentDetour start");
         var shouldPresent = true;
         exceptionHandler.FaultBarrier(() =>
         {
@@ -114,15 +114,15 @@ unsafe public class GameHooks : IDisposable
         {
             DXGIPresentHook!.Original(a, b);
         }
-        //logger.Trace("DXGIPresentFn end");
+        //logger.Trace("DXGIPresentDetour end");
     }
 
 
     private delegate void SetMatricesDelegate(FFXIVClientStructs.FFXIV.Client.Game.Camera* camera, IntPtr ptr);
-    [Signature(Signatures.SetMatrices, DetourName = nameof(SetMatricesFn))]
+    [Signature(Signatures.SetMatrices, DetourName = nameof(SetMatricesDetour))]
     private Hook<SetMatricesDelegate>? SetMatricesHook = null;
 
-    private void SetMatricesFn(FFXIVClientStructs.FFXIV.Client.Game.Camera* camera, IntPtr ptr)
+    private void SetMatricesDetour(FFXIVClientStructs.FFXIV.Client.Game.Camera* camera, IntPtr ptr)
     {
         SetMatricesHook!.Original(camera, ptr);
         exceptionHandler.FaultBarrier(() =>
@@ -139,11 +139,11 @@ unsafe public class GameHooks : IDisposable
         });
     }
 
-    private delegate void RenderThreadSetRenderTargetDg(Device* deviceInstance, SetRenderTargetCommand* command);
-    [Signature(Signatures.RenderThreadSetRenderTarget, DetourName = nameof(RenderThreadSetRenderTargetFn))]
-    private Hook<RenderThreadSetRenderTargetDg>? RenderThreadSetRenderTargetHook = null;
+    private delegate void RenderThreadSetRenderTargetDelegate(Device* deviceInstance, SetRenderTargetCommand* command);
+    [Signature(Signatures.RenderThreadSetRenderTarget, DetourName = nameof(RenderThreadSetRenderTargetDetour))]
+    private Hook<RenderThreadSetRenderTargetDelegate>? RenderThreadSetRenderTargetHook = null;
 
-    private void RenderThreadSetRenderTargetFn(Device* deviceInstance, SetRenderTargetCommand* command)
+    private void RenderThreadSetRenderTargetDetour(Device* deviceInstance, SetRenderTargetCommand* command)
     {
         var renderTargets = command->numRenderTargets;
         if (renderTargets == LeftEyeRenderTargetNumber || renderTargets == RightEyeRenderTargetNumber)
@@ -159,11 +159,11 @@ unsafe public class GameHooks : IDisposable
         }
     }
 
-    private delegate void RenderSkeletonListDg(UInt64 RenderSkeletonLinkedList, float frameTiming);
-    [Signature(Signatures.RenderSkeletonList, DetourName = nameof(RenderSkeletonListFn))]
-    private Hook<RenderSkeletonListDg>? RenderSkeletonListHook = null;
+    private delegate void RenderSkeletonListDelegate(long RenderSkeletonLinkedList, float frameTiming);
+    [Signature(Signatures.RenderSkeletonList, DetourName = nameof(RenderSkeletonListDetour))]
+    private Hook<RenderSkeletonListDelegate>? RenderSkeletonListHook = null;
 
-    private unsafe void RenderSkeletonListFn(UInt64 RenderSkeletonLinkedList, float frameTiming)
+    private unsafe void RenderSkeletonListDetour(long RenderSkeletonLinkedList, float frameTiming)
     {
         RenderSkeletonListHook!.Original(RenderSkeletonLinkedList, frameTiming);
         exceptionHandler.FaultBarrier(() =>
@@ -172,11 +172,11 @@ unsafe public class GameHooks : IDisposable
         });
     }
 
-    private delegate void PushbackUIDg(UInt64 a, UInt64 b);
-    [Signature(Signatures.PushbackUI, DetourName = nameof(PushbackUIFn))]
-    private Hook<PushbackUIDg>? PushbackUIHook = null;
+    private delegate void PushbackUIDelegate(ulong a, long b);
+    [Signature(Signatures.PushbackUI, DetourName = nameof(PushbackUIDetour))]
+    private Hook<PushbackUIDelegate>? PushbackUIHook = null;
 
-    private void PushbackUIFn(UInt64 a, UInt64 b)
+    private void PushbackUIDetour(ulong a, long b)
     {
 
         exceptionHandler.FaultBarrier(() =>
@@ -186,11 +186,11 @@ unsafe public class GameHooks : IDisposable
         PushbackUIHook!.Original(a, b);
     }
 
-    private delegate int CreateDXGIFactoryDg(IntPtr guid, void** ppFactory);
-    [Signature(Signatures.CreateDXGIFactory, DetourName = nameof(CreateDXGIFactoryFn))]
-    private Hook<CreateDXGIFactoryDg>? CreateDXGIFactoryHook = null;
+    private delegate int CreateDXGIFactoryDelegate(IntPtr guid, void** ppFactory);
+    [Signature(Signatures.CreateDXGIFactory, DetourName = nameof(CreateDXGIFactoryDetour))]
+    private Hook<CreateDXGIFactoryDelegate>? CreateDXGIFactoryHook = null;
 
-    private unsafe int CreateDXGIFactoryFn(IntPtr guid, void** ppFactory)
+    private unsafe int CreateDXGIFactoryDetour(IntPtr guid, void** ppFactory)
     {
         hookStatus.MarkHookAdded();
         // SteamVR requires using CreateDXGIFactory1
@@ -202,10 +202,10 @@ unsafe public class GameHooks : IDisposable
         }
     }
 
-    private delegate void MousePointScreenToClientDg(UInt64 frameworkInstance, Point* mousePos);
-    [Signature(Signatures.MousePointScreenToClient, DetourName = nameof(MousePointScreenToClientFn))]
-    private Hook<MousePointScreenToClientDg>? MousePointScreenToClientHook = null;
-    private void MousePointScreenToClientFn(UInt64 frameworkInstance, Point* mousePos)
+    private delegate void MousePointScreenToClientDelegate(long frameworkInstance, Point* mousePos);
+    [Signature(Signatures.MousePointScreenToClient, DetourName = nameof(MousePointScreenToClientDetour))]
+    private Hook<MousePointScreenToClientDelegate>? MousePointScreenToClientHook = null;
+    private void MousePointScreenToClientDetour(long frameworkInstance, Point* mousePos)
     {
         MousePointScreenToClientHook!.Original(frameworkInstance, mousePos);
         exceptionHandler.FaultBarrier(() =>
