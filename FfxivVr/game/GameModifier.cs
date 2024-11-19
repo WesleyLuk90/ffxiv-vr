@@ -213,4 +213,9 @@ unsafe public class GameModifier
     {
         nameplateModifier.PinTargetNameplate(context, handlers);
     }
+
+    internal void UpdateLetterboxing(InternalLetterboxing* internalLetterboxing)
+    {
+        internalLetterboxing->ShouldLetterBox &= ~LetterBoxingOption.EnableLetterboxing;
+    }
 }

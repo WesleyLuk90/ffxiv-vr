@@ -12,11 +12,11 @@ class HudLayoutManager(Configuration configuration, VRLifecycle vRLifecycle, Log
         if (shouldUpdate)
         {
             shouldUpdate = false;
-            if (vRLifecycle.IsEnabled() && configuration.vrHudLayout is int vrLayout && 0 <= vrLayout && vrLayout <= 3)
+            if (vRLifecycle.IsEnabled() && configuration.VRHudLayout is int vrLayout && 0 <= vrLayout && vrLayout <= 3)
             {
                 SwitchLayout(vrLayout);
             }
-            else if (!vRLifecycle.IsEnabled() && configuration.defaultHudLayout is int defaultLayout && 0 <= defaultLayout && defaultLayout <= 3)
+            else if (!vRLifecycle.IsEnabled() && configuration.DefaultHudLayout is int defaultLayout && 0 <= defaultLayout && defaultLayout <= 3)
             {
                 SwitchLayout(defaultLayout);
             }

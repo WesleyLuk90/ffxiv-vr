@@ -36,6 +36,7 @@ internal class ConfigWindow : Window
             Checkbox("Follow Head in First Person", ref config.FollowCharacter);
             Checkbox("Disable Auto Face Target in First Person", ref config.DisableAutoFaceTargetInFirstPerson);
             Checkbox("Match game to real floor position", ref config.MatchFloorPosition);
+            Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
             Slider("World Scale", ref config.WorldScale);
             Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
         }
@@ -45,8 +46,8 @@ internal class ConfigWindow : Window
             Slider("UI Size", ref config.UISize);
             Checkbox("Keep UI In Front", ref config.KeepUIInFront);
             Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
-            ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.vrHudLayout);
-            ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.defaultHudLayout);
+            ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
+            ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
         }
         if (ImGui.CollapsingHeader("Controls"))
         {

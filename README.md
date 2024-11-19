@@ -24,7 +24,6 @@ Based on the original [xivr-Ex Plugin](https://github.com/ProjectMimer/xivr-Ex)
 
 -   For performance, decreases the display limits in FFXIV
     -   `System Configuration > ... > Display Limits > Character and Object Quantity > Minimum`
--   Use the [FullscreenCutscenes plugin](https://github.com/goaaats/Dalamud.FullscreenCutscenes) to remove black bars during cutscenes
 
 ## Compatibility
 

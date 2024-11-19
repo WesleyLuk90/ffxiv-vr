@@ -26,8 +26,10 @@ public class Configuration : IPluginConfiguration
 
     public float UISize = 1.0f;
 
-    public int? vrHudLayout = null;
-    public int? defaultHudLayout = null;
+    public int? VRHudLayout = null;
+    public int? DefaultHudLayout = null;
+
+    public bool DisableCutsceneLetterbox = true;
 
     public void Save()
     {

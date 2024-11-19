@@ -200,4 +200,13 @@ public unsafe class VRLifecycle : IDisposable
             vrSession?.OnNamePlateUpdate(context, handlers);
         }
     }
+
+    internal void UpdateLetterboxing(InternalLetterboxing* internalLetterbox)
+    {
+        // Always enable regardless of VR
+        if (configuration.DisableCutsceneLetterbox)
+        {
+            gameModifier.UpdateLetterboxing(internalLetterbox);
+        }
+    }
 }

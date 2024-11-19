@@ -58,6 +58,7 @@ unsafe public class GameHooks : IDisposable
         InitializeHook(PushbackUIHook, nameof(PushbackUIHook));
         InitializeHook(CreateDXGIFactoryHook, nameof(CreateDXGIFactoryHook));
         InitializeHook(MousePointScreenToClientHook, nameof(MousePointScreenToClientHook));
+        InitializeHook(UpdateLetterboxingHook, nameof(UpdateLetterboxingHook));
     }
     private void InitializeHook<T>(Hook<T>? hook, string name) where T : Delegate
     {
@@ -215,5 +216,18 @@ unsafe public class GameHooks : IDisposable
                 *mousePos = point;
             }
         });
+    }
+
+    // https://github.com/goaaats/Dalamud.FullscreenCutscenes/blob/main/Dalamud.FullscreenCutscenes/Plugin.cs
+    private delegate nint UpdateLetterboxingDelegate(InternalLetterboxing* thisptr);
+    [Signature(Signatures.UpdateLetterboxing, DetourName = nameof(UpdateLetterboxingDetour))]
+    private Hook<UpdateLetterboxingDelegate>? UpdateLetterboxingHook = null;
+    private nint UpdateLetterboxingDetour(InternalLetterboxing* internalLetterbox)
+    {
+        exceptionHandler.FaultBarrier(() =>
+        {
+            vrLifecycle.UpdateLetterboxing(internalLetterbox);
+        });
+        return UpdateLetterboxingHook!.Original(internalLetterbox);
     }
 }
