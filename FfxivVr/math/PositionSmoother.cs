@@ -1,4 +1,5 @@
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Maths;
 
 namespace FfxivVR;
@@ -18,11 +19,12 @@ public unsafe class PositionSmoother
             Reset();
             lastCharacter = character;
         }
-        var realPosition = character->Position.ToVector3D();
+        var mountBase = (CharacterBase*)character->DrawObject;
+        var realPosition = mountBase->Position.ToVector3D();
         Vector3D<float> smoothedPosition = realPosition;
         if (lastPosition is Vector3D<float> last && (last - realPosition).Length < 10)
         {
-            var factor = 0.01f;
+            var factor = 0.05f;
             // Use the smoothed velocity to predict our position
             smoothedPosition = last + velocity;
             // Blend the new position to update the velocity
@@ -36,6 +38,7 @@ public unsafe class PositionSmoother
     {
         lastPosition = null;
         velocity = Vector3D<float>.Zero;
+        lastCharacter = null;
     }
 
 }

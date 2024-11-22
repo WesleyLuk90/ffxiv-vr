@@ -1,4 +1,6 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.Havok.Animation.Rig;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
@@ -53,22 +55,22 @@ unsafe internal class SkeletonModifier(Logger logger)
         return partial->GetHavokPose(0);
     }
 
-    private Dictionary<IntPtr, SkeletonStructure?> SkeletonStructures = new Dictionary<IntPtr, SkeletonStructure?>();
-    public SkeletonStructure? GetSkeletonStructure(Skeleton* skeleton)
+    private Dictionary<string, SkeletonStructure> SkeletonStructures = new();
+    private SkeletonStructure? GetSkeletonStructure(Skeleton* skeleton)
     {
         var havokSkeleton = GetHavokSkeleton(skeleton);
         if (havokSkeleton == null)
         {
             return null;
         }
-        var ptr = (IntPtr)havokSkeleton;
-        if (!SkeletonStructures.ContainsKey(ptr))
+        var key = skeleton->PartialSkeletons->SkeletonResourceHandle->FileName.ToString();
+        if (!SkeletonStructures.ContainsKey(key))
         {
             // Test in Alexander - The Fist of the Son for the morph
-            logger.Debug($"New skeleton found with {havokSkeleton->Bones.Length} bones");
-            SkeletonStructures[ptr] = new SkeletonStructure(havokSkeleton);
+            logger.Debug($"New skeleton {key} found with {havokSkeleton->Bones.Length} bones");
+            SkeletonStructures[key] = new SkeletonStructure(havokSkeleton);
         }
-        return SkeletonStructures[ptr];
+        return SkeletonStructures[key];
     }
 
     public hkaSkeleton* GetHavokSkeleton(Skeleton* skeleton)
@@ -315,5 +317,48 @@ unsafe internal class SkeletonModifier(Logger logger)
             * adjustments
             * MathFactory.YRotation(float.DegreesToRadians(-90))
             ).ToQuaternion();
+    }
+    public Matrix4X4<float>? GetMountTransform(Character* mountObject)
+    {
+        if (mountObject == null)
+        {
+            return null;
+        }
+        var mountBase = (CharacterBase*)mountObject->DrawObject;
+        if (mountBase == null)
+        {
+            return null;
+        }
+        var skeleton = mountBase->Skeleton;
+        if (skeleton == null)
+        {
+            return null;
+        }
+        var structure = GetSkeletonStructure(skeleton);
+        if (structure == null)
+        {
+            return null;
+        }
+        if (structure.GetBone(MountBones.RiderPosition) is not Bone riderPositionBone)
+        {
+            return null;
+        }
+        var partial = skeleton->PartialSkeletons;
+        if (partial == null)
+        {
+            return null;
+        }
+        var pose = partial->GetHavokPose(0);
+        if (pose == null)
+        {
+            return null;
+        }
+        var transforms = riderPositionBone.GetModelTransforms(pose);
+        var boneRotation = transforms->Rotation.ToQuaternion();
+        var mountRotation = skeleton->Transform.Rotation.ToQuaternion();
+
+        var scaled = Vector3D.Transform(transforms->Translation.ToVector3D(), Matrix4X4.CreateScale(mountObject->DrawObject->Scale.ToVector3D()));
+        return MathFactory.CreateScaleRotationTranslationMatrix(transforms->Scale.ToVector3D(), boneRotation, scaled) *
+            Matrix4X4.CreateFromQuaternion(mountRotation);
     }
 }
