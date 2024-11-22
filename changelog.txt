@@ -1,1 +1,1 @@
-[Feature] Add built in support for removing letterbox
+[Fix] Calculate mounted head position differently
