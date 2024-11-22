@@ -20,7 +20,7 @@ public unsafe class PositionSmoother
         }
         var realPosition = character->Position.ToVector3D();
         Vector3D<float> smoothedPosition = realPosition;
-        if (lastPosition is Vector3D<float> last)
+        if (lastPosition is Vector3D<float> last && (last - realPosition).Length < 10)
         {
             var factor = 0.01f;
             // Use the smoothed velocity to predict our position
