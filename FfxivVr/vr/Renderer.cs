@@ -152,7 +152,7 @@ unsafe internal class Renderer(
         var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
         RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
-        if (Debugging.DebugMode)
+        if (Debugging.ShowHands)
         {
             RenderHands(context, hands, vrViewProjectionMatrix);
         }

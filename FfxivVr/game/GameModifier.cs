@@ -132,13 +132,13 @@ unsafe public class GameModifier
         return (Character*)player!.Address;
     }
 
-    public void HideHeadMesh()
+    public void HideHeadMesh(bool force = false)
     {
-        if (gameState.IsInCutscene())
+        if (gameState.IsInCutscene() && !force)
         {
             return;
         }
-        if (!gameState.IsFirstPerson())
+        if (!gameState.IsFirstPerson() && !force)
         {
             return;
         }
@@ -161,6 +161,8 @@ unsafe public class GameModifier
         return (CharacterBase*)character->GameObject.DrawObject;
     }
 
+
+    private PositionSmoother positionSmoother = new();
     public Vector3D<float>? GetHeadPosition()
     {
         var characterBase = GetCharacterBase();
@@ -168,19 +170,76 @@ unsafe public class GameModifier
         {
             return null;
         }
+        var character = getCharacterOrGpose();
+        var isDismounting = (character->Mount.Flags & 1) != 0;
+        Matrix4X4<float> headTransforms;
+        if (character->Mount.MountObject != null && !isDismounting)
+        {
+            var smoothedPosition = positionSmoother.GetSmoothedPosition(character->Mount.MountObject);
+            var mountTransform = GetMountTransform(character->Mount.MountObject) ?? Matrix4X4.CreateFromQuaternion(characterBase->DrawObject.Rotation.ToQuaternion());
+            var worldTransform = MathFactory.CreateScaleRotationTranslationMatrix(characterBase->Scale.ToVector3D(), Quaternion<float>.Identity, smoothedPosition);
+            headTransforms = mountTransform * worldTransform;
+        }
+        else
+        {
+            positionSmoother.Reset();
+            headTransforms = MathFactory.CreateScaleRotationTranslationMatrix(characterBase->Scale.ToVector3D(), characterBase->DrawObject.Rotation.ToQuaternion(), characterBase->Position.ToVector3D());
+        }
         var actorModel = InternalCharacterBase.FromCharacterBase(characterBase);
+        var actorScale = Matrix4X4.CreateScale(actorModel->Height);
         var skeleton = characterBase->Skeleton;
-        var pos = characterBase->Position;
-        var rot = characterBase->Rotation;
-        var rotQuat = new Quaternion<float>(rot.X, rot.Y, rot.Z, rot.W);
         var headPosition = skeletonModifier.GetHeadPosition(skeleton);
-
-        if (headPosition == null)
+        if (headPosition is Vector3D<float> head)
+        {
+            return Vector3D.Transform(head, actorScale * headTransforms);
+        }
+        else
         {
             return null;
         }
-        Vector3D<float> head2 = (Vector3D<float>)headPosition;
-        return Vector3D.Transform(head2, Matrix4X4.CreateScale<float>(actorModel->Height) * Matrix4X4.CreateFromQuaternion(rotQuat)) + new Vector3D<float>(pos.X, pos.Y, pos.Z);
+    }
+
+    private Matrix4X4<float>? GetMountTransform(Character* mountObject)
+    {
+        if (mountObject == null)
+        {
+            return null;
+        }
+        var mountBase = (CharacterBase*)mountObject->DrawObject;
+        if (mountBase == null)
+        {
+            return null;
+        }
+        var skeleton = mountBase->Skeleton;
+        if (skeleton == null)
+        {
+            return null;
+        }
+        var structure = skeletonModifier.GetSkeletonStructure(skeleton);
+        if (structure == null)
+        {
+            return null;
+        }
+        if (structure.GetBone(MountBones.RiderPosition) is not Bone riderPositionBone)
+        {
+            return null;
+        }
+        var partial = skeleton->PartialSkeletons;
+        if (partial == null)
+        {
+            return null;
+        }
+        var pose = partial->GetHavokPose(0);
+        if (pose == null)
+        {
+            return null;
+        }
+        var transforms = riderPositionBone.GetModelTransforms(pose);
+        var boneRotation = transforms->Rotation.ToQuaternion();
+        var mountRotation = skeleton->Transform.Rotation.ToQuaternion();
+        var scaled = Vector3D.Transform(transforms->Translation.ToVector3D(), Matrix4X4.CreateScale(mountObject->DrawObject->Scale.ToVector3D()));
+        return MathFactory.CreateScaleRotationTranslationMatrix(transforms->Scale.ToVector3D(), boneRotation, scaled) *
+            Matrix4X4.CreateFromQuaternion(mountRotation);
     }
 
     internal void UpdateMotionControls(HandTrackerExtension.HandData hands, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)

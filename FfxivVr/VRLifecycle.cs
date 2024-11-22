@@ -156,6 +156,10 @@ public unsafe class VRLifecycle : IDisposable
 
     internal void UpdateVisibility()
     {
+        if (Debugging.HideHead)
+        {
+            gameModifier.HideHeadMesh(force: true);
+        }
         lock (this)
         {
             vrSession?.UpdateVisibility();

@@ -124,6 +124,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private void DrawUI()
     {
+        Debugging.DrawLocation();
         WindowSystem.Draw();
         // We require dalamud ui to be ready so wait for the draw call
         exceptionHandler.FaultBarrier(() =>
@@ -264,11 +265,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                         freeCamera.Enabled = true;
                         logger.Info("Enabled free cam");
                     }
-                    break;
-                // Development commands
-                case "debugmode":
-                    Debugging.DebugMode = !Debugging.DebugMode;
-                    logger.Info($"DebugMode enabled: {Debugging.DebugMode}");
                     break;
                 case "debug":
                     debugWindow.Toggle();

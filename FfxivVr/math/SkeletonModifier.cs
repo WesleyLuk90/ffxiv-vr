@@ -4,7 +4,6 @@ using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
-using static FfxivVR.SkeletonStructure;
 
 namespace FfxivVR;
 
@@ -25,13 +24,21 @@ unsafe internal class SkeletonModifier(Logger logger)
         {
             return null;
         }
-        var transforms = structure.GetBone(BoneType.Neck).GetModelTransforms(pose);
+        if (structure.GetBone(HumanBones.Neck) is not Bone neckBone)
+        {
+            return null;
+        }
+        var transforms = neckBone.GetModelTransforms(pose);
         if (transforms == null)
         {
             return null;
         }
-        var neckLength = 0.2f; // Hacky way to center the head
-        var neckVector = Vector3D.Transform(new Vector3D<float>(neckLength, 0, 0), transforms->Rotation.ToQuaternion());
+        if (structure.GetBone(HumanBones.Face) is not Bone face)
+        {
+            return null;
+        }
+        // Use the reference pose for the face and rotate using the neck
+        var neckVector = Vector3D.Transform(face.ReferencePose.Translation.ToVector3D(), transforms->Rotation.ToQuaternion());
         return transforms->Translation.ToVector3D() + neckVector;
     }
 
@@ -47,7 +54,7 @@ unsafe internal class SkeletonModifier(Logger logger)
     }
 
     private Dictionary<IntPtr, SkeletonStructure?> SkeletonStructures = new Dictionary<IntPtr, SkeletonStructure?>();
-    private SkeletonStructure? GetSkeletonStructure(Skeleton* skeleton)
+    public SkeletonStructure? GetSkeletonStructure(Skeleton* skeleton)
     {
         var havokSkeleton = GetHavokSkeleton(skeleton);
         if (havokSkeleton == null)
@@ -59,20 +66,12 @@ unsafe internal class SkeletonModifier(Logger logger)
         {
             // Test in Alexander - The Fist of the Son for the morph
             logger.Debug($"New skeleton found with {havokSkeleton->Bones.Length} bones");
-            try
-            {
-                SkeletonStructures[ptr] = new SkeletonStructure(havokSkeleton);
-            }
-            catch (BoneNotFound e)
-            {
-                logger.Debug($"{e} Not a character skeleton, ignoring");
-                SkeletonStructures[ptr] = null;
-            }
+            SkeletonStructures[ptr] = new SkeletonStructure(havokSkeleton);
         }
         return SkeletonStructures[ptr];
     }
 
-    private hkaSkeleton* GetHavokSkeleton(Skeleton* skeleton)
+    public hkaSkeleton* GetHavokSkeleton(Skeleton* skeleton)
     {
         if (skeleton == null)
         {
@@ -103,14 +102,21 @@ unsafe internal class SkeletonModifier(Logger logger)
         {
             return;
         }
-        var spine = structure.GetBone(BoneType.SpineC);
+        if (structure.GetBone(HumanBones.SpineC) is not Bone spine)
+        {
+            return;
+        }
+        if (structure.GetBone(HumanBones.Neck) is not Bone neck)
+        {
+            return;
+        }
         var spineTransform = spine.GetModelTransforms(pose);
-        var neck = structure.GetBone(BoneType.Neck);
         var children = structure.GetDescendants(neck);
         foreach (var child in children)
         {
             var childTransform = child.GetModelTransforms(pose);
             childTransform->Translation = spineTransform->Translation;
+            childTransform->Translation.Z -= 0.05f;
             childTransform->Scale.X = 0.001f;
             childTransform->Scale.Y = 0.001f;
             childTransform->Scale.Z = 0.001f;
@@ -139,13 +145,13 @@ unsafe internal class SkeletonModifier(Logger logger)
         var maybeHead = GetHeadPosition(skeleton);
         if (maybeHead is Vector3D<float> head)
         {
-            ResetPoseTree(pose, structure, structure.GetBone(BoneType.ArmLeft));
-            ResetPoseTree(pose, structure, structure.GetBone(BoneType.ArmRight));
+            ResetPoseTree(pose, structure, HumanBones.ArmLeft);
+            ResetPoseTree(pose, structure, HumanBones.ArmRight);
 
-            UpdateArmIK(hands.LeftHand, pose, structure, head, BoneType.ArmLeft, BoneType.ForearmLeft, BoneType.HandLeft, skeletonRotation);
-            UpdateArmIK(hands.RightHand, pose, structure, head, BoneType.ArmRight, BoneType.ForearmRight, BoneType.HandRight, skeletonRotation);
-            RotateHand(hands.LeftHand, BoneType.HandLeft, BoneType.WristLeft, BoneType.ForearmLeft, structure, pose, skeletonRotation);
-            RotateHand(hands.RightHand, BoneType.HandRight, BoneType.WristRight, BoneType.ForearmRight, structure, pose, skeletonRotation);
+            UpdateArmIK(hands.LeftHand, pose, structure, head, HumanBones.ArmLeft, HumanBones.ForearmLeft, HumanBones.HandLeft, skeletonRotation);
+            UpdateArmIK(hands.RightHand, pose, structure, head, HumanBones.ArmRight, HumanBones.ForearmRight, HumanBones.HandRight, skeletonRotation);
+            RotateHand(hands.LeftHand, HumanBones.HandLeft, HumanBones.WristLeft, HumanBones.ForearmLeft, structure, pose, skeletonRotation);
+            RotateHand(hands.RightHand, HumanBones.HandRight, HumanBones.WristRight, HumanBones.ForearmRight, structure, pose, skeletonRotation);
 
             foreach (var joint in HandJoints)
             {
@@ -157,28 +163,32 @@ unsafe internal class SkeletonModifier(Logger logger)
 
     // https://docs.unity3d.com/Packages/com.unity.xr.hands@1.1/manual/hand-data/xr-hand-data-model.html
     private List<HandJoint> HandJoints = new List<HandJoint>() {
-        new HandJoint(HandJointEXT.LittleProximalExt,  BoneType.PinkyFingerLeftA, BoneType.PinkyFingerRightA),
-        new HandJoint(HandJointEXT.RingProximalExt,  BoneType.RingFingerLeftA, BoneType.RingFingerRightA),
-        new HandJoint(HandJointEXT.MiddleProximalExt,  BoneType.MiddleFingerLeftA, BoneType.MiddleFingerRightA),
-        new HandJoint(HandJointEXT.IndexProximalExt,  BoneType.IndexFingerLeftA, BoneType.IndexFingerRightA),
-        new HandJoint(HandJointEXT.ThumbProximalExt,  BoneType.ThumbLeftA, BoneType.ThumbRightA),
+        new HandJoint(HandJointEXT.LittleProximalExt,  HumanBones.PinkyFingerLeftA, HumanBones.PinkyFingerRightA),
+        new HandJoint(HandJointEXT.RingProximalExt,  HumanBones.RingFingerLeftA, HumanBones.RingFingerRightA),
+        new HandJoint(HandJointEXT.MiddleProximalExt,  HumanBones.MiddleFingerLeftA, HumanBones.MiddleFingerRightA),
+        new HandJoint(HandJointEXT.IndexProximalExt,  HumanBones.IndexFingerLeftA, HumanBones.IndexFingerRightA),
+        new HandJoint(HandJointEXT.ThumbProximalExt,  HumanBones.ThumbLeftA, HumanBones.ThumbRightA),
 
-        new HandJoint(HandJointEXT.LittleIntermediateExt,  BoneType.PinkyFingerLeftB, BoneType.PinkyFingerRightB),
-        new HandJoint(HandJointEXT.RingIntermediateExt,  BoneType.RingFingerLeftB, BoneType.RingFingerRightB),
-        new HandJoint(HandJointEXT.MiddleIntermediateExt,  BoneType.MiddleFingerLeftB, BoneType.MiddleFingerRightB),
-        new HandJoint(HandJointEXT.IndexIntermediateExt,  BoneType.IndexFingerLeftB, BoneType.IndexFingerRightB),
-        new HandJoint(HandJointEXT.ThumbDistalExt,  BoneType.ThumbLeftB, BoneType.ThumbRightB),
+        new HandJoint(HandJointEXT.LittleIntermediateExt,  HumanBones.PinkyFingerLeftB, HumanBones.PinkyFingerRightB),
+        new HandJoint(HandJointEXT.RingIntermediateExt,  HumanBones.RingFingerLeftB, HumanBones.RingFingerRightB),
+        new HandJoint(HandJointEXT.MiddleIntermediateExt,  HumanBones.MiddleFingerLeftB, HumanBones.MiddleFingerRightB),
+        new HandJoint(HandJointEXT.IndexIntermediateExt,  HumanBones.IndexFingerLeftB, HumanBones.IndexFingerRightB),
+        new HandJoint(HandJointEXT.ThumbDistalExt,  HumanBones.ThumbLeftB, HumanBones.ThumbRightB),
     };
 
-    class HandJoint(HandJointEXT joint, BoneType leftBone, BoneType rightBone)
+    class HandJoint(HandJointEXT joint, string leftBone, string rightBone)
     {
         public HandJointEXT Joint { get; } = joint;
-        public BoneType LeftBone { get; } = leftBone;
-        public BoneType RightBone { get; } = rightBone;
+        public string LeftBone { get; } = leftBone;
+        public string RightBone { get; } = rightBone;
     }
 
-    private void ResetPoseTree(hkaPose* pose, SkeletonStructure structure, Bone armBone)
+    private void ResetPoseTree(hkaPose* pose, SkeletonStructure structure, string armBoneName)
     {
+        if (structure.GetBone(armBoneName) is not Bone armBone)
+        {
+            return;
+        }
         ResetPose(armBone, pose);
         structure.GetDescendants(armBone).ForEach(b =>
         {
@@ -194,13 +204,24 @@ unsafe internal class SkeletonModifier(Logger logger)
         *local = bone.ReferencePose;
     }
 
-    private void RotateHand(HandJointLocationEXT[] joints, BoneType handBone, BoneType wristBone, BoneType forearmBone, SkeletonStructure structure, hkaPose* pose, Quaternion<float> skeletonRotation)
+    private void RotateHand(HandJointLocationEXT[] joints, string handBoneName, string wristBoneName, string forearmBoneName, SkeletonStructure structure, hkaPose* pose, Quaternion<float> skeletonRotation)
     {
         var desiredRotation = joints[(int)HandJointEXT.PalmExt].Pose.Orientation.ToQuaternion();
 
-        var hand = structure.GetBone(handBone);
+        if (structure.GetBone(handBoneName) is not Bone hand)
+        {
+            return;
+        }
+        if (structure.GetBone(wristBoneName) is not Bone wristBone)
+        {
+            return;
+        }
+        if (structure.GetBone(forearmBoneName) is not Bone forearmBone)
+        {
+            return;
+        }
         var globalHandRotation = hand.GetModelTransforms(pose)->Rotation.ToQuaternion();
-        var flipHand = handBone == BoneType.HandLeft ? -90 : 90;
+        var flipHand = handBoneName == HumanBones.HandLeft ? -90 : 90;
         var handTransforms = hand.GetLocalTransforms(pose);
         handTransforms->Rotation = (handTransforms->Rotation.ToQuaternion()
             * Quaternion<float>.Inverse(globalHandRotation)
@@ -210,8 +231,8 @@ unsafe internal class SkeletonModifier(Logger logger)
             * MathFactory.YRotation(float.DegreesToRadians(-90))
             * MathFactory.XRotation(float.DegreesToRadians(flipHand))).ToQuaternion();
 
-        var wrist = structure.GetBone(wristBone).GetLocalTransforms(pose);
-        var forearm = structure.GetBone(forearmBone).GetLocalTransforms(pose);
+        var wrist = wristBone.GetLocalTransforms(pose);
+        var forearm = forearmBone.GetLocalTransforms(pose);
 
         var half = Quaternion<float>.Slerp(handTransforms->Rotation.ToQuaternion(), forearm->Rotation.ToQuaternion(), 0.5f);
         var half2 = Quaternion<float>.Normalize(new Quaternion<float>(half.X, 0, 0, half.W));
@@ -220,14 +241,23 @@ unsafe internal class SkeletonModifier(Logger logger)
 
     private Quaternion<float> y180 = MathFactory.YRotation(float.DegreesToRadians(180));
 
-    private void UpdateArmIK(HandJointLocationEXT[] joints, hkaPose* pose, SkeletonStructure structure, Vector3D<float> head, BoneType arm, BoneType forearm, BoneType hand, Quaternion<float> skeletonRotation)
+    private void UpdateArmIK(HandJointLocationEXT[] joints, hkaPose* pose, SkeletonStructure structure, Vector3D<float> head, string arm, string forearm, string hand, Quaternion<float> skeletonRotation)
     {
         var wrist = joints[(int)HandJointEXT.WristExt];
         var targetHandPosition = Vector3D.Transform(wrist.Pose.Position.ToVector3D(), skeletonRotation) + head;
 
-        var armBone = structure.GetBone(arm);
-        var forearmBone = structure.GetBone(forearm);
-        var handBone = structure.GetBone(hand);
+        if (structure.GetBone(arm) is not Bone armBone)
+        {
+            return;
+        }
+        if (structure.GetBone(forearm) is not Bone forearmBone)
+        {
+            return;
+        }
+        if (structure.GetBone(hand) is not Bone handBone)
+        {
+            return;
+        }
 
         var armTransforms = armBone.GetModelTransforms(pose);
         var forearmTransforms = forearmBone.GetModelTransforms(pose);
@@ -256,21 +286,24 @@ unsafe internal class SkeletonModifier(Logger logger)
 
     private InverseKinematics ik = new InverseKinematics();
 
-    private void UpdateHandBone(HandJointLocationEXT[] hand, HandJointEXT joint, BoneType type, hkaPose* pose, SkeletonStructure skeletonStructure, RuntimeAdjustments runtimeAdjustments, Quaternion<float> skeletonRotation)
+    private void UpdateHandBone(HandJointLocationEXT[] hand, HandJointEXT joint, string type, hkaPose* pose, SkeletonStructure skeletonStructure, RuntimeAdjustments runtimeAdjustments, Quaternion<float> skeletonRotation)
     {
         var jointRotation = hand[(int)joint].Pose.Orientation.ToQuaternion();
 
         var adjustments = Quaternion<float>.Identity;
-        if (type == BoneType.ThumbLeftA || type == BoneType.ThumbLeftB)
+        if (type == HumanBones.ThumbLeftA || type == HumanBones.ThumbLeftB)
         {
             adjustments = runtimeAdjustments.ThumbRotation;
         }
-        else if (type == BoneType.ThumbRightA || type == BoneType.ThumbRightB)
+        else if (type == HumanBones.ThumbRightA || type == HumanBones.ThumbRightB)
         {
             adjustments = runtimeAdjustments.ThumbRotation.Inverse();
         }
 
-        var bone = skeletonStructure.GetBone(type);
+        if (skeletonStructure.GetBone(type) is not Bone bone)
+        {
+            return;
+        }
         var globalRotation = bone.GetModelTransforms(pose)->Rotation.ToQuaternion();
         var localTransforms = bone.GetLocalTransforms(pose);
 

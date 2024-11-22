@@ -1,5 +1,3 @@
-
-using FFXIVClientStructs.FFXIV.Client.Game;
 using Silk.NET.Maths;
 using System;
 
@@ -57,11 +55,6 @@ class FollowingFirstPersonCamera : VRCameraType
     {
         if (gameCamera.HeadPosition is Vector3D<float> headPosition)
         {
-            // Push the head a bit more forward to prevent clipping
-            if (Conditions.IsMounted)
-            {
-                headPosition += Vector3D.Transform(new Vector3D<float>(0, 0, -0.2f), MathFactory.YRotation(gameCamera.GetYRotation()));
-            }
             return headPosition;
         }
         else

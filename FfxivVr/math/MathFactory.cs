@@ -24,4 +24,9 @@ public static class MathFactory
     {
         return Quaternion<float>.CreateFromAxisAngle(Vector3D.Normalize<float>(new Vector3D<float>(x, y, z)), float.DegreesToRadians(angle));
     }
+
+    public static Matrix4X4<float> CreateScaleRotationTranslationMatrix(Vector3D<float> scale, Quaternion<float> rotation, Vector3D<float> translation)
+    {
+        return Matrix4X4.CreateScale(scale) * Matrix4X4.CreateFromQuaternion(rotation) * Matrix4X4.CreateTranslation(translation);
+    }
 }
