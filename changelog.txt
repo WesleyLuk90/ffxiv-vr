@@ -1,1 +1,1 @@
-[Fix] Calculate mounted head position differently
+[Fix] Alte Roite mount, cleanup and tweaks
