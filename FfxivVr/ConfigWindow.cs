@@ -32,6 +32,7 @@ internal class ConfigWindow : Window
         }
         if (ImGui.CollapsingHeader("View"))
         {
+            Checkbox("Show Body in First Person", ref config.ShowBodyInFirstPerson);
             Checkbox("Recenter Camera on View Change", ref config.RecenterOnViewChange);
             Checkbox("Follow Head in First Person", ref config.FollowCharacter);
             Checkbox("Disable Auto Face Target in First Person", ref config.DisableAutoFaceTargetInFirstPerson);

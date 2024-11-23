@@ -310,9 +310,12 @@ public unsafe class VRSession : IDisposable
     {
         if (State.SessionRunning)
         {
-            gameModifier.ForceFirstPersonBodyVisible();
+            if (configuration.ShowBodyInFirstPerson)
+            {
+                gameModifier.ForceFirstPersonBodyVisible();
 
-            gameModifier.HideHeadMesh();
+                gameModifier.HideHeadMesh();
+            }
 
             if (cameraPhase is CameraPhase phase && phase.Hands is HandTrackerExtension.HandData hands)
             {

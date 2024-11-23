@@ -31,6 +31,8 @@ public class Configuration : IPluginConfiguration
 
     public bool DisableCutsceneLetterbox = true;
 
+    public bool ShowBodyInFirstPerson = true;
+
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);
