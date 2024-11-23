@@ -25,6 +25,12 @@ Based on the original [xivr-Ex Plugin](https://github.com/ProjectMimer/xivr-Ex)
 -   For performance, decreases the display limits in FFXIV
     -   `System Configuration > ... > Display Limits > Character and Object Quantity > Minimum`
 
+## Help
+
+If you want to report a bug or request a feature please create an [Issue](https://github.com/WesleyLuk90/ffxiv-vr/issues).
+
+For support and discussion please ask in the Discord ([https://discord.gg/flat2vr](https://discord.gg/flat2vr))
+
 ## Compatibility
 
 Tested with Virtual Desktop, Occulus Link and SteamVR. OpenXR is recomended over SteamVR if available.
