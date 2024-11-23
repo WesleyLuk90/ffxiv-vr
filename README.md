@@ -43,6 +43,8 @@ Sometimes SteamVR will get stuck waiting for the game or just take a minute. Try
 
 If you're running into crashes try disabling GShade and ReShade as they have been reported to cause crashes.
 
+If there is a large black box in front of you there is likely an incompatible plugin enabled. Try disabling other plugins to determine if that is the cause. Splatoon and vnavmesh have been reported to cause this issue.
+
 ## Known Issues
 
 -   No support for VR controllers
