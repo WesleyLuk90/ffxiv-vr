@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Objects;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
@@ -46,11 +47,41 @@ unsafe public class GameModifier
             return;
         }
         UpdateVisbility(targetManager.Target, true);
+
         if (gameState.IsGPosing())
         {
             UpdateVisbility(clientState.LocalPlayer, false);
         }
         Character* character = getCharacterOrGpose();
+
+        ForceVisible(character);
+
+        var manager = CharacterManager.Instance();
+        if (clientState.LocalPlayer is IPlayerCharacter localPlayer)
+        {
+            // If we're a passenger in someone elses mount then make it visible
+            var owner = manager->LookupBattleCharaByEntityId(localPlayer.OwnerId);
+            if (owner != null)
+            {
+                ForceVisible((Character*)owner);
+            }
+            // If someone else is our passenger, then make them visible
+            for (int i = 0; i < manager->BattleCharas.Length; i++)
+            {
+                var chara = manager->BattleCharas[i];
+                if (chara.Value != null)
+                {
+                    if (chara.Value->OwnerId == localPlayer.EntityId)
+                    {
+                        ForceVisible((Character*)chara.Value);
+                    }
+                }
+            }
+        }
+    }
+
+    private void ForceVisible(Character* character)
+    {
         if (character == null)
         {
             return;
