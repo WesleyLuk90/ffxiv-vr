@@ -30,6 +30,11 @@ public abstract class VRCameraMode
     {
         return gameCamera.GetYRotation();
     }
+
+    public virtual Matrix4X4<float> GetRotationMatrix(GameCamera gameCamera)
+    {
+        return Matrix4X4.CreateRotationY(GetYRotation(gameCamera));
+    }
     public virtual bool ShouldLockCameraVerticalRotation()
     {
         return false;

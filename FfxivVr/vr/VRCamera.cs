@@ -23,12 +23,11 @@ internal class VRCamera(Configuration configuration)
         proj.M43 = near;
         return proj.ToMatrix4x4();
     }
-    internal Matrix4X4<float> ComputeGameViewMatrix(View view, VRCameraMode type, GameCamera gameCamera)
+    internal Matrix4X4<float> ComputeGameViewMatrix(View view, VRCameraMode cameraMode, GameCamera gameCamera)
     {
-        var cameraPosition = type.GetCameraPosition(gameCamera);
-        var yRotation = type.GetYRotation(gameCamera);
+        var cameraPosition = cameraMode.GetCameraPosition(gameCamera);
 
-        var gameViewMatrix = Matrix4X4.CreateRotationY(yRotation) * Matrix4X4.CreateTranslation(cameraPosition);
+        var gameViewMatrix = cameraMode.GetRotationMatrix(gameCamera) * Matrix4X4.CreateTranslation(cameraPosition);
         var scaledPosition = view.Pose.Position.ToVector3D() / configuration.WorldScale;
         var vrViewMatrix = Matrix4X4.CreateFromQuaternion(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation(scaledPosition);
 
