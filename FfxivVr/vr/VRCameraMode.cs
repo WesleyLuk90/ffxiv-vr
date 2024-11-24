@@ -44,11 +44,23 @@ public abstract class VRCameraMode
 class OrbitCamera() : VRCameraMode
 {
     public override Vector3D<float> GetCameraPosition(GameCamera gameCamera) { return gameCamera.Position; }
+
+    public override Matrix4X4<float> GetRotationMatrix(GameCamera gameCamera)
+    {
+        var cameraFacing = gameCamera.Position - gameCamera.LookAt;
+        var angle = MathF.Asin(cameraFacing.Y / cameraFacing.Length);
+        return Matrix4X4.CreateRotationX(-angle) * Matrix4X4.CreateRotationY(GetYRotation(gameCamera));
+    }
+}
+
+class LevelOrbitCamera() : VRCameraMode
+{
+    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera) { return gameCamera.Position; }
 }
 
 
 // This just works the same way as the orbit camera
-class FirstPersonCamera : OrbitCamera
+class FirstPersonCamera : LevelOrbitCamera
 {
 
 }

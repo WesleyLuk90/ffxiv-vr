@@ -38,6 +38,7 @@ internal class ConfigWindow : Window
             Checkbox("Disable Auto Face Target in First Person", ref config.DisableAutoFaceTargetInFirstPerson);
             Checkbox("Match game to real floor position", ref config.MatchFloorPosition);
             Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
+            Checkbox("Keep the camera level with the floor", ref config.KeepCameraHorizontal);
             Slider("World Scale", ref config.WorldScale);
             Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
         }

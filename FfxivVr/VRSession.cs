@@ -295,9 +295,13 @@ public unsafe class VRSession : IDisposable
                 distance: d,
                 worldScale: configuration.WorldScale);
         }
-        else
+        else if (!configuration.KeepCameraHorizontal)
         {
             return new OrbitCamera();
+        }
+        else
+        {
+            return new LevelOrbitCamera();
         }
     }
 
