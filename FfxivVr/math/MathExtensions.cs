@@ -22,6 +22,11 @@ public static class MathExtensions
     {
         return new Vector3D<float>(vec.X, vec.Y, vec.Z);
     }
+    public static Vector3 ToVector3(this Vector3D<float> vec)
+    {
+        return new Vector3(vec.X, vec.Y, vec.Z);
+    }
+
     public static hkVector4f ToHkVector4(this Vector3D<float> vec)
     {
         var hk = new hkVector4f();

@@ -193,8 +193,6 @@ unsafe public class GameModifier
     }
 
 
-    private PositionSmoother positionSmoother = new();
-
     // Test with Alte Roite mount
     // Stand on a slope with a mount
     public Vector3D<float>? GetHeadPosition()
@@ -205,18 +203,21 @@ unsafe public class GameModifier
             return null;
         }
         var character = getCharacterOrGpose();
+        if (character == null)
+        {
+            return null;
+        }
         var isDismounting = (character->Mount.Flags & 1) != 0;
         Matrix4X4<float> headTransforms;
         if (character->Mount.MountObject != null && character->Mount.MountObject->DrawObject != null && !isDismounting)
         {
-            var smoothedPosition = positionSmoother.GetSmoothedPosition(character->Mount.MountObject);
+            var mountPosition = character->Mount.MountObject->DrawObject->Position.ToVector3D();
             var mountTransform = skeletonModifier.GetMountTransform(character->Mount.MountObject) ?? Matrix4X4.CreateFromQuaternion(characterBase->DrawObject.Rotation.ToQuaternion());
-            var worldTransform = MathFactory.CreateScaleRotationTranslationMatrix(characterBase->Scale.ToVector3D(), Quaternion<float>.Identity, smoothedPosition);
+            var worldTransform = MathFactory.CreateScaleRotationTranslationMatrix(characterBase->Scale.ToVector3D(), Quaternion<float>.Identity, mountPosition);
             headTransforms = mountTransform * worldTransform;
         }
         else
         {
-            positionSmoother.Reset();
             headTransforms = MathFactory.CreateScaleRotationTranslationMatrix(characterBase->Scale.ToVector3D(), characterBase->DrawObject.Rotation.ToQuaternion(), characterBase->Position.ToVector3D());
         }
         var actorModel = InternalCharacterBase.FromCharacterBase(characterBase);

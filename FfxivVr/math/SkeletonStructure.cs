@@ -30,7 +30,10 @@ public unsafe class SkeletonStructure
             if (boneIndex != 0)
             {
                 var parent = skeleton->ParentIndices[boneIndex];
-                bonesByInternalIndex[parent].Children.Add(boneIndex);
+                if (parent >= 0 && parent < bonesByInternalIndex.Count)
+                {
+                    bonesByInternalIndex[parent].Children.Add(boneIndex);
+                }
             }
             bonesByInternalIndex.Add(bone);
             bonesByType[name] = bone;
