@@ -5,9 +5,13 @@ $currentVersion = [version]$xml.Project.PropertyGroup.Version
 $nextVersion = "{0}.{1}.{2}" -f $currentVersion.Major, $currentVersion.Minor, ($currentVersion.Build + 1)
 
 $changeLog = git log --pretty=format:%s v$currentVersion..HEAD | Select-String "^\[" | % { $_.Line }
+$fixes = git log --pretty=format:%s%n%b v$currentVersion..HEAD | Select-String "#\d+" | % { "Closes " + $_.Matches.Value }
+$releasesMessage = "Publish Version $nextVersion`n" + [string]::Join("`n", $fixes)
 
 echo "Change Log"
 echo $changeLog
+echo "Release Message"
+echo $releaseMessage
 
 echo "Do you want to deploy version $($nextVersion) (y/n)?";
 $key = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
@@ -20,6 +24,7 @@ if ( $key.Character -ne "y" ) {
 echo "Deploying $($nextVersion)"
 
 [IO.File]::WriteAllLines("changelog.txt", $changeLog)
+[IO.File]::WriteAllLines("release-message.txt", $releaseMessage)
 
 $xml.Project.PropertyGroup.Version = $nextVersion
 $xml.Save(".\FfxivVr\FfxivVR.csproj")

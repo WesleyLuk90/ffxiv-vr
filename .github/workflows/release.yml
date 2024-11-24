@@ -83,5 +83,5 @@ jobs:
         git fetch origin master
         git checkout master
         git add .\PluginRepo\pluginmaster.json
-        git commit -m "Publish version"
+        git commit -F release-message.txt
         git push origin master
