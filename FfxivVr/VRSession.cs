@@ -314,10 +314,10 @@ public unsafe class VRSession : IDisposable
     {
         if (State.SessionRunning)
         {
+            gameModifier.UpdateCharacterVisibility(configuration.ShowBodyInFirstPerson);
+
             if (configuration.ShowBodyInFirstPerson)
             {
-                gameModifier.ForceFirstPersonBodyVisible();
-
                 gameModifier.HideHeadMesh();
             }
 

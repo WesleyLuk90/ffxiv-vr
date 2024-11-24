@@ -63,7 +63,7 @@ static class Debugging
     public static bool ShowHands = false;
     public static bool HideHead = false;
 
-    public static Vector3D<float>? Location;
+    public static Vector3D<float>? Location = null;
 
     public static void DebugShow(string key, object? value)
     {

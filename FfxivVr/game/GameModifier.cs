@@ -1,11 +1,9 @@
 ﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Maths;
 using System.Collections.Generic;
@@ -21,13 +19,7 @@ unsafe public class GameModifier
     private readonly NameplateModifier nameplateModifier;
     private readonly SkeletonModifier skeletonModifier;
 
-    public enum ModelCullTypes : byte
-    {
-        None = 0,
-        InsideCamera = 66,
-        OutsideCullCone = 67,
-        Visible = 75
-    }
+    private readonly GameVisibililty gameVisibililty = new GameVisibililty();
 
     public GameModifier(Logger logger, GameState gameState, IGameGui gameGui, ITargetManager targetManager, IClientState clientState)
     {
@@ -40,21 +32,25 @@ unsafe public class GameModifier
         this.skeletonModifier = new SkeletonModifier(logger);
     }
 
-    public void ForceFirstPersonBodyVisible()
+    public void UpdateCharacterVisibility(bool showInFirstPerson)
     {
-        if (gameState.IsInCutscene())
+        if (gameState.IsInCutscene() || gameState.IsBetweenAreas())
         {
             return;
         }
-        UpdateVisbility(targetManager.Target, true);
+        if (gameState.IsFirstPerson() && !showInFirstPerson)
+        {
+            return;
+        }
+        gameVisibililty.UpdateVisbility(targetManager.Target, true);
 
         if (gameState.IsGPosing())
         {
-            UpdateVisbility(clientState.LocalPlayer, false);
+            gameVisibililty.UpdateVisbility(clientState.LocalPlayer, false);
         }
         Character* character = getCharacterOrGpose();
 
-        ForceVisible(character);
+        SetCharacterVisible(character);
 
         var manager = CharacterManager.Instance();
         if (clientState.LocalPlayer is IPlayerCharacter localPlayer)
@@ -63,7 +59,7 @@ unsafe public class GameModifier
             var owner = manager->LookupBattleCharaByEntityId(localPlayer.OwnerId);
             if (owner != null)
             {
-                ForceVisible((Character*)owner);
+                SetCharacterVisible((Character*)owner);
             }
             // If someone else is our passenger, then make them visible
             for (int i = 0; i < manager->BattleCharas.Length; i++)
@@ -73,76 +69,32 @@ unsafe public class GameModifier
                 {
                     if (chara.Value->OwnerId == localPlayer.EntityId)
                     {
-                        ForceVisible((Character*)chara.Value);
+                        SetCharacterVisible((Character*)chara.Value);
                     }
                 }
             }
         }
     }
 
-    private void ForceVisible(Character* character)
+    private void SetCharacterVisible(Character* character)
     {
         if (character == null)
         {
             return;
         }
-        if (character->GameObject.DrawObject != null)
-        {
-            character->GameObject.DrawObject->Flags = (byte)ModelCullTypes.Visible;
+        gameVisibililty.SetVisible(character, true);
 
-            if (character->Mount.MountObject != null)
-            {
-                if (character->Mount.MountObject->DrawObject != null)
-                {
-                    character->Mount.MountObject->DrawObject->Flags = (byte)ModelCullTypes.Visible;
-                }
-            }
-            if (character->OrnamentData.OrnamentObject != null)
-            {
-                if (character->OrnamentData.OrnamentObject->DrawObject != null)
-                {
-                    character->OrnamentData.OrnamentObject->DrawObject->Flags = (byte)ModelCullTypes.Visible;
-                }
-            }
-            var drawData = character->DrawData;
-            if (character->IsWeaponDrawn || !drawData.IsWeaponHidden || Conditions.IsCrafting || Conditions.IsGathering)
-            {
-                var mainHand = drawData.Weapon(DrawDataContainer.WeaponSlot.MainHand);
-                if (mainHand.DrawObject != null)
-                {
-                    mainHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
-                }
-                var offHand = drawData.Weapon(DrawDataContainer.WeaponSlot.OffHand);
-                if (offHand.DrawObject != null)
-                {
-                    offHand.DrawObject->Flags = (byte)ModelCullTypes.Visible;
-                }
-                var unknown = drawData.Weapon(DrawDataContainer.WeaponSlot.Unk);
-                if (unknown.DrawObject != null)
-                {
-                    unknown.DrawObject->Flags = (byte)ModelCullTypes.Visible;
-                }
-            }
+        gameVisibililty.SetVisible(character->Mount.MountObject, true);
+        gameVisibililty.SetVisible(character->OrnamentData.OrnamentObject, true);
+        var drawData = character->DrawData;
+        if (character->IsWeaponDrawn || !drawData.IsWeaponHidden || Conditions.IsCrafting || Conditions.IsGathering)
+        {
+            gameVisibililty.SetVisible(drawData.Weapon(DrawDataContainer.WeaponSlot.MainHand), true);
+            gameVisibililty.SetVisible(drawData.Weapon(DrawDataContainer.WeaponSlot.OffHand), true);
+            gameVisibililty.SetVisible(drawData.Weapon(DrawDataContainer.WeaponSlot.Unk), true);
         }
     }
 
-    private void UpdateVisbility(IGameObject? gameObject, bool visible)
-    {
-        if (gameObject == null)
-        {
-            return;
-        }
-        GameObject* realObject = (GameObject*)gameObject.Address;
-        if (realObject == null)
-        {
-            return;
-        }
-        if (realObject->DrawObject == null)
-        {
-            return;
-        }
-        realObject->DrawObject->Flags = visible ? (byte)ModelCullTypes.Visible : (byte)ModelCullTypes.InsideCamera;
-    }
 
     public Character* getCharacterOrGpose()
     {

@@ -55,6 +55,11 @@ unsafe public class GameState
             Conditions.IsOccupiedInCutSceneEvent;
     }
 
+    internal bool IsBetweenAreas()
+    {
+        return Conditions.IsInBetweenAreas;
+    }
+
     // Returns the game camera distance regardless of walls
     public float? GetGameCameraDistance()
     {
