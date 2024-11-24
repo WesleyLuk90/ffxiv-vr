@@ -6,7 +6,7 @@ $nextVersion = "{0}.{1}.{2}" -f $currentVersion.Major, $currentVersion.Minor, ($
 
 $changeLog = git log --pretty=format:%s v$currentVersion..HEAD | Select-String "^\[" | % { $_.Line }
 $fixes = git log --pretty=format:%s%n%b v$currentVersion..HEAD | Select-String "#\d+" | % { "Closes " + $_.Matches.Value }
-$releasesMessage = "Publish Version $nextVersion`n" + [string]::Join("`n", $fixes)
+$releaseMessage = "Publish Version $nextVersion`n" + [string]::Join("`n", $fixes)
 
 echo "Change Log"
 echo $changeLog
