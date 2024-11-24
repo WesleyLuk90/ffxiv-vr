@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 
-public enum CameraMode
+public enum CameraView
 {
     FirstPerson = 0,
     ThirdPerson = 1,
@@ -13,5 +13,5 @@ public enum CameraMode
 public unsafe struct InternalGameCamera
 {
     public static InternalGameCamera* FromCamera(Camera* camera) => (InternalGameCamera*)camera;
-    [FieldOffset(0x170)] public CameraMode CameraMode;
+    [FieldOffset(0x170)] public CameraView CameraMode;
 }

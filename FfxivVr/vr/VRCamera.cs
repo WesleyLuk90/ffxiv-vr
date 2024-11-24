@@ -23,7 +23,7 @@ internal class VRCamera(Configuration configuration)
         proj.M43 = near;
         return proj.ToMatrix4x4();
     }
-    internal Matrix4X4<float> ComputeGameViewMatrix(View view, VRCameraType type, GameCamera gameCamera)
+    internal Matrix4X4<float> ComputeGameViewMatrix(View view, VRCameraMode type, GameCamera gameCamera)
     {
         var cameraPosition = type.GetCameraPosition(gameCamera);
         var yRotation = type.GetYRotation(gameCamera);

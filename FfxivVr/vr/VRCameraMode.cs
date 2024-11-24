@@ -20,7 +20,7 @@ public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector
 }
 
 // Gets the origin view position of the VR camera, VR view offsets are applied afterwards
-public abstract class VRCameraType
+public abstract class VRCameraMode
 {
 
     public abstract Vector3D<float> GetCameraPosition(GameCamera gameCamera);
@@ -36,7 +36,7 @@ public abstract class VRCameraType
     }
 }
 
-class OrbitCamera() : VRCameraType
+class OrbitCamera() : VRCameraMode
 {
     public override Vector3D<float> GetCameraPosition(GameCamera gameCamera) { return gameCamera.Position; }
 }
@@ -48,7 +48,7 @@ class FirstPersonCamera : OrbitCamera
 
 }
 
-class FollowingFirstPersonCamera : VRCameraType
+class FollowingFirstPersonCamera : VRCameraMode
 {
 
     public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
@@ -64,7 +64,7 @@ class FollowingFirstPersonCamera : VRCameraType
     }
 }
 
-class LockedFloorCamera : VRCameraType
+class LockedFloorCamera : VRCameraMode
 {
     public LockedFloorCamera(float groundPosition, float height, float distance, float worldScale)
     {
@@ -91,7 +91,7 @@ class LockedFloorCamera : VRCameraType
     }
 }
 
-public class FreeCamera : VRCameraType
+public class FreeCamera : VRCameraMode
 {
     public Vector3D<float> Position = Vector3D<float>.Zero;
     public float YRotation = 0;

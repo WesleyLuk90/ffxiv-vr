@@ -91,12 +91,12 @@ public unsafe class VRSession : IDisposable
     {
         public Eye Eye;
         public View[] Views;
-        public VRCameraType CameraType;
+        public VRCameraMode CameraType;
 
         public Task<FrameState> WaitFrameTask { get; }
         public HandTrackerExtension.HandData? Hands { get; }
 
-        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask, HandTrackerExtension.HandData? hands, VRCameraType cameraType)
+        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask, HandTrackerExtension.HandData? hands, VRCameraMode cameraType)
         {
             Eye = eye;
             Views = views;
@@ -271,7 +271,7 @@ public unsafe class VRSession : IDisposable
         }
     }
 
-    private VRCameraType GetVRCameraType(float? localSpaceHeight)
+    private VRCameraMode GetVRCameraType(float? localSpaceHeight)
     {
         var characterBase = gameModifier.GetCharacterBase();
         var distance = gameState.GetGameCameraDistance();
@@ -368,7 +368,7 @@ public unsafe class VRSession : IDisposable
                 return frameState;
             });
 
-            VRCameraType cameraType = GetVRCameraType(localSpaceHeight);
+            VRCameraMode cameraType = GetVRCameraType(localSpaceHeight);
             cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, hands, cameraType);
 
             if (Conditions.IsInFlight && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation()))
