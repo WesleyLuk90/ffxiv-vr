@@ -297,14 +297,19 @@ public unsafe class VRSession(
                 gameModifier.HideHeadMesh();
             }
 
-            if (cameraPhase is CameraPhase phase && phase.Hands is HandTrackerExtension.HandData hands)
+            if (cameraPhase is CameraPhase phase)
             {
                 var camera = gameState.GetCurrentCamera();
                 var position = camera->Position.ToVector3D();
                 var lookAt = camera->LookAtVector.ToVector3D();
 
                 var gameCamera = new GameCamera(position, lookAt, null);
-                gameModifier.UpdateMotionControls(hands, vrSystem.RuntimeAdjustments, phase.CameraType.GetYRotation(gameCamera));
+
+                gameModifier.UpdateMotionControls(
+                    phase.Hands,
+                    configuration.ControllerTracking ? vrInput.GetControllerPose() : null,
+                    vrSystem.RuntimeAdjustments,
+                    phase.CameraType.GetYRotation(gameCamera));
             }
         }
     }

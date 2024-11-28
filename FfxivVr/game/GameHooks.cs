@@ -242,7 +242,6 @@ unsafe public class GameHooks : IDisposable
         var returnVaue = GamepadPollHook!.Original(gamepadInput);
         exceptionHandler.FaultBarrier(() =>
         {
-            Debugging.DebugShow("Gampad address", (IntPtr)gamepadInput);
             vrLifecycle.UpdateGamepad(gamepadInput);
         });
         return returnVaue;

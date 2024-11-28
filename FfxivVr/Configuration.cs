@@ -18,6 +18,7 @@ public class Configuration : IPluginConfiguration
     public bool FitWindowOnScreen = true;
 
     public bool HandTracking = false;
+    public bool ControllerTracking = false;
 
     public bool MatchFloorPosition = false;
     public bool DisableCameraDirectionFlying = false;

@@ -1,4 +1,5 @@
 using Dalamud.Game.ClientState.GamePad;
+using SharpDX.Win32;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
@@ -17,8 +18,7 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
     private ActionSet actionSet = new ActionSet();
     private ulong leftHandPath;
     private ulong rightHandPath;
-    private Silk.NET.OpenXR.Action leftPalmPose;
-    private Silk.NET.OpenXR.Action rightPalmPose;
+    private Silk.NET.OpenXR.Action palmPose;
     private Silk.NET.OpenXR.Action aButton;
     private Silk.NET.OpenXR.Action bButton;
     private Silk.NET.OpenXR.Action xButton;
@@ -33,9 +33,8 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
     private Silk.NET.OpenXR.Action rightStickPush;
     private Silk.NET.OpenXR.Action leftAnalog;
     private Silk.NET.OpenXR.Action rightAnalog;
-    private Space leftHandSpace = new Space();
-    private Space rightHandSpace = new Space();
-
+    private Space leftSpace = new Space();
+    private Space rightSpace = new Space();
 
 
     public void Dispose()
@@ -48,8 +47,7 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         CreateActionSet();
         leftHandPath = CreatePath("/user/hand/left");
         rightHandPath = CreatePath("/user/hand/right");
-        leftPalmPose = CreateAction(actionType: ActionType.PoseInput, "left-palm-pose");
-        rightPalmPose = CreateAction(actionType: ActionType.PoseInput, "right-palm-pose");
+        palmPose = CreateAction(actionType: ActionType.PoseInput, "palm-pose", [leftHandPath, rightHandPath]);
 
         aButton = CreateAction(actionType: ActionType.BooleanInput, "a-button");
         bButton = CreateAction(actionType: ActionType.BooleanInput, "b-button");
@@ -68,8 +66,8 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         rightAnalog = CreateAction(actionType: ActionType.Vector2fInput, "right-analog");
 
         SuggestBindings([
-            CreateSuggestedBinding(leftPalmPose, "/user/hand/left/input/grip/pose"),
-            CreateSuggestedBinding(rightPalmPose, "/user/hand/right/input/grip/pose"),
+            CreateSuggestedBinding(palmPose, "/user/hand/left/input/grip/pose"),
+            CreateSuggestedBinding(palmPose, "/user/hand/right/input/grip/pose"),
 
             CreateSuggestedBinding(leftAnalog, "/user/hand/left/input/thumbstick"),
             CreateSuggestedBinding(rightAnalog, "/user/hand/right/input/thumbstick"),
@@ -93,6 +91,20 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         AttachActionSet();
     }
 
+    public class ControllerPose(
+        Posef? LeftPose,
+        Posef? RightPose
+    )
+    {
+        public Posef? LeftPose { get; } = LeftPose;
+        public Posef? RightPose { get; } = RightPose;
+    }
+
+    public ControllerPose? GetControllerPose()
+    {
+        return lastControllerPose;
+    }
+
     public VrInputState PollActions(long predictedTime)
     {
         var input = new VrInputState();
@@ -110,22 +122,22 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
             return new VrInputState();
         }
         result.CheckResult("SyncAction");
-        if (GetActionPose(leftHandSpace, predictedTime, leftPalmPose) is Posef leftPose)
+        lastControllerPose = new ControllerPose(
+            LeftPose: GetActionPose(leftSpace, predictedTime, palmPose, leftHandPath),
+            RightPose: GetActionPose(rightSpace, predictedTime, palmPose, rightHandPath)
+        );
+        Vector3D<float>? leftDebug = null;
+        Vector3D<float>? rightDebug = null;
+        if (lastControllerPose?.LeftPose?.Position is Vector3f v)
         {
-            Debugging.DebugShow("Palm Left", leftPose.Position.ToVector3D());
+            leftDebug = v.ToVector3D();
         }
-        else
+        if (lastControllerPose?.RightPose?.Position is Vector3f rpose)
         {
-            Debugging.DebugShow("Palm Right", null);
+            rightDebug = rpose.ToVector3D();
         }
-        if (GetActionPose(rightHandSpace, predictedTime, rightPalmPose) is Posef rightPose)
-        {
-            Debugging.DebugShow("Palm Right", rightPose.Position.ToVector3D());
-        }
-        else
-        {
-            Debugging.DebugShow("Palm Right", null);
-        }
+        Debugging.DebugShow("Left", leftDebug);
+        Debugging.DebugShow("Right", rightDebug);
         GetActionBool(aButton, input, GamepadButtons.South);
         GetActionBool(bButton, input, GamepadButtons.East);
         GetActionBool(xButton, input, GamepadButtons.West);
@@ -207,10 +219,11 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         return new Vector2D<float>(state.CurrentState.X, state.CurrentState.Y);
     }
 
-    private Posef? GetActionPose(Space space, long predictedTime, Silk.NET.OpenXR.Action action)
+    private Posef? GetActionPose(Space space, long predictedTime, Silk.NET.OpenXR.Action action, ulong path)
     {
         var getInfo = new ActionStateGetInfo(
-            action: action
+            action: action,
+            subactionPath: path
         );
         var statePose = new ActionStatePose(next: null);
         xr.GetActionStatePose(system.Session, ref getInfo, ref statePose).CheckResult("GetActionStatePose");
@@ -245,17 +258,19 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
                 position: new Vector3f(0, 0, 0),
                 orientation: new Quaternionf(0, 0, 0, 1)
             ),
-            action: leftPalmPose
+            action: palmPose,
+            subactionPath: leftHandPath
         );
-        xr.CreateActionSpace(system.Session, ref leftCreateInfo, ref leftHandSpace).CheckResult("CreateActionSpace");
+        xr.CreateActionSpace(system.Session, ref leftCreateInfo, ref leftSpace).CheckResult("CreateActionSpace");
         var rightCreateInfo = new ActionSpaceCreateInfo(
             poseInActionSpace: new Posef(
                 position: new Vector3f(0, 0, 0),
                 orientation: new Quaternionf(0, 0, 0, 1)
             ),
-            action: leftPalmPose
+            action: palmPose,
+            subactionPath: rightHandPath
         );
-        xr.CreateActionSpace(system.Session, ref rightCreateInfo, ref rightHandSpace).CheckResult("CreateActionSpace");
+        xr.CreateActionSpace(system.Session, ref rightCreateInfo, ref rightSpace).CheckResult("CreateActionSpace");
     }
 
     private ActionSuggestedBinding CreateSuggestedBinding(Silk.NET.OpenXR.Action action, string actionPath)
@@ -284,15 +299,27 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         }
     }
 
-    private Silk.NET.OpenXR.Action CreateAction(ActionType actionType, string name)
+    private Silk.NET.OpenXR.Action CreateAction(ActionType actionType, string name, ulong[]? paths = null)
     {
         var actionCreateInfo = new ActionCreateInfo(next: null, actionType: actionType);
         Native.WriteCString(actionCreateInfo.ActionName, name, 64);
         Native.WriteCString(actionCreateInfo.LocalizedActionName, name, 128);
         var action = new Silk.NET.OpenXR.Action();
-        actionCreateInfo.CountSubactionPaths = 0;
-        actionCreateInfo.SubactionPaths = null;
-        xr.CreateAction(actionSet, in actionCreateInfo, ref action).CheckResult("CreateAction");
+        if (paths is ulong[] p)
+        {
+            fixed (ulong* pointer = new Span<ulong>(p))
+            {
+                actionCreateInfo.CountSubactionPaths = (uint)p.Length;
+                actionCreateInfo.SubactionPaths = pointer;
+                xr.CreateAction(actionSet, in actionCreateInfo, ref action).CheckResult("CreateAction");
+            }
+        }
+        else
+        {
+            actionCreateInfo.CountSubactionPaths = 0;
+            actionCreateInfo.SubactionPaths = null;
+            xr.CreateAction(actionSet, in actionCreateInfo, ref action).CheckResult("CreateAction");
+        }
         return action;
     }
 
@@ -335,6 +362,8 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         public bool IsPhysicalController = false;
     }
     private CurrentController? currentController = null;
+    private ControllerPose? lastControllerPose = null;
+
     internal void InteractionProfileChanged()
     {
         var leftProfile = new InteractionProfileState(next: null);

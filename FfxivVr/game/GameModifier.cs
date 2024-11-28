@@ -188,7 +188,7 @@ unsafe public class GameModifier
 
 
 
-    internal void UpdateMotionControls(HandTrackerExtension.HandData hands, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
+    internal void UpdateMotionControls(HandTrackerExtension.HandData? hands, VRInput.ControllerPose? controllerPose, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
     {
         Character* character = getCharacterOrGpose();
         if (character == null)
@@ -202,7 +202,7 @@ unsafe public class GameModifier
         }
         var actorModel = InternalCharacterBase.FromCharacterBase(characterBase);
         var skeleton = characterBase->Skeleton;
-        skeletonModifier.UpdateHands(skeleton, hands, runtimeAdjustments, cameraYRotation);
+        skeletonModifier.UpdateHands(skeleton, hands, controllerPose, runtimeAdjustments, cameraYRotation);
     }
 
     internal void ResetVerticalCameraRotation(float rotation)

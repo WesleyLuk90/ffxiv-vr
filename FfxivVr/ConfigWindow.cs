@@ -55,6 +55,7 @@ internal class ConfigWindow : Window
         {
             Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
             Checkbox("Enable hand tracking", ref config.HandTracking);
+            Checkbox("Enable controller tracking", ref config.ControllerTracking);
         }
     }
 
