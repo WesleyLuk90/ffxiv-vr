@@ -1,6 +1,7 @@
 ﻿using Silk.NET.Core;
 using Silk.NET.OpenXR;
 using System;
+using System.Linq;
 
 namespace FfxivVR;
 public unsafe class HandTrackerExtension(
@@ -39,7 +40,7 @@ public unsafe class HandTrackerExtension(
     }
 
     private uint JointCount = 26; // Number of values in HandJointEXT enum
-    public HandData GetHandTrackingData(Space space, long predictedTime)
+    public HandData? GetHandTrackingData(Space space, long predictedTime)
     {
         HandJointsMotionRangeInfoEXT motionRangeInfo = new HandJointsMotionRangeInfoEXT(handJointsMotionRange: HandJointsMotionRangeEXT.UnobstructedExt);
         var locateInfo = new HandJointsLocateInfoEXT(
@@ -65,6 +66,10 @@ public unsafe class HandTrackerExtension(
                 jointLocations: ptr
             );
             xrLocateHandJointsEXT(rightHandTracker, &locateInfo, &locations).CheckResult("LocateHandJointsEXT");
+        }
+        if (leftHand.All(j => j.LocationFlags == 0) && rightHand.All(j => j.LocationFlags == 0))
+        {
+            return null;
         }
         return new HandData(leftHand, rightHand);
     }

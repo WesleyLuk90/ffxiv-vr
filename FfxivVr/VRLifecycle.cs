@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.Gui.NamePlate;
+﻿using Dalamud.Game.ClientState.GamePad;
+using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
@@ -211,6 +212,14 @@ public unsafe class VRLifecycle : IDisposable
         if (configuration.DisableCutsceneLetterbox)
         {
             gameModifier.UpdateLetterboxing(internalLetterbox);
+        }
+    }
+
+    internal void UpdateGamepad(GamepadInput* gamepadInput)
+    {
+        lock (this)
+        {
+            vrSession?.UpdateGamepad(gamepadInput);
         }
     }
 }

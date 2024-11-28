@@ -1,4 +1,5 @@
-﻿using Dalamud.Hooking;
+﻿using Dalamud.Game.ClientState.GamePad;
+using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
@@ -59,6 +60,7 @@ unsafe public class GameHooks : IDisposable
         InitializeHook(CreateDXGIFactoryHook, nameof(CreateDXGIFactoryHook));
         InitializeHook(MousePointScreenToClientHook, nameof(MousePointScreenToClientHook));
         InitializeHook(UpdateLetterboxingHook, nameof(UpdateLetterboxingHook));
+        InitializeHook(GamepadPollHook, nameof(GamepadPollHook));
     }
     private void InitializeHook<T>(Hook<T>? hook, string name) where T : Delegate
     {
@@ -74,7 +76,7 @@ unsafe public class GameHooks : IDisposable
     }
 
     public delegate ulong FrameworkTickDelegate(Framework* FrameworkInstance);
-    [Signature(Signatures.FrameworkTick, DetourName = nameof(FrameworkTickDetour))]
+    [Signature("40 53 48 83 EC 20 FF 81 D0 16 00 00 48 8B D9 48 8D 4C 24 30", DetourName = nameof(FrameworkTickDetour))]
     public Hook<FrameworkTickDelegate>? FrameworkTickHook = null;
 
     private ulong FrameworkTickDetour(Framework* FrameworkInstance)
@@ -100,7 +102,7 @@ unsafe public class GameHooks : IDisposable
     }
 
     private delegate void DXGIPresentDelegate(long a, long b);
-    [Signature(Signatures.DXGIPresent, DetourName = nameof(DXGIPresentDetour))]
+    [Signature("E8 ?? ?? ?? ?? C6 43 79 00", DetourName = nameof(DXGIPresentDetour))]
     private Hook<DXGIPresentDelegate>? DXGIPresentHook = null;
     private void DXGIPresentDetour(long a, long b)
     {
@@ -119,7 +121,7 @@ unsafe public class GameHooks : IDisposable
 
 
     private delegate void SetMatricesDelegate(FFXIVClientStructs.FFXIV.Client.Game.Camera* camera, IntPtr ptr);
-    [Signature(Signatures.SetMatrices, DetourName = nameof(SetMatricesDetour))]
+    [Signature("E8 ?? ?? ?? ?? 0F 10 43 ?? C6 83", DetourName = nameof(SetMatricesDetour))]
     private Hook<SetMatricesDelegate>? SetMatricesHook = null;
 
     private void SetMatricesDetour(FFXIVClientStructs.FFXIV.Client.Game.Camera* camera, IntPtr ptr)
@@ -140,7 +142,7 @@ unsafe public class GameHooks : IDisposable
     }
 
     private delegate void RenderThreadSetRenderTargetDelegate(Device* deviceInstance, SetRenderTargetCommand* command);
-    [Signature(Signatures.RenderThreadSetRenderTarget, DetourName = nameof(RenderThreadSetRenderTargetDetour))]
+    [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? F3 0F 10 5F 18", DetourName = nameof(RenderThreadSetRenderTargetDetour))]
     private Hook<RenderThreadSetRenderTargetDelegate>? RenderThreadSetRenderTargetHook = null;
 
     private void RenderThreadSetRenderTargetDetour(Device* deviceInstance, SetRenderTargetCommand* command)
@@ -160,7 +162,7 @@ unsafe public class GameHooks : IDisposable
     }
 
     private delegate void RenderSkeletonListDelegate(long RenderSkeletonLinkedList, float frameTiming);
-    [Signature(Signatures.RenderSkeletonList, DetourName = nameof(RenderSkeletonListDetour))]
+    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 6C 24 ?? 48 8B 5C 24", DetourName = nameof(RenderSkeletonListDetour))]
     private Hook<RenderSkeletonListDelegate>? RenderSkeletonListHook = null;
 
     private unsafe void RenderSkeletonListDetour(long RenderSkeletonLinkedList, float frameTiming)
@@ -173,7 +175,7 @@ unsafe public class GameHooks : IDisposable
     }
 
     private delegate void PushbackUIDelegate(ulong a, long b);
-    [Signature(Signatures.PushbackUI, DetourName = nameof(PushbackUIDetour))]
+    [Signature("E8 ?? ?? ?? ?? EB ?? E8 ?? ?? ?? ?? 4C 8D 5C 24 50", DetourName = nameof(PushbackUIDetour))]
     private Hook<PushbackUIDelegate>? PushbackUIHook = null;
 
     private void PushbackUIDetour(ulong a, long b)
@@ -187,7 +189,7 @@ unsafe public class GameHooks : IDisposable
     }
 
     private delegate int CreateDXGIFactoryDelegate(IntPtr guid, void** ppFactory);
-    [Signature(Signatures.CreateDXGIFactory, DetourName = nameof(CreateDXGIFactoryDetour))]
+    [Signature("E8 ?? ?? ?? ?? 85 C0 0F ?? ?? ?? ?? ?? 48 8B 8F ?? ?? 00 00 4C 8D 44 24", DetourName = nameof(CreateDXGIFactoryDetour))]
     private Hook<CreateDXGIFactoryDelegate>? CreateDXGIFactoryHook = null;
 
     private unsafe int CreateDXGIFactoryDetour(IntPtr guid, void** ppFactory)
@@ -203,7 +205,7 @@ unsafe public class GameHooks : IDisposable
     }
 
     private delegate void MousePointScreenToClientDelegate(long frameworkInstance, Point* mousePos);
-    [Signature(Signatures.MousePointScreenToClient, DetourName = nameof(MousePointScreenToClientDetour))]
+    [Signature("E8 ?? ?? ?? ?? 48 8B 4B ?? 48 8D 54 24 ?? FF 15", DetourName = nameof(MousePointScreenToClientDetour))]
     private Hook<MousePointScreenToClientDelegate>? MousePointScreenToClientHook = null;
     private void MousePointScreenToClientDetour(long frameworkInstance, Point* mousePos)
     {
@@ -220,7 +222,7 @@ unsafe public class GameHooks : IDisposable
 
     // https://github.com/goaaats/Dalamud.FullscreenCutscenes/blob/main/Dalamud.FullscreenCutscenes/Plugin.cs
     private delegate nint UpdateLetterboxingDelegate(InternalLetterboxing* thisptr);
-    [Signature(Signatures.UpdateLetterboxing, DetourName = nameof(UpdateLetterboxingDetour))]
+    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 8B ?? ?? ?? ??", DetourName = nameof(UpdateLetterboxingDetour))]
     private Hook<UpdateLetterboxingDelegate>? UpdateLetterboxingHook = null;
     private nint UpdateLetterboxingDetour(InternalLetterboxing* internalLetterbox)
     {
@@ -229,5 +231,20 @@ unsafe public class GameHooks : IDisposable
             vrLifecycle.UpdateLetterboxing(internalLetterbox);
         });
         return UpdateLetterboxingHook!.Original(internalLetterbox);
+    }
+
+    // https://github.com/goatcorp/Dalamud/blob/4c9b2a1577f8cd8c8b99e828d174b7122730e808/Dalamud/Game/ClientState/ClientStateAddressResolver.cs#L47
+    private delegate int GamepadPollDelegate(GamepadInput* thisptr);
+    [Signature("40 55 53 57 41 54 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 44 0F 29 B4 24", DetourName = nameof(GamepadPollDetour))]
+    private Hook<GamepadPollDelegate>? GamepadPollHook = null;
+    private int GamepadPollDetour(GamepadInput* gamepadInput)
+    {
+        var returnVaue = GamepadPollHook!.Original(gamepadInput);
+        exceptionHandler.FaultBarrier(() =>
+        {
+            Debugging.DebugShow("Gampad address", (IntPtr)gamepadInput);
+            vrLifecycle.UpdateGamepad(gamepadInput);
+        });
+        return returnVaue;
     }
 }

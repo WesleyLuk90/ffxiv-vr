@@ -36,11 +36,12 @@ unsafe public class ResolutionManager
     private UInt64 DisableSetCursorPosOrig = 0;
     private UInt64 DisableSetCursorPosOverride = 0x05C6909090909090;
 
+    private const string g_DisableSetCursorPosAddr = "FF ?? ?? ?? ?? 00 C6 05 ?? ?? ?? ?? 00 0F B6 43 38";
     public ResolutionManager(Logger logger, Configuration configuration)
     {
         this.logger = logger;
         this.configuration = configuration;
-        DisableSetCursorPosAddr = (UInt64)Plugin.SigScanner!.ScanText(Signatures.g_DisableSetCursorPosAddr);
+        DisableSetCursorPosAddr = (UInt64)Plugin.SigScanner!.ScanText(g_DisableSetCursorPosAddr);
         logger.Debug($"Found disable address {DisableSetCursorPosAddr}");
     }
     public void ChangeResolution(Vector2D<uint> resolution)

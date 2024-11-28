@@ -20,6 +20,10 @@ namespace FfxivVR
         {
             return Marshal.PtrToStringUTF8((IntPtr)pointer)!;
         }
+        public unsafe static string ReadCString(byte[] bytes)
+        {
+            return Encoding.UTF8.GetString(bytes).Trim('\0');
+        }
         public unsafe static void WriteCString(byte* pointer, string value, int maxLength)
         {
             var span = new Span<byte>(pointer, maxLength);

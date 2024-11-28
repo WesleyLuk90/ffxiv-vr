@@ -1,4 +1,5 @@
 using Silk.NET.OpenXR;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace FfxivVR
@@ -11,8 +12,9 @@ namespace FfxivVR
         private readonly VRState vrState;
         private readonly VRSpace vrSpace;
         private readonly WaitFrameService waitFrameService;
+        private readonly VRInput vrInput;
 
-        internal EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState, VRSpace vrSpace, WaitFrameService waitFrameService)
+        internal EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState, VRSpace vrSpace, WaitFrameService waitFrameService, VRInput vrInput)
         {
             this.xr = xr;
             this.vrSystem = vrSystem;
@@ -20,6 +22,7 @@ namespace FfxivVR
             this.vrState = vrState;
             this.vrSpace = vrSpace;
             this.waitFrameService = waitFrameService;
+            this.vrInput = vrInput;
         }
         internal unsafe void PollEvents(System.Action onSessionEnd)
         {
@@ -49,7 +52,15 @@ namespace FfxivVR
                     case StructureType.EventDataInteractionProfileChanged:
                         {
                             var interactionProfileChanged = Unsafe.As<EventDataBuffer, EventDataInteractionProfileChanged>(ref eventDataBuffer);
-                            logger.Info($"Interaction profile changed: {interactionProfileChanged.Session}");
+                            logger.Debug($"Interaction profile changed: {interactionProfileChanged.Session}");
+                            try
+                            {
+                                vrInput.InteractionProfileChanged();
+                            }
+                            catch (Exception e)
+                            {
+                                logger.Debug($"Failed, ignoring {e} {e.StackTrace}");
+                            }
                             break;
                         }
                     case StructureType.EventDataReferenceSpaceChangePending:
@@ -72,7 +83,6 @@ namespace FfxivVR
                 }
             }
         }
-
         private unsafe void HandleSessionStateChanged(EventDataSessionStateChanged stateChanged, System.Action onSessionEnd)
         {
             if (!stateChanged.Session.Equals(vrSystem.Session))

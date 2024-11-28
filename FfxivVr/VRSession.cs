@@ -1,3 +1,4 @@
+using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Silk.NET.Direct3D11;
@@ -32,6 +33,8 @@ public unsafe class VRSession : IDisposable
     private readonly WaitFrameService waitFrameService;
     private readonly FramePrediction framePrediction;
 
+    private readonly VRInput vrInput;
+
     public VRSession(
         XR xr,
         Logger logger,
@@ -57,7 +60,8 @@ public unsafe class VRSession : IDisposable
         resolutionManager = new ResolutionManager(logger, configuration);
         renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera, diagnostics, resolutionManager);
         waitFrameService = new WaitFrameService(vrSystem, xr);
-        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService);
+        vrInput = new VRInput(xr, vrSystem, logger, vrSpace, State);
+        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService, vrInput);
         this.renderPipelineInjector = renderPipelineInjector;
         this.configuration = configuration;
         framePrediction = new FramePrediction(vrSystem);
@@ -73,12 +77,14 @@ public unsafe class VRSession : IDisposable
         resolutionManager.ChangeResolution(size);
         resources.Initialize(size);
         vrSpace.Initialize();
+        vrInput.Initialize();
     }
 
     public void Dispose()
     {
         cameraPhase = null;
         renderPhase = null;
+        vrInput.Dispose();
         resolutionManager.RevertResolution();
         vrSpace.Dispose();
         vrShaders.Dispose();
@@ -357,12 +363,14 @@ public unsafe class VRSession : IDisposable
         }
     }
 
+
     internal void PrepareVRRender()
     {
         if (State.SessionRunning)
         {
             logger.Trace("Starting cycle");
             var predictedTime = framePrediction.GetPredictedFrameTime();
+
             var views = renderer.LocateView(predictedTime);
             var localSpaceHeight = configuration.MatchFloorPosition ? vrSpace.GetLocalSpaceHeight(predictedTime) : null;
             var hands = MaybeGetHandTrackingData(predictedTime, lastHands);
@@ -393,8 +401,11 @@ public unsafe class VRSession : IDisposable
         }
     }
 
+    private bool handTrackingActive = false;
     private HandTrackerExtension.HandData? MaybeGetHandTrackingData(long predictedTime, HandTrackerExtension.HandData? lastData)
     {
+        var data = vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
+        handTrackingActive = data != null;
         if (!configuration.HandTracking)
         {
             return null;
@@ -403,15 +414,17 @@ public unsafe class VRSession : IDisposable
         {
             return null;
         }
-        var data = vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
         if (data == null)
         {
             return null;
         }
         var left = data.LeftHand;
-        if (lastData != null && left.All(joint => joint.LocationFlags == 0))
+        if (left.All(joint => joint.LocationFlags == 0))
         {
-            left = lastData.LeftHand;
+            if (lastData != null)
+            {
+                left = lastData.LeftHand;
+            }
         }
         var right = data.RightHand;
         if (lastData != null && right.All(joint => joint.LocationFlags == 0))
@@ -429,5 +442,10 @@ public unsafe class VRSession : IDisposable
     internal void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
         gameModifier.OnNamePlateUpdate(context, handlers);
+    }
+
+    internal void UpdateGamepad(GamepadInput* gamepadInput)
+    {
+        vrInput.UpdateGamepad(gamepadInput, handTrackingActive);
     }
 }

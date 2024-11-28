@@ -9,11 +9,11 @@ namespace FfxivVR;
 public unsafe class RenderPipelineInjector
 {
     private delegate void PushbackDg(UInt64 a, UInt64 b);
-    [Signature(Signatures.Pushback, Fallibility = Fallibility.Fallible)]
+    [Signature("E8 ?? ?? ?? ?? 0F 28 B4 24 A0 01 00 00 48 8B 8C 24 90 01 00 00", Fallibility = Fallibility.Fallible)]
     private PushbackDg? PushbackFn = null;
 
     private delegate UInt64 AllocateQueueMemoryDg(UInt64 a, UInt64 b);
-    [Signature(Signatures.AllocateQueueMemory, Fallibility = Fallibility.Fallible)]
+    [Signature("E8 ?? ?? ?? ?? 48 8B F8 48 85 C0 0f 84 ?? ?? ?? ?? 45 33 C0 41 BA 05 00 00 00", Fallibility = Fallibility.Fallible)]
     private AllocateQueueMemoryDg? AllocateQueueMemmoryFn = null;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -30,9 +30,10 @@ public unsafe class RenderPipelineInjector
             };
     private nint tls_index;
 
+    private const string g_tls_index = "8B 0D ?? ?? ?? ?? 45 33 E4 41";
     public RenderPipelineInjector(ISigScanner sigScanner, Logger logger)
     {
-        tls_index = sigScanner.GetStaticAddressFromSig(Signatures.g_tls_index);
+        tls_index = sigScanner.GetStaticAddressFromSig(g_tls_index);
         getThreadedDataHandle = GCHandle.Alloc(GetThreadedDataASM, GCHandleType.Pinned);
         var processHandle = PInvoke.GetCurrentProcess_SafeHandle();
         if (!PInvoke.VirtualProtectEx(processHandle, (void*)getThreadedDataHandle.AddrOfPinnedObject(), (UIntPtr)GetThreadedDataASM.Length, PAGE_PROTECTION_FLAGS.PAGE_EXECUTE_READWRITE, out PAGE_PROTECTION_FLAGS _))
