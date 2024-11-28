@@ -446,6 +446,6 @@ public unsafe class VRSession : IDisposable
 
     internal void UpdateGamepad(GamepadInput* gamepadInput)
     {
-        vrInput.UpdateGamepad(gamepadInput, handTrackingActive);
+        vrInput.UpdateGamepad(gamepadInput);
     }
 }

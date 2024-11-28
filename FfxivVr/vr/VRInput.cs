@@ -2,6 +2,8 @@ using Dalamud.Game.ClientState.GamePad;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace FfxivVR;
 
@@ -102,7 +104,12 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
             countActiveActionSets: 1,
             activeActionSets: &activeActionSet
         );
-        xr.SyncAction(system.Session, ref syncInfo).CheckResult("SyncAction");
+        var result = xr.SyncAction(system.Session, ref syncInfo);
+        if (result == Result.SessionNotFocused)
+        {
+            return new VrInputState();
+        }
+        result.CheckResult("SyncAction");
         if (GetActionPose(leftHandSpace, predictedTime, leftPalmPose) is Posef leftPose)
         {
             Debugging.DebugShow("Palm Left", leftPose.Position.ToVector3D());
@@ -119,18 +126,18 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         {
             Debugging.DebugShow("Palm Right", null);
         }
-        GetActionBool(aButton, input, GamepadButtons.South, setChange: true);
-        GetActionBool(bButton, input, GamepadButtons.East, setChange: true);
-        GetActionBool(xButton, input, GamepadButtons.West, setChange: true);
-        GetActionBool(yButton, input, GamepadButtons.North, setChange: true);
-        GetActionBool(startButton, input, GamepadButtons.Start, setChange: true);
-        GetActionBool(selectButton, input, GamepadButtons.Select, setChange: true);
-        GetActionBool(leftTrigger, input, GamepadButtons.L2, setChange: false);
-        GetActionBool(rightTrigger, input, GamepadButtons.R2, setChange: false);
-        GetActionBool(leftBumper, input, GamepadButtons.L1, setChange: true);
-        GetActionBool(rightBumper, input, GamepadButtons.R1, setChange: true);
-        GetActionBool(leftStickPush, input, GamepadButtons.L3, setChange: true);
-        GetActionBool(rightStickPush, input, GamepadButtons.R3, setChange: true);
+        GetActionBool(aButton, input, GamepadButtons.South);
+        GetActionBool(bButton, input, GamepadButtons.East);
+        GetActionBool(xButton, input, GamepadButtons.West);
+        GetActionBool(yButton, input, GamepadButtons.North);
+        GetActionBool(startButton, input, GamepadButtons.Start);
+        GetActionBool(selectButton, input, GamepadButtons.Select);
+        GetActionBool(leftTrigger, input, GamepadButtons.L2);
+        GetActionBool(rightTrigger, input, GamepadButtons.R2);
+        GetActionBool(leftBumper, input, GamepadButtons.L1);
+        GetActionBool(rightBumper, input, GamepadButtons.R1);
+        GetActionBool(leftStickPush, input, GamepadButtons.L3);
+        GetActionBool(rightStickPush, input, GamepadButtons.R3);
 
         var left = GetActionVector2f(leftAnalog);
         var right = GetActionVector2f(rightAnalog);
@@ -139,7 +146,28 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         return input;
     }
 
-    private void GetActionBool(Silk.NET.OpenXR.Action action, VrInputState inputState, GamepadButtons button, bool setChange)
+    class RepeatState
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        int nextRepeat = 1;
+
+        private int NextRepeatMillis()
+        {
+            return 210 + nextRepeat * 50;
+        }
+        public bool DoRepeat()
+        {
+            if (stopwatch.ElapsedMilliseconds > NextRepeatMillis())
+            {
+                nextRepeat++;
+                return true;
+            }
+            return false;
+        }
+    }
+
+    private Dictionary<GamepadButtons, RepeatState> repeatStates = new();
+    private void GetActionBool(Silk.NET.OpenXR.Action action, VrInputState inputState, GamepadButtons button)
     {
         var getInfo = new ActionStateGetInfo(
             action: action
@@ -150,16 +178,22 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         if (state.CurrentState == 1)
         {
             inputState.ButtonsRaw |= button;
+            if (repeatStates.GetValueOrDefault(button) is RepeatState repeatState && repeatState.DoRepeat())
+            {
+                inputState.ButtonsRepeat |= button;
+            }
         }
-        if (state.ChangedSinceLastSync == 1 && setChange)
+        if (state.ChangedSinceLastSync == 1)
         {
             if (state.CurrentState == 1)
             {
                 inputState.ButtonsPressed |= button;
+                repeatStates[button] = new RepeatState();
             }
             else
             {
                 inputState.ButtonsReleased |= button;
+                repeatStates.Remove(button);
             }
         }
     }
@@ -298,6 +332,7 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
 
     private bool ResetController = false;
     private bool VRControllerActive = false;
+    private bool IsPhysicalController = false;
     internal void InteractionProfileChanged()
     {
         var leftProfile = new InteractionProfileState(next: null);
@@ -311,13 +346,15 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         if (leftProfile.InteractionProfile == 0 || rightProfile.InteractionProfile == 0)
         {
             ResetController = true;
+            IsPhysicalController = false;
         }
     }
 
-    internal void UpdateGamepad(GamepadInput* gamepadInput, bool handTrackingActive)
+    internal void UpdateGamepad(GamepadInput* gamepadInput)
     {
         if (vrState.State != SessionState.Focused || ResetController)
         {
+            // In case the user doesn't have a controller connected, reset all these values so that the controller buttons don't end up in a stuck on state
             gamepadInput->LeftStickX = 0;
             gamepadInput->LeftStickY = 0;
             gamepadInput->RightStickX = 0;
@@ -327,17 +364,22 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
             gamepadInput->ButtonsRaw = 0;
             ResetController = false;
         }
-        // Virtual seems to emulate the controller if hand tracking is active so disable VR controllers in this case
-        else if (PollActions(system.Now()) is VrInputState input && !handTrackingActive && VRControllerActive)
+        else if (PollActions(system.Now()) is VrInputState input && VRControllerActive)
         {
-            gamepadInput->LeftStickX = (int)(input.LeftStick.X * 99);
-            gamepadInput->LeftStickY = (int)(input.LeftStick.Y * 99);
-            gamepadInput->RightStickX = (int)(input.RightStick.X * 99);
-            gamepadInput->RightStickY = (int)(input.RightStick.Y * 99);
+            // Virtual Desktop tries to emulate a controller with hand tracking but we want to ignore those inputs so detect that by waiting for a non emulated input
+            IsPhysicalController |= input.IsPhysicalController();
+            if (IsPhysicalController)
+            {
+                gamepadInput->LeftStickX = (int)(input.LeftStick.X * 99);
+                gamepadInput->LeftStickY = (int)(input.LeftStick.Y * 99);
+                gamepadInput->RightStickX = (int)(input.RightStick.X * 99);
+                gamepadInput->RightStickY = (int)(input.RightStick.Y * 99);
 
-            gamepadInput->ButtonsPressed = (ushort)input.ButtonsPressed;
-            gamepadInput->ButtonsReleased = (ushort)input.ButtonsReleased;
-            gamepadInput->ButtonsRaw = (ushort)input.ButtonsRaw;
+                gamepadInput->ButtonsPressed = (ushort)input.ButtonsPressed;
+                gamepadInput->ButtonsReleased = (ushort)input.ButtonsReleased;
+                gamepadInput->ButtonsRaw = (ushort)input.ButtonsRaw;
+                gamepadInput->ButtonsRepeat = (ushort)input.ButtonsRepeat;
+            }
         }
     }
 }
