@@ -4,7 +4,7 @@ using Silk.NET.OpenXR;
 using System;
 
 namespace FfxivVR;
-internal class VRCamera(Configuration configuration)
+public class VRCamera(Configuration configuration)
 {
     private readonly Configuration configuration = configuration;
     private float near = 0.1f;

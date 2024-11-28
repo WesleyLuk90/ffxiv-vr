@@ -42,7 +42,7 @@ unsafe public class Resources : IDisposable
     private D3DBuffer? pixelShaderConstantsBuffer;
     private Vertex[]? vertices;
     private D3DBuffer? vertexBuffer;
-    private readonly ID3D11Device* device;
+    private readonly DxDevice device;
     private readonly Logger logger;
     private readonly VRDiagnostics diagnostics;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
@@ -59,7 +59,7 @@ unsafe public class Resources : IDisposable
     public RenderTarget[] SceneRenderTargets = [];
     public DepthTarget[] SceneDepthTargets = [];
 
-    public Resources(ID3D11Device* device, Logger logger, VRDiagnostics diagnostics)
+    public Resources(DxDevice device, Logger logger, VRDiagnostics diagnostics)
     {
         this.device = device;
         this.logger = logger;
@@ -106,7 +106,7 @@ unsafe public class Resources : IDisposable
             miscFlags: (uint)ResourceMiscFlag.Shared
         );
         ID3D11Texture2D* texture = null;
-        device->CreateTexture2D(ref textureDescription, null, ref texture).D3D11Check("CreateTexture2D");
+        device.Device->CreateTexture2D(ref textureDescription, null, ref texture).D3D11Check("CreateTexture2D");
         var depthStencilViewDesc = new DepthStencilViewDesc(
             format: Silk.NET.DXGI.Format.FormatD24UnormS8Uint,
             viewDimension: DsvDimension.Texture2D,
@@ -115,7 +115,7 @@ unsafe public class Resources : IDisposable
             )
         );
         ID3D11DepthStencilView* depthStencilView = null;
-        device->CreateDepthStencilView((ID3D11Resource*)texture, ref depthStencilViewDesc, ref depthStencilView).D3D11Check("CreateDepthStencilView");
+        device.Device->CreateDepthStencilView((ID3D11Resource*)texture, ref depthStencilViewDesc, ref depthStencilView).D3D11Check("CreateDepthStencilView");
 
         return new DepthTarget(
             texture,
@@ -200,7 +200,7 @@ unsafe public class Resources : IDisposable
             miscFlags: (uint)ResourceMiscFlag.Shared
         );
         ID3D11Texture2D* texture = null;
-        device->CreateTexture2D(ref textureDescription, null, ref texture).D3D11Check("CreateTexture2D");
+        device.Device->CreateTexture2D(ref textureDescription, null, ref texture).D3D11Check("CreateTexture2D");
         var renderTargetViewDescription = new RenderTargetViewDesc(
             format: format,
             viewDimension: RtvDimension.Texture2D,
@@ -209,7 +209,7 @@ unsafe public class Resources : IDisposable
             )
         );
         ID3D11RenderTargetView* renderTargetView = null;
-        device->CreateRenderTargetView((ID3D11Resource*)texture, ref renderTargetViewDescription, ref renderTargetView).D3D11Check("CreateRenderTargetView");
+        device.Device->CreateRenderTargetView((ID3D11Resource*)texture, ref renderTargetViewDescription, ref renderTargetView).D3D11Check("CreateRenderTargetView");
         var shaderResourceViewDescription = new ShaderResourceViewDesc(
             format: format,
             viewDimension: Silk.NET.Core.Native.D3DSrvDimension.D3DSrvDimensionTexture2D,
@@ -219,7 +219,7 @@ unsafe public class Resources : IDisposable
             )
         );
         ID3D11ShaderResourceView* shaderResourceView = null;
-        device->CreateShaderResourceView((ID3D11Resource*)texture, ref shaderResourceViewDescription, ref shaderResourceView).D3D11Check("CreateShaderResourceView");
+        device.Device->CreateShaderResourceView((ID3D11Resource*)texture, ref shaderResourceViewDescription, ref shaderResourceView).D3D11Check("CreateShaderResourceView");
         diagnostics.LogTextures($"Created textures {size.X}x{size.Y} {format}");
         return new RenderTarget(
             texture,
@@ -241,7 +241,7 @@ unsafe public class Resources : IDisposable
             maxLOD: float.MaxValue
         );
 
-        device->CreateSamplerState(ref samplerDesc, ref samplerState).D3D11Check("CreateSamplerState"); ;
+        device.Device->CreateSamplerState(ref samplerDesc, ref samplerState).D3D11Check("CreateSamplerState"); ;
     }
 
     private void CreateBuffers()
@@ -287,7 +287,7 @@ unsafe public class Resources : IDisposable
             );
         fixed (ID3D11DepthStencilState** ptr = &depthStencilStateOn)
         {
-            device->CreateDepthStencilState(ref depthStencilOn, ptr).D3D11Check("CreateDepthStencilState");
+            device.Device->CreateDepthStencilState(ref depthStencilOn, ptr).D3D11Check("CreateDepthStencilState");
         }
         var depthStencilOff = new DepthStencilDesc(
             depthEnable: false,
@@ -311,7 +311,7 @@ unsafe public class Resources : IDisposable
             );
         fixed (ID3D11DepthStencilState** ptr = &depthStencilStateOff)
         {
-            device->CreateDepthStencilState(ref depthStencilOff, ptr).D3D11Check("CreateDepthStencilState");
+            device.Device->CreateDepthStencilState(ref depthStencilOff, ptr).D3D11Check("CreateDepthStencilState");
         }
     }
 
@@ -331,7 +331,7 @@ unsafe public class Resources : IDisposable
         );
         fixed (ID3D11RasterizerState** ptr = &rasterizerState)
         {
-            device->CreateRasterizerState(ref rasterizerDesc, ptr).D3D11Check("CreateRasterizerState");
+            device.Device->CreateRasterizerState(ref rasterizerDesc, ptr).D3D11Check("CreateRasterizerState");
         }
     }
 
@@ -343,7 +343,7 @@ unsafe public class Resources : IDisposable
         );
         description.RenderTarget[0] = renderTargetBlendDesc;
         ID3D11BlendState* state = null;
-        device->CreateBlendState(ref description, &state).D3D11Check("CreateBlendState");
+        device.Device->CreateBlendState(ref description, &state).D3D11Check("CreateBlendState");
         return state;
     }
     private void CreateBlendState()
@@ -429,7 +429,7 @@ unsafe public class Resources : IDisposable
                 structureByteStride: 0
             );
             ID3D11Buffer* buffer = null;
-            device->CreateBuffer(ref description, ref subresourceData, ref buffer).D3D11Check("CreateBuffer");
+            device.Device->CreateBuffer(ref description, ref subresourceData, ref buffer).D3D11Check("CreateBuffer");
             return new D3DBuffer(buffer, (uint)bytes.Length);
         }
     }

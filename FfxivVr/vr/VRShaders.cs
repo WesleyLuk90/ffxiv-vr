@@ -7,7 +7,7 @@ namespace FfxivVR;
 
 unsafe public class VRShaders
 {
-    private readonly ID3D11Device* device;
+    private readonly DxDevice device;
     private readonly Logger logger;
     private ID3D11PixelShader* pixelShader;
     private ID3D11VertexShader* vertexShader;
@@ -46,7 +46,7 @@ unsafe public class VRShaders
         }
     }
 
-    public VRShaders(ID3D11Device* device, Logger logger)
+    public VRShaders(DxDevice device, Logger logger)
     {
         vertexShaderBinary = LoadVertexShader();
         pixelShaderBinary = LoadPixelShader();
@@ -59,7 +59,7 @@ unsafe public class VRShaders
         ID3D11VertexShader* vertexShader = null;
         fixed (byte* p = vertexShaderBinary)
         {
-            device->CreateVertexShader(p, (nuint)vertexShaderBinary.Length, null, ref vertexShader)
+            device.Device->CreateVertexShader(p, (nuint)vertexShaderBinary.Length, null, ref vertexShader)
                 .D3D11Check("CreateVertexShader");
         }
         this.vertexShader = vertexShader;
@@ -67,7 +67,7 @@ unsafe public class VRShaders
         ID3D11PixelShader* pixelShader = null;
         fixed (byte* p = pixelShaderBinary)
         {
-            device->CreatePixelShader(p, (nuint)pixelShaderBinary.Length, null, ref pixelShader)
+            device.Device->CreatePixelShader(p, (nuint)pixelShaderBinary.Length, null, ref pixelShader)
                 .D3D11Check("CreatePixelShader");
         }
         this.pixelShader = pixelShader;
@@ -103,7 +103,7 @@ unsafe public class VRShaders
                     fixed (byte* pVertexShader = vertexShaderSpan)
                     {
                         ID3D11InputLayout* inputLayout = null;
-                        device->CreateInputLayout(pInputElement, (uint)inputElementDescSpan.Length, pVertexShader, (nuint)vertexShaderSpan.Length, &inputLayout).D3D11Check("CreateInputLayout");
+                        device.Device->CreateInputLayout(pInputElement, (uint)inputElementDescSpan.Length, pVertexShader, (nuint)vertexShaderSpan.Length, &inputLayout).D3D11Check("CreateInputLayout");
                         this.inputLayout = inputLayout;
 
                     }

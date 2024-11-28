@@ -1,6 +1,8 @@
 ﻿using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
@@ -15,6 +17,7 @@ public unsafe class VRLifecycle : IDisposable
     private readonly Configuration configuration;
     private readonly GameState gameState;
     private readonly RenderPipelineInjector renderPipelineInjector;
+    private IHost? host;
     private VRSession? vrSession;
     private readonly HookStatus hookStatus;
     private readonly VRDiagnostics diagnostics;
@@ -44,6 +47,38 @@ public unsafe class VRLifecycle : IDisposable
         this.freeCamera = freeCamera;
     }
 
+    private IHost CreateSession()
+    {
+        var builder = Host.CreateApplicationBuilder();
+
+        builder.Services.AddSingleton(xr);
+        builder.Services.AddSingleton(logger);
+        builder.Services.AddSingleton(new DxDevice(GetDevice()));
+        builder.Services.AddSingleton(configuration);
+        builder.Services.AddSingleton(gameState);
+        builder.Services.AddSingleton(renderPipelineInjector);
+        builder.Services.AddSingleton(hookStatus);
+        builder.Services.AddSingleton(diagnostics);
+        builder.Services.AddSingleton(gameModifier);
+        builder.Services.AddSingleton(freeCamera);
+        builder.Services.AddSingleton<VRSystem>();
+        builder.Services.AddSingleton<VRState>();
+        builder.Services.AddSingleton<VRSwapchains>();
+        builder.Services.AddSingleton<Resources>();
+        builder.Services.AddSingleton<VRSpace>();
+        builder.Services.AddSingleton<VRCamera>();
+        builder.Services.AddSingleton<ResolutionManager>();
+        builder.Services.AddSingleton<Renderer>();
+        builder.Services.AddSingleton<WaitFrameService>();
+        builder.Services.AddSingleton<VRInput>();
+        builder.Services.AddSingleton<EventHandler>();
+        builder.Services.AddSingleton<FramePrediction>();
+        builder.Services.AddSingleton<VRSession>();
+        builder.Services.AddSingleton<VRShaders>();
+        builder.Services.AddSingleton<DalamudRenderer>();
+        return builder.Build();
+    }
+
     public void EnableVR()
     {
         if (vrSession != null)
@@ -52,27 +87,19 @@ public unsafe class VRLifecycle : IDisposable
             return;
         }
         logger.Info("Starting VR");
-        vrSession = new VRSession(
-            xr: xr,
-            logger: logger,
-            device: GetDevice(),
-            configuration: configuration,
-            gameState: gameState,
-            renderPipelineInjector: renderPipelineInjector,
-            hookStatus: hookStatus,
-            diagnostics: diagnostics,
-            gameModifier: gameModifier,
-            freeCamera: freeCamera
-        );
         try
         {
+            var host = CreateSession();
+            this.host = host;
+            vrSession = host.Services.GetRequiredService<VRSession>(); ;
+
             vrSession.Initialize();
         }
         catch (Exception)
         {
             logger.Info("Failed to start VR");
-            vrSession.Dispose();
             vrSession = null;
+            this.host?.Dispose();
             throw;
         }
     }
@@ -97,7 +124,7 @@ public unsafe class VRLifecycle : IDisposable
             logger.Info("Stopping VR");
             lock (this)
             {
-                vrSession?.Dispose();
+                host?.Dispose();
             }
             vrSession = null;
         }

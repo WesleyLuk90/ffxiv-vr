@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace FfxivVR
 {
-    internal class EventHandler
+    public class EventHandler
     {
         private readonly XR xr;
         private readonly VRSystem vrSystem;
@@ -14,7 +14,7 @@ namespace FfxivVR
         private readonly WaitFrameService waitFrameService;
         private readonly VRInput vrInput;
 
-        internal EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState, VRSpace vrSpace, WaitFrameService waitFrameService, VRInput vrInput)
+        public EventHandler(XR xr, VRSystem vrSystem, Logger logger, VRState vrState, VRSpace vrSpace, WaitFrameService waitFrameService, VRInput vrInput)
         {
             this.xr = xr;
             this.vrSystem = vrSystem;

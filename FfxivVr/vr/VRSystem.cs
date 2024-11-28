@@ -1,5 +1,4 @@
 using Silk.NET.Core;
-using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System;
 using System.Diagnostics;
@@ -11,7 +10,7 @@ public unsafe class VRSystem : IDisposable
     public Session Session = new Session();
     internal ViewConfigurationType ViewConfigurationType = ViewConfigurationType.PrimaryStereo;
     private readonly XR xr;
-    private readonly ID3D11Device* device;
+    private readonly DxDevice device;
     private readonly Logger logger;
     private readonly HookStatus hookStatus;
     private readonly Configuration configuration;
@@ -20,7 +19,8 @@ public unsafe class VRSystem : IDisposable
 
     public RuntimeAdjustments RuntimeAdjustments = new RuntimeAdjustments();
 
-    public VRSystem(XR xr, ID3D11Device* device, Logger logger, HookStatus hookStatus, Configuration configuration)
+    public VRSystem(XR xr,
+        DxDevice device, Logger logger, HookStatus hookStatus, Configuration configuration)
     {
         this.xr = xr;
         this.device = device;
@@ -103,7 +103,7 @@ public unsafe class VRSystem : IDisposable
         xr.GetInstanceProcAddr(Instance, "xrConvertWin32PerformanceCounterToTimeKHR", &performanceToTimePointer).CheckResult("GetInstanceProcAddr");
         performanceToTime = (delegate* unmanaged[Cdecl]<Instance, long*, long*, Result>)performanceToTimePointer.Handle;
 
-        var binding = new GraphicsBindingD3D11KHR(device: device);
+        var binding = new GraphicsBindingD3D11KHR(device: device.Device);
         var sessionInfo = new SessionCreateInfo(systemId: SystemId, createFlags: 0, next: &binding);
         xr.CreateSession(Instance, ref sessionInfo, ref Session).CheckResult("CreateSession");
 

@@ -3,7 +3,6 @@ using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -11,63 +10,48 @@ using System.Threading.Tasks;
 
 namespace FfxivVR;
 
-public unsafe class VRSession : IDisposable
+public unsafe class VRSession(
+    Logger logger,
+    Configuration configuration,
+    GameState gameState,
+    RenderPipelineInjector renderPipelineInjector,
+    GameModifier gameModifier,
+    FreeCamera freeCamera,
+    VRSystem vrSystem,
+    VRState State,
+    VRSwapchains swapchains,
+    Resources resources,
+    VRShaders vrShaders,
+    VRSpace vrSpace,
+    VRCamera vrCamera,
+    ResolutionManager resolutionManager,
+    Renderer renderer,
+    WaitFrameService waitFrameService,
+    VRInput vrInput,
+    EventHandler eventHandler,
+    FramePrediction framePrediction
+)
 {
-    private readonly VRSystem vrSystem;
-    private readonly Logger logger;
-    public readonly VRState State;
-    private readonly Renderer renderer;
-    private readonly GameModifier gameModifier;
-    private readonly VRSpace vrSpace;
-    private readonly EventHandler eventHandler;
-    private readonly VRShaders vrShaders;
-    private readonly Resources resources;
-    private readonly VRSwapchains swapchains;
-    private readonly GameState gameState;
-    private readonly DalamudRenderer dalamudRenderer;
-    private readonly FreeCamera freeCamera;
-    private readonly VRCamera vrCamera;
-    private readonly RenderPipelineInjector renderPipelineInjector;
-    private readonly Configuration configuration;
-    private readonly ResolutionManager resolutionManager;
-    private readonly WaitFrameService waitFrameService;
-    private readonly FramePrediction framePrediction;
+    private readonly VRSystem vrSystem = vrSystem;
+    private readonly Logger logger = logger;
+    public readonly VRState State = State;
+    private readonly Renderer renderer = renderer;
+    private readonly GameModifier gameModifier = gameModifier;
+    private readonly VRSpace vrSpace = vrSpace;
+    private readonly EventHandler eventHandler = eventHandler;
+    private readonly VRShaders vrShaders = vrShaders;
+    private readonly Resources resources = resources;
+    private readonly VRSwapchains swapchains = swapchains;
+    private readonly GameState gameState = gameState;
+    private readonly FreeCamera freeCamera = freeCamera;
+    private readonly VRCamera vrCamera = vrCamera;
+    private readonly RenderPipelineInjector renderPipelineInjector = renderPipelineInjector;
+    private readonly Configuration configuration = configuration;
+    private readonly ResolutionManager resolutionManager = resolutionManager;
+    private readonly WaitFrameService waitFrameService = waitFrameService;
+    private readonly FramePrediction framePrediction = framePrediction;
 
-    private readonly VRInput vrInput;
-
-    public VRSession(
-        XR xr,
-        Logger logger,
-        ID3D11Device* device,
-        Configuration configuration,
-        GameState gameState,
-        RenderPipelineInjector renderPipelineInjector,
-        HookStatus hookStatus,
-        VRDiagnostics diagnostics,
-        GameModifier gameModifier,
-        FreeCamera freeCamera)
-    {
-        vrSystem = new VRSystem(xr, device, logger, hookStatus, configuration);
-        this.logger = logger;
-        State = new VRState();
-        swapchains = new VRSwapchains(xr, vrSystem, logger, device);
-        resources = new Resources(device, logger, diagnostics);
-        vrShaders = new VRShaders(device, logger);
-        vrSpace = new VRSpace(xr, logger, vrSystem);
-        this.gameState = gameState;
-        dalamudRenderer = new DalamudRenderer(logger);
-        vrCamera = new VRCamera(configuration);
-        resolutionManager = new ResolutionManager(logger, configuration);
-        renderer = new Renderer(xr, vrSystem, State, logger, swapchains, resources, vrShaders, vrSpace, configuration, dalamudRenderer, vrCamera, diagnostics, resolutionManager);
-        waitFrameService = new WaitFrameService(vrSystem, xr);
-        vrInput = new VRInput(xr, vrSystem, logger, vrSpace, State);
-        eventHandler = new EventHandler(xr, vrSystem, logger, State, vrSpace, waitFrameService, vrInput);
-        this.renderPipelineInjector = renderPipelineInjector;
-        this.configuration = configuration;
-        framePrediction = new FramePrediction(vrSystem);
-        this.gameModifier = gameModifier;
-        this.freeCamera = freeCamera;
-    }
+    private readonly VRInput vrInput = vrInput;
 
     public void Initialize()
     {
@@ -78,19 +62,6 @@ public unsafe class VRSession : IDisposable
         resources.Initialize(size);
         vrSpace.Initialize();
         vrInput.Initialize();
-    }
-
-    public void Dispose()
-    {
-        cameraPhase = null;
-        renderPhase = null;
-        vrInput.Dispose();
-        resolutionManager.RevertResolution();
-        vrSpace.Dispose();
-        vrShaders.Dispose();
-        swapchains.Dispose();
-        resources.Dispose();
-        vrSystem.Dispose();
     }
 
     public class CameraPhase
@@ -401,11 +372,9 @@ public unsafe class VRSession : IDisposable
         }
     }
 
-    private bool handTrackingActive = false;
     private HandTrackerExtension.HandData? MaybeGetHandTrackingData(long predictedTime, HandTrackerExtension.HandData? lastData)
     {
         var data = vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
-        handTrackingActive = data != null;
         if (!configuration.HandTracking)
         {
             return null;

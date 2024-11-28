@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 namespace FfxivVR;
-unsafe internal class VRSwapchains : IDisposable
+unsafe public class VRSwapchains : IDisposable
 {
     private static List<Format> ColorFormats = new List<Format>() {
         Format.FormatR8G8B8A8UnormSrgb,
@@ -19,15 +19,15 @@ unsafe internal class VRSwapchains : IDisposable
     private readonly XR xr;
     private readonly VRSystem system;
     private readonly Logger logger;
-    private readonly ID3D11Device* d11Device;
+    private readonly DxDevice device;
     public const ViewConfigurationType ViewConfigType = ViewConfigurationType.PrimaryStereo;
     public List<SwapchainView> Views = null!;
-    public VRSwapchains(XR xr, VRSystem system, Logger logger, ID3D11Device* d11Device)
+    public VRSwapchains(XR xr, VRSystem system, Logger logger, DxDevice device)
     {
         this.xr = xr;
         this.system = system;
         this.logger = logger;
-        this.d11Device = d11Device;
+        this.device = device;
     }
     public Vector2D<uint> Initialize()
     {
@@ -74,7 +74,7 @@ unsafe internal class VRSwapchains : IDisposable
                         mipSlice: 0
                     )
                 ); ;
-                d11Device->CreateRenderTargetView((ID3D11Resource*)image.Texture, ref rtvd, ref rtv).D3D11Check("CreateRenderTargetView");
+                device.Device->CreateRenderTargetView((ID3D11Resource*)image.Texture, ref rtvd, ref rtv).D3D11Check("CreateRenderTargetView");
                 renderTargetViews[i] = rtv;
                 imageTextures[i] = (ID3D11Texture2D*)image.Texture;
             }
@@ -105,7 +105,7 @@ unsafe internal class VRSwapchains : IDisposable
                     )
                 );
                 ID3D11DepthStencilView* dsv = null;
-                d11Device->CreateDepthStencilView((ID3D11Resource*)image.Texture, ref dsvd, ref dsv).D3D11Check("CreateRenderTargetView");
+                device.Device->CreateDepthStencilView((ID3D11Resource*)image.Texture, ref dsvd, ref dsv).D3D11Check("CreateRenderTargetView");
                 depthStencilViews[i] = dsv;
                 depthTextures[i] = (ID3D11Texture2D*)image.Texture;
             }
@@ -164,7 +164,7 @@ unsafe internal class VRSwapchains : IDisposable
     }
 }
 
-unsafe class SwapchainInfo<T>
+public unsafe class SwapchainInfo<T>
 {
     public Swapchain Swapchain;
     public long SwapchainFormat;
@@ -190,7 +190,7 @@ unsafe class SwapchainInfo<T>
 #pragma warning restore 8500
 
 }
-class SwapchainView
+public class SwapchainView
 {
     public ViewConfigurationView ViewConfigurationView;
     public SwapchainInfo<ID3D11RenderTargetView> ColorSwapchainInfo;

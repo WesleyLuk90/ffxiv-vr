@@ -8,7 +8,7 @@ using static FfxivVR.Resources;
 
 namespace FfxivVR;
 
-unsafe internal class Renderer(
+unsafe public class Renderer(
     XR xr,
     VRSystem system,
     VRState vrState,

@@ -24,7 +24,7 @@ class ResizeState
         RenderResolution = renderResolution;
     }
 }
-unsafe public class ResolutionManager
+unsafe public class ResolutionManager : IDisposable
 {
     private const SET_WINDOW_POS_FLAGS SetWindowPositionFlags = SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_FRAMECHANGED;
     private const uint ExitSizeMove = 0x0232;
@@ -225,5 +225,10 @@ unsafe public class ResolutionManager
         {
             return Matrix4X4<float>.Identity;
         }
+    }
+
+    public void Dispose()
+    {
+        RevertResolution();
     }
 }

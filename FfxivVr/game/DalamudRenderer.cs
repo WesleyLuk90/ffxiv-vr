@@ -6,7 +6,7 @@ using System;
 using System.Reflection;
 
 namespace FfxivVR;
-unsafe internal class DalamudRenderer
+unsafe public class DalamudRenderer
 {
     private readonly Logger logger;
 
