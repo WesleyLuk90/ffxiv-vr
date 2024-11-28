@@ -330,9 +330,11 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         return Native.ReadCString(buffer);
     }
 
-    private bool ResetController = false;
-    private bool VRControllerActive = false;
-    private bool IsPhysicalController = false;
+    class CurrentController
+    {
+        public bool IsPhysicalController = false;
+    }
+    private CurrentController? currentController = null;
     internal void InteractionProfileChanged()
     {
         var leftProfile = new InteractionProfileState(next: null);
@@ -342,33 +344,19 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
 
         logger.Debug($"Interaction profile changed left:{GetPath(leftProfile.InteractionProfile)} right:{GetPath(leftProfile.InteractionProfile)}");
 
-        VRControllerActive = leftProfile.InteractionProfile != 0 || rightProfile.InteractionProfile != 0;
-        if (leftProfile.InteractionProfile == 0 || rightProfile.InteractionProfile == 0)
+        if (leftProfile.InteractionProfile != 0 || rightProfile.InteractionProfile != 0)
         {
-            ResetController = true;
-            IsPhysicalController = false;
+            currentController = new CurrentController();
         }
     }
 
     internal void UpdateGamepad(GamepadInput* gamepadInput)
     {
-        if (vrState.State != SessionState.Focused || ResetController)
-        {
-            // In case the user doesn't have a controller connected, reset all these values so that the controller buttons don't end up in a stuck on state
-            gamepadInput->LeftStickX = 0;
-            gamepadInput->LeftStickY = 0;
-            gamepadInput->RightStickX = 0;
-            gamepadInput->RightStickY = 0;
-            gamepadInput->ButtonsPressed = 0;
-            gamepadInput->ButtonsReleased = 0;
-            gamepadInput->ButtonsRaw = 0;
-            ResetController = false;
-        }
-        else if (PollActions(system.Now()) is VrInputState input && VRControllerActive)
+        if (PollActions(system.Now()) is VrInputState input && currentController is CurrentController controller)
         {
             // Virtual Desktop tries to emulate a controller with hand tracking but we want to ignore those inputs so detect that by waiting for a non emulated input
-            IsPhysicalController |= input.IsPhysicalController();
-            if (IsPhysicalController)
+            controller.IsPhysicalController |= input.IsPhysicalController();
+            if (controller.IsPhysicalController)
             {
                 gamepadInput->LeftStickX = (int)(input.LeftStick.X * 99);
                 gamepadInput->LeftStickY = (int)(input.LeftStick.Y * 99);
