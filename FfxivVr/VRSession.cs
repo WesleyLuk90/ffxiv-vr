@@ -5,7 +5,6 @@ using Silk.NET.Direct3D11;
 using Silk.NET.OpenXR;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace FfxivVR;
@@ -374,7 +373,6 @@ public unsafe class VRSession(
 
     private HandTrackerExtension.HandData? MaybeGetHandTrackingData(long predictedTime, HandTrackerExtension.HandData? lastData)
     {
-        var data = vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
         if (!configuration.HandTracking)
         {
             return null;
@@ -383,22 +381,16 @@ public unsafe class VRSession(
         {
             return null;
         }
+        var data = vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
         if (data == null)
         {
             return null;
         }
-        var left = data.LeftHand;
-        if (left.All(joint => joint.LocationFlags == 0))
+        var left = data.LeftHandTracked() ? data.LeftHand : lastData?.LeftHand;
+        var right = data.RightHandTracked() ? data.RightHand : lastData?.RightHand;
+        if (left == null || right == null)
         {
-            if (lastData != null)
-            {
-                left = lastData.LeftHand;
-            }
-        }
-        var right = data.RightHand;
-        if (lastData != null && right.All(joint => joint.LocationFlags == 0))
-        {
-            right = lastData.RightHand;
+            return null;
         }
         return new HandTrackerExtension.HandData(left, right);
     }
