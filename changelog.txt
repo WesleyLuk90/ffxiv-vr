@@ -1,1 +1,1 @@
-[Feature] #5 Add vr controller tracking
+[Feature] #10 Add separate option for flying height in third person, change config menu to tabs and split by view
