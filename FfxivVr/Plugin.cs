@@ -106,7 +106,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
-        configuration.Save();
         companionPlugins.OnUnload();
         Framework.Update -= FrameworkUpdate;
         NamePlateGui.OnNamePlateUpdate -= OnNamePlateUpdate;
@@ -314,7 +313,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     {
         diagnostics.OnStop();
         vrLifecycle.DisableVR();
-        configuration.Save();
         companionPlugins.OnDeactivate();
         hudLayoutManager.RequestHudLayoutUpdate();
     }

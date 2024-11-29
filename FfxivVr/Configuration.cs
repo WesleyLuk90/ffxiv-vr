@@ -22,6 +22,7 @@ public class Configuration : IPluginConfiguration
 
     public bool MatchFloorPosition = false;
     public bool DisableCameraDirectionFlying = false;
+    public bool DisableCameraDirectionFlyingThirdPerson = false;
 
     public bool KeepUIInFront = true;
 

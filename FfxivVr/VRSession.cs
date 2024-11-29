@@ -351,14 +351,15 @@ public unsafe class VRSession(
             VRCameraMode cameraType = GetVRCameraType(localSpaceHeight);
             cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, GetTrackingData(predictedTime), cameraType);
 
-            if (Conditions.IsInFlight && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation()))
+            if (Conditions.IsInFlight || Conditions.IsDiving)
             {
-                if (gameState.IsFirstPerson())
+                if (gameState.IsFirstPerson() && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation()))
                 {
                     gameModifier.ResetVerticalCameraRotation(0);
                 }
-                else
+                else if (configuration.DisableCameraDirectionFlyingThirdPerson || cameraType.ShouldLockCameraVerticalRotation())
                 {
+                    // Vertical rotation is offset by about 15 degress for some reason
                     gameModifier.ResetVerticalCameraRotation(float.DegreesToRadians(15));
                 }
             }
