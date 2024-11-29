@@ -1,5 +1,4 @@
 using Dalamud.Game.ClientState.GamePad;
-using SharpDX.Win32;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;

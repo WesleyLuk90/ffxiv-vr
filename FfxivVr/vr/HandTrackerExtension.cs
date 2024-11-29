@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 
 namespace FfxivVR;
-public unsafe class HandTrackerExtension(
+public unsafe class HandTracking(
     PfnVoidFunction xrCreateHandTrackerEXT,
     PfnVoidFunction xrDestroyHandTrackerEXT,
     PfnVoidFunction xrLocateHandJointsEXT) : IDisposable

@@ -133,7 +133,7 @@ public unsafe class VRSystem : IDisposable
             xr.GetInstanceProcAddr(Instance, "xrDestroyHandTrackerEXT", &xrDestroyHandTrackerEXT).CheckResult("GetInstanceProcAddr");
             PfnVoidFunction xrLocateHandJointsEXT = new PfnVoidFunction();
             xr.GetInstanceProcAddr(Instance, "xrLocateHandJointsEXT", &xrLocateHandJointsEXT).CheckResult("GetInstanceProcAddr");
-            HandTrackerExtension = new HandTrackerExtension(
+            HandTrackerExtension = new HandTracking(
                 xrCreateHandTrackerEXT: xrCreateHandTrackerEXT,
                 xrDestroyHandTrackerEXT: xrDestroyHandTrackerEXT,
                 xrLocateHandJointsEXT: xrLocateHandJointsEXT
@@ -155,7 +155,7 @@ public unsafe class VRSystem : IDisposable
 
     private delegate* unmanaged[Cdecl]<Instance, long*, long*, Result> performanceToTime = null;
 
-    public HandTrackerExtension? HandTrackerExtension = null;
+    public HandTracking? HandTrackerExtension = null;
 
     public bool HandTrackingExtensionEnabled { get; private set; }
 

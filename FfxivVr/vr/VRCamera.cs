@@ -1,10 +1,11 @@
-﻿using FFXIVClientStructs.FFXIV.Common.Math;
+﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using FFXIVClientStructs.FFXIV.Common.Math;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 
 namespace FfxivVR;
-public class VRCamera(Configuration configuration)
+public class VRCamera(Configuration configuration, GameModifier gameModifier, GameState gameState, FreeCamera freeCamera)
 {
     private readonly Configuration configuration = configuration;
     private float near = 0.1f;
@@ -54,5 +55,54 @@ public class VRCamera(Configuration configuration)
         proj.M33 = 0;
         proj.M43 = near;
         return Matrix4X4.Multiply(viewInverted, proj);
+    }
+
+    public unsafe VRCameraMode GetVRCameraType(float? localSpaceHeight)
+    {
+        var characterBase = gameModifier.GetCharacterBase();
+        var distance = gameState.GetGameCameraDistance();
+        if (freeCamera.Enabled)
+        {
+            return freeCamera;
+        }
+        else if (gameState.IsFirstPerson() && configuration.FollowCharacter)
+        {
+            return new FollowingFirstPersonCamera();
+        }
+        else if (gameState.IsFirstPerson())
+        {
+            return new FirstPersonCamera();
+        }
+        else if (localSpaceHeight is float height && characterBase != null && distance is float d)
+        {
+            return new LockedFloorCamera(
+                groundPosition: characterBase->Position.Y,
+                height: height,
+                distance: d,
+                worldScale: configuration.WorldScale);
+        }
+        else if (!configuration.KeepCameraHorizontal)
+        {
+            return new OrbitCamera();
+        }
+        else
+        {
+            return new LevelOrbitCamera();
+        }
+    }
+
+    internal unsafe void UpdateCamera(Camera* camera, VRCameraMode cameraType, View view)
+    {
+        camera->RenderCamera->ProjectionMatrix = ComputeGameProjectionMatrix(view);
+        camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
+
+        var position = camera->Position.ToVector3D();
+        var lookAt = camera->LookAtVector.ToVector3D();
+
+        var gameCamera = new GameCamera(position, lookAt, gameModifier.GetHeadPosition());
+        camera->RenderCamera->ViewMatrix = ComputeGameViewMatrix(view, cameraType, gameCamera).ToMatrix4x4();
+        camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
+
+        camera->RenderCamera->FoV = view.Fov.AngleRight - view.Fov.AngleLeft;
     }
 }

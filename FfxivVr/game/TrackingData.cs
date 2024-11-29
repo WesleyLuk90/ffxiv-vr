@@ -1,17 +1,16 @@
 using Silk.NET.OpenXR;
-using System;
 
 namespace FfxivVR;
 
 public class TrackingData(
-    HandTrackerExtension.HandPose? handPose,
-    HandTrackerExtension.HandPose? lastValidHandPose,
+    HandTracking.HandPose? handPose,
+    HandTracking.HandPose? lastValidHandPose,
     VRInput.ControllerPose? controllerPose,
     VRInput.ControllerPose? lastValidControllerPose
 )
 {
-    public HandTrackerExtension.HandPose? HandPose { get; } = handPose;
-    public HandTrackerExtension.HandPose? LastValidHandPose { get; } = lastValidHandPose;
+    public HandTracking.HandPose? HandPose { get; } = handPose;
+    public HandTracking.HandPose? LastValidHandPose { get; } = lastValidHandPose;
     public VRInput.ControllerPose? ControllerPose { get; } = controllerPose;
     public VRInput.ControllerPose? LastValidControllerPose { get; } = lastValidControllerPose;
 
@@ -65,16 +64,16 @@ public class TrackingData(
         return null;
     }
 
-    internal static TrackingData CreateNew(HandTrackerExtension.HandPose? hands, VRInput.ControllerPose? controllers)
+    internal static TrackingData CreateNew(HandTracking.HandPose? hands, VRInput.ControllerPose? controllers)
     {
         return new TrackingData(hands, null, controllers, null);
     }
 
-    internal TrackingData Update(bool handTracking, HandTrackerExtension.HandPose? hands, bool controllerTracking, VRInput.ControllerPose? controllers)
+    internal TrackingData Update(bool handTracking, HandTracking.HandPose? hands, bool controllerTracking, VRInput.ControllerPose? controllers)
     {
         return new TrackingData(
             handTracking ? hands : null,
-            handTracking ? new HandTrackerExtension.HandPose(GetLeftHand(), GetRightHand()) : null,
+            handTracking ? new HandTracking.HandPose(GetLeftHand(), GetRightHand()) : null,
             controllerTracking ? controllers : null,
             controllerTracking ? new VRInput.ControllerPose(GetLeftController(), GetRightController()) : null
         );

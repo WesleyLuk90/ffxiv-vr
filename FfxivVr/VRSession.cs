@@ -15,7 +15,6 @@ public unsafe class VRSession(
     GameState gameState,
     RenderPipelineInjector renderPipelineInjector,
     GameModifier gameModifier,
-    FreeCamera freeCamera,
     VRSystem vrSystem,
     VRState State,
     VRSwapchains swapchains,
@@ -42,14 +41,12 @@ public unsafe class VRSession(
     private readonly Resources resources = resources;
     private readonly VRSwapchains swapchains = swapchains;
     private readonly GameState gameState = gameState;
-    private readonly FreeCamera freeCamera = freeCamera;
     private readonly VRCamera vrCamera = vrCamera;
     private readonly RenderPipelineInjector renderPipelineInjector = renderPipelineInjector;
     private readonly Configuration configuration = configuration;
     private readonly ResolutionManager resolutionManager = resolutionManager;
     private readonly WaitFrameService waitFrameService = waitFrameService;
     private readonly FramePrediction framePrediction = framePrediction;
-
     private readonly VRInput vrInput = vrInput;
 
     public void Initialize()
@@ -67,7 +64,7 @@ public unsafe class VRSession(
     {
         public Eye Eye;
         public View[] Views;
-        public VRCameraMode CameraType;
+        public VRCameraMode CameraMode;
 
         public Task<FrameState> WaitFrameTask { get; }
         public TrackingData TrackingData;
@@ -77,7 +74,7 @@ public unsafe class VRSession(
             Views = views;
             WaitFrameTask = waitFrameTask;
             TrackingData = trackingData;
-            CameraType = cameraType;
+            CameraMode = cameraType;
         }
 
         public View CurrentView()
@@ -226,53 +223,8 @@ public unsafe class VRSession(
         if (State.SessionRunning && cameraPhase is CameraPhase phase)
         {
             logger.Trace($"Set {phase.Eye} camera matrix");
-            View view = view = phase.CurrentView();
-
-            camera->RenderCamera->ProjectionMatrix = vrCamera.ComputeGameProjectionMatrix(view);
-            camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
-
-            var position = camera->Position.ToVector3D();
-            var lookAt = camera->LookAtVector.ToVector3D();
-
-            var gameCamera = new GameCamera(position, lookAt, gameModifier.GetHeadPosition());
-            camera->RenderCamera->ViewMatrix = vrCamera.ComputeGameViewMatrix(view, phase.CameraType, gameCamera).ToMatrix4x4();
-            camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
-
-            camera->RenderCamera->FoV = view.Fov.AngleRight - view.Fov.AngleLeft;
-        }
-    }
-
-    private VRCameraMode GetVRCameraType(float? localSpaceHeight)
-    {
-        var characterBase = gameModifier.GetCharacterBase();
-        var distance = gameState.GetGameCameraDistance();
-        if (freeCamera.Enabled)
-        {
-            return freeCamera;
-        }
-        else if (gameState.IsFirstPerson() && configuration.FollowCharacter)
-        {
-            return new FollowingFirstPersonCamera();
-        }
-        else if (gameState.IsFirstPerson())
-        {
-            return new FirstPersonCamera();
-        }
-        else if (localSpaceHeight is float height && characterBase != null && distance is float d)
-        {
-            return new LockedFloorCamera(
-                groundPosition: characterBase->Position.Y,
-                height: height,
-                distance: d,
-                worldScale: configuration.WorldScale);
-        }
-        else if (!configuration.KeepCameraHorizontal)
-        {
-            return new OrbitCamera();
-        }
-        else
-        {
-            return new LevelOrbitCamera();
+            View view = phase.CurrentView();
+            vrCamera.UpdateCamera(camera, phase.CameraMode, view);
         }
     }
 
@@ -303,7 +255,7 @@ public unsafe class VRSession(
                 gameModifier.UpdateMotionControls(
                     phase.TrackingData,
                     vrSystem.RuntimeAdjustments,
-                    phase.CameraType.GetYRotation(gameCamera));
+                    gameCamera.GetYRotation());
             }
         }
     }
@@ -348,7 +300,7 @@ public unsafe class VRSession(
                 return frameState;
             });
 
-            VRCameraMode cameraType = GetVRCameraType(localSpaceHeight);
+            VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight);
             cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, GetTrackingData(predictedTime), cameraType);
 
             if (Conditions.IsInFlight || Conditions.IsDiving)
@@ -389,7 +341,7 @@ public unsafe class VRSession(
         }
     }
 
-    private HandTrackerExtension.HandPose? GetHandTrackingData(long predictedTime)
+    private HandTracking.HandPose? GetHandTrackingData(long predictedTime)
     {
         if (!configuration.HandTracking)
         {
