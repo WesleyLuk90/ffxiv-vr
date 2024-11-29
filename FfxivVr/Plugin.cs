@@ -41,7 +41,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly GamepadManager gamepadManager;
     private readonly GameHooks gameHooks;
     private readonly Configuration configuration;
-    private readonly GameState gameState = new GameState(ClientState);
+    private readonly GameState gameState = new GameState(ClientState, GameGui);
     private readonly ConfigWindow configWindow;
     private readonly WindowSystem WindowSystem = new("FFXIV VR");
     private readonly CompanionPlugins companionPlugins = new CompanionPlugins();
@@ -157,7 +157,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
             hudLayoutManager.Update();
         });
     }
-
     private bool LaunchAtStartChecked = false;
     private DebugWindow debugWindow;
     private HookStatus hookStatus;

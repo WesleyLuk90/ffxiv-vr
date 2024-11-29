@@ -21,7 +21,8 @@ unsafe public class Renderer(
     DalamudRenderer dalamudRenderer,
     VRCamera vrCamera,
     VRDiagnostics diagnostics,
-    ResolutionManager resolutionManager)
+    ResolutionManager resolutionManager,
+    GameState gameState)
 {
     private readonly XR xr = xr;
     private readonly VRSystem system = system;
@@ -36,8 +37,9 @@ unsafe public class Renderer(
     private readonly VRCamera vrCamera = vrCamera;
     private readonly VRDiagnostics diagnostics = diagnostics;
     private readonly ResolutionManager resolutionManager = resolutionManager;
+    private readonly GameState gameState = gameState;
 
-    private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false)
+    private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection
@@ -45,7 +47,7 @@ unsafe public class Renderer(
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: invertAlpha ? ShaderMode.InvertedAlpha : ShaderMode.Texture,
             gamma: configuration.Gamma,
-            color: new Vector4D<float>(0, 0, 0, 1)));
+            color: new Vector4D<float>(1 - fade, 1 - fade, 1 - fade, 1)));
         resources.SetSampler(context, shaderResourceView);
         resources.Draw(context);
     }
@@ -151,7 +153,8 @@ unsafe public class Renderer(
         resources.SetSceneBlendState(context);
         var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
-        RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
+
+        RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
 
         resources.SetCompositingBlendState(context);
         if (ShouldUseDepthTexture())
@@ -243,9 +246,9 @@ unsafe public class Renderer(
             resources.SetStandardBlendState(context);
             resources.SetSampler(context, maybeCursor.ShaderResourceView);
             resources.SetPixelShaderConstants(context, new PixelShaderConstants(
-                mode: 0,
+                mode: ShaderMode.Texture,
                 gamma: 1f,
-                color: new Vector4D<float>(1, 0, 0, 1f),
+                color: new Vector4D<float>(1, 1, 1, 1f),
                 uvOffset: maybeCursor.UvOffset,
                 uvScale: maybeCursor.UvScale));
             resources.Draw(context);

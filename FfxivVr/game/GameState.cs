@@ -8,10 +8,12 @@ namespace FfxivVR;
 unsafe public class GameState
 {
     private IClientState clientState;
+    private readonly IGameGui gameGui;
 
-    public GameState(IClientState clientState)
+    public GameState(IClientState clientState, IGameGui gameGui)
     {
         this.clientState = clientState;
+        this.gameGui = gameGui;
     }
 
     public bool IsFirstPerson()
@@ -99,5 +101,21 @@ unsafe public class GameState
     public InternalGameCamera* GetInternalGameCamera()
     {
         return InternalGameCamera.FromCamera(GetActiveCamera());
+    }
+
+    public AddonFade* GetAddonFade()
+    {
+        return (AddonFade*)gameGui.GetAddonByName("FadeMiddle");
+    }
+
+    public float GetFade()
+    {
+        var fade = 0f;
+        var addon = GetAddonFade();
+        if (addon != null)
+        {
+            fade = AddonFade.GetAlpha(addon);
+        }
+        return fade;
     }
 }

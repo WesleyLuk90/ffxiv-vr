@@ -22,7 +22,7 @@ float4 main(VertexShaderOutput vertexShaderOutput) : SV_TARGET
     float2 texCoord = vertexShaderOutput.texcoord * uvScale + uvOffset;
     if (mode == 0)
     {
-        color = tex.Sample(tex_sampler, texCoord);
+        color = tex.Sample(tex_sampler, texCoord) * constantColor;
     }
     else if (mode == 1) // Draw circle
     {
