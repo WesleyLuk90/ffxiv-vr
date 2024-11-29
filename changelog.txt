@@ -1,5 +1,1 @@
-[Fix] Keep showing player on large mounts when camera is close
-[Feature] #6 add option to angle camera and keep it pointing at character
-[Fix] Fix stars while mounted
-[Feature] Add option to show or hide body in first person
-[Fix] Fixes #1, fix visibility for multi-seat mounts
+[Feature] #5 Add vr controller tracking
