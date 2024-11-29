@@ -4,13 +4,13 @@ $xml = [xml](Get-Content -Path .\FfxivVr\FfxivVR.csproj)
 $currentVersion = [version]$xml.Project.PropertyGroup.Version
 $nextVersion = "{0}.{1}.{2}" -f $currentVersion.Major, $currentVersion.Minor, ($currentVersion.Build + 1)
 
-$changeLog = git log --pretty=format:%s v$currentVersion..HEAD | Select-String "^\[" | % { $_.Line }
-$fixes = git log --pretty=format:%s%n%b v$currentVersion..HEAD | Select-String "#\d+" | % { "Closes " + $_.Matches.Value }
+$changeLog = git log --pretty=format:%s v$currentVersion..HEAD --invert-grep --grep="Publish Version" | Select-String "^\[" | % { $_.Line }
+$fixes = git log --pretty=format:%s%n%b v$currentVersion..HEAD --invert-grep --grep="Publish Version" | Select-String "#\d+" | % { "Closes " + $_.Matches.Value }
 $releaseMessage = "Publish Version $nextVersion`n" + [string]::Join("`n", $fixes)
 
-echo "Change Log"
+echo "=== Change Log ==="
 echo $changeLog
-echo "Release Message"
+echo "=== Release Message ==="
 echo $releaseMessage
 
 echo "Do you want to deploy version $($nextVersion) (y/n)?";
