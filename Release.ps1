@@ -1,3 +1,4 @@
+git pull --ff-only
 
 $xml = [xml](Get-Content -Path .\FfxivVr\FfxivVR.csproj)
 
