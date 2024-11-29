@@ -40,7 +40,7 @@ public unsafe class HandTrackerExtension(
     }
 
     private uint JointCount = 26; // Number of values in HandJointEXT enum
-    public HandData GetHandTrackingData(Space space, long predictedTime)
+    public HandPose GetHandTrackingData(Space space, long predictedTime)
     {
         HandJointsMotionRangeInfoEXT motionRangeInfo = new HandJointsMotionRangeInfoEXT(handJointsMotionRange: HandJointsMotionRangeEXT.UnobstructedExt);
         var locateInfo = new HandJointsLocateInfoEXT(
@@ -67,21 +67,14 @@ public unsafe class HandTrackerExtension(
             );
             xrLocateHandJointsEXT(rightHandTracker, &locateInfo, &locations).CheckResult("LocateHandJointsEXT");
         }
-        return new HandData(leftHand, rightHand);
+        var leftValid = leftHand.Any(j => j.LocationFlags != 0);
+        var rightValid = rightHand.Any(j => j.LocationFlags != 0);
+        return new HandPose(leftValid ? leftHand : null, rightValid ? rightHand : null);
     }
 
-    public class HandData(HandJointLocationEXT[] LeftHand, HandJointLocationEXT[] RightHand)
+    public class HandPose(HandJointLocationEXT[]? LeftHand, HandJointLocationEXT[]? RightHand)
     {
-        public HandJointLocationEXT[] LeftHand { get; } = LeftHand;
-        public HandJointLocationEXT[] RightHand { get; } = RightHand;
-
-        public bool LeftHandTracked()
-        {
-            return LeftHand.Any(h => h.LocationFlags != 0);
-        }
-        public bool RightHandTracked()
-        {
-            return RightHand.Any(h => h.LocationFlags != 0);
-        }
+        public HandJointLocationEXT[]? LeftHand { get; } = LeftHand;
+        public HandJointLocationEXT[]? RightHand { get; } = RightHand;
     }
 }

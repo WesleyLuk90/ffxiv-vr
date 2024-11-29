@@ -80,7 +80,7 @@ unsafe public class Renderer(
         return views;
     }
 
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, FrameState frameState, View[] views, Eye eye, HandTrackerExtension.HandData? hands)
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, FrameState frameState, View[] views, Eye eye)
     {
         var swapchainView = swapchains.Views[eye.ToIndex()];
         CheckResolution(swapchainView);
@@ -152,10 +152,6 @@ unsafe public class Renderer(
         var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
         RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity);
-        if (Debugging.ShowHands)
-        {
-            RenderHands(context, hands, vrViewProjectionMatrix);
-        }
 
         resources.SetCompositingBlendState(context);
         if (ShouldUseDepthTexture())
@@ -189,22 +185,6 @@ unsafe public class Renderer(
             resolutionErrorChecked = true;
         }
     }
-    private void RenderHands(ID3D11DeviceContext* context, HandTrackerExtension.HandData? hands, Matrix4X4<float> vrViewProjectionMatrix)
-    {
-        if (hands == null)
-        {
-            return;
-        }
-        foreach (var joint in hands.LeftHand)
-        {
-            RenderPoint(context, 0.01f, joint.Pose.Position.ToVector3D(), vrViewProjectionMatrix);
-        }
-        foreach (var joint in hands.RightHand)
-        {
-            RenderPoint(context, 0.01f, joint.Pose.Position.ToVector3D(), vrViewProjectionMatrix);
-        }
-    }
-
     private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj)
     {
         var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));

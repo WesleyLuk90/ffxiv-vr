@@ -92,12 +92,12 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
     }
 
     public class ControllerPose(
-        Posef? LeftPose,
-        Posef? RightPose
+        Posef? LeftController,
+        Posef? RightController
     )
     {
-        public Posef? LeftPose { get; } = LeftPose;
-        public Posef? RightPose { get; } = RightPose;
+        public Posef? LeftController { get; } = LeftController;
+        public Posef? RightController { get; } = RightController;
     }
 
     public ControllerPose? GetControllerPose()
@@ -105,6 +105,7 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         return lastControllerPose;
     }
 
+    // Need to be careful to only call this in one place because SyncAction is stateful
     public VrInputState PollActions(long predictedTime)
     {
         var input = new VrInputState();
@@ -123,21 +124,9 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         }
         result.CheckResult("SyncAction");
         lastControllerPose = new ControllerPose(
-            LeftPose: GetActionPose(leftSpace, predictedTime, palmPose, leftHandPath),
-            RightPose: GetActionPose(rightSpace, predictedTime, palmPose, rightHandPath)
+            LeftController: GetActionPose(leftSpace, predictedTime, palmPose, leftHandPath),
+            RightController: GetActionPose(rightSpace, predictedTime, palmPose, rightHandPath)
         );
-        Vector3D<float>? leftDebug = null;
-        Vector3D<float>? rightDebug = null;
-        if (lastControllerPose?.LeftPose?.Position is Vector3f v)
-        {
-            leftDebug = v.ToVector3D();
-        }
-        if (lastControllerPose?.RightPose?.Position is Vector3f rpose)
-        {
-            rightDebug = rpose.ToVector3D();
-        }
-        Debugging.DebugShow("Left", leftDebug);
-        Debugging.DebugShow("Right", rightDebug);
         GetActionBool(aButton, input, GamepadButtons.South);
         GetActionBool(bButton, input, GamepadButtons.East);
         GetActionBool(xButton, input, GamepadButtons.West);
@@ -186,7 +175,6 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         );
         var state = new ActionStateBoolean(next: null);
         xr.GetActionStateBoolean(system.Session, ref getInfo, ref state).CheckResult("GetActionStateBoolean");
-        Debugging.DebugShow(button.ToString(), state.IsActive == 1);
         if (state.CurrentState == 1)
         {
             inputState.ButtonsRaw |= button;

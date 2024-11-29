@@ -45,7 +45,6 @@ internal class DebugWindow : Window
             }
             if (ImGui.BeginTabItem("Modes"))
             {
-                ImGui.Checkbox("Show Hands", ref Debugging.ShowHands);
                 ImGui.Checkbox("Hide Head", ref Debugging.HideHead);
                 ImGui.EndTabItem();
             }
@@ -60,7 +59,6 @@ static class Debugging
     public static float XRotation = 0;
     public static float YRotation = 0;
     public static float ZRotation = 0;
-    public static bool ShowHands = false;
     public static bool HideHead = false;
 
     public static Vector3D<float>? Location = null;

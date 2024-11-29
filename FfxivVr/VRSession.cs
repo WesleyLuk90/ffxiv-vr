@@ -70,14 +70,13 @@ public unsafe class VRSession(
         public VRCameraMode CameraType;
 
         public Task<FrameState> WaitFrameTask { get; }
-        public HandTrackerExtension.HandData? Hands { get; }
-
-        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask, HandTrackerExtension.HandData? hands, VRCameraMode cameraType)
+        public TrackingData TrackingData;
+        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask, TrackingData trackingData, VRCameraMode cameraType)
         {
             Eye = eye;
             Views = views;
             WaitFrameTask = waitFrameTask;
-            Hands = hands;
+            TrackingData = trackingData;
             CameraType = cameraType;
         }
 
@@ -88,22 +87,20 @@ public unsafe class VRSession(
     }
 
     // Stores the hands data from the last frame so we keep the hands in the same spot of we lose tracking
-    private HandTrackerExtension.HandData? lastHands;
+    private TrackingData? lastTrackingData;
     private CameraPhase? cameraPhase;
 
     abstract class RenderPhase;
     class LeftRenderPhase : RenderPhase
     {
         public View[] Views;
-        public HandTrackerExtension.HandData? Hands;
 
         public Task<FrameState> WaitFrameTask { get; }
 
-        public LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask, HandTrackerExtension.HandData? hands)
+        public LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask)
         {
             Views = views;
             WaitFrameTask = waitFrameTask;
-            this.Hands = hands;
         }
     }
     class RightRenderPhase : RenderPhase
@@ -111,16 +108,14 @@ public unsafe class VRSession(
         public FrameState FrameState;
         public CompositionLayerProjectionView LeftLayer;
 
-        public HandTrackerExtension.HandData? Hands { get; }
 
         public View[] Views;
 
-        public RightRenderPhase(FrameState frameState, CompositionLayerProjectionView leftLayer, View[] views, HandTrackerExtension.HandData? hands)
+        public RightRenderPhase(FrameState frameState, CompositionLayerProjectionView leftLayer, View[] views)
         {
             FrameState = frameState;
             Views = views;
             LeftLayer = leftLayer;
-            Hands = hands;
         }
 
     }
@@ -156,8 +151,8 @@ public unsafe class VRSession(
             if (frameState.ShouldRender == 1)
             {
                 logger.Trace("Render left eye");
-                var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left, leftRenderPhase.Hands);
-                renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views, leftRenderPhase.Hands);
+                var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left);
+                renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views);
             }
             else
             {
@@ -169,7 +164,7 @@ public unsafe class VRSession(
         else if (renderPhase is RightRenderPhase rightRenderPhase)
         {
             logger.Trace("Render right eye");
-            var rightLayer = renderer.RenderEye(context, rightRenderPhase.FrameState, rightRenderPhase.Views, Eye.Right, rightRenderPhase.Hands);
+            var rightLayer = renderer.RenderEye(context, rightRenderPhase.FrameState, rightRenderPhase.Views, Eye.Right);
             renderer.EndFrame(context, rightRenderPhase.FrameState, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
             logger.Trace("End frame");
             renderPhase = null;
@@ -182,12 +177,12 @@ public unsafe class VRSession(
                     {
                         logger.Trace("Switching camera phase to right eye");
                         phase.Eye = Eye.Right;
-                        renderPhase = new LeftRenderPhase(phase.Views, cameraPhase.WaitFrameTask, phase.Hands);
+                        renderPhase = new LeftRenderPhase(phase.Views, cameraPhase.WaitFrameTask);
                         break;
                     }
                 case Eye.Right:
                     {
-                        lastHands = cameraPhase?.Hands;
+                        lastTrackingData = cameraPhase?.TrackingData;
                         cameraPhase = null;
                         break;
                     }
@@ -196,7 +191,7 @@ public unsafe class VRSession(
         }
         else
         {
-            lastHands = null;
+            lastTrackingData = null;
         }
         return shouldPresent;
     }
@@ -306,8 +301,7 @@ public unsafe class VRSession(
                 var gameCamera = new GameCamera(position, lookAt, null);
 
                 gameModifier.UpdateMotionControls(
-                    phase.Hands,
-                    configuration.ControllerTracking ? vrInput.GetControllerPose() : null,
+                    phase.TrackingData,
                     vrSystem.RuntimeAdjustments,
                     phase.CameraType.GetYRotation(gameCamera));
             }
@@ -348,7 +342,6 @@ public unsafe class VRSession(
 
             var views = renderer.LocateView(predictedTime);
             var localSpaceHeight = configuration.MatchFloorPosition ? vrSpace.GetLocalSpaceHeight(predictedTime) : null;
-            var hands = MaybeGetHandTrackingData(predictedTime, lastHands);
             Task<FrameState> waitFrameTask = Task.Run(() =>
             {
                 var frameState = waitFrameService.WaitFrame();
@@ -356,7 +349,7 @@ public unsafe class VRSession(
             });
 
             VRCameraMode cameraType = GetVRCameraType(localSpaceHeight);
-            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, hands, cameraType);
+            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, GetTrackingData(predictedTime), cameraType);
 
             if (Conditions.IsInFlight && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation()))
             {
@@ -376,7 +369,26 @@ public unsafe class VRSession(
         }
     }
 
-    private HandTrackerExtension.HandData? MaybeGetHandTrackingData(long predictedTime, HandTrackerExtension.HandData? lastData)
+    private TrackingData GetTrackingData(long predictedTime)
+    {
+        if (!gameState.IsFirstPerson())
+        {
+            return TrackingData.Disabled();
+        }
+        var hands = configuration.HandTracking ? GetHandTrackingData(predictedTime) : null;
+        var controllers = configuration.ControllerTracking ? vrInput.GetControllerPose() : null;
+
+        if (lastTrackingData is TrackingData last)
+        {
+            return last.Update(configuration.HandTracking, hands, configuration.ControllerTracking, controllers);
+        }
+        else
+        {
+            return TrackingData.CreateNew(hands, controllers);
+        }
+    }
+
+    private HandTrackerExtension.HandPose? GetHandTrackingData(long predictedTime)
     {
         if (!configuration.HandTracking)
         {
@@ -386,18 +398,7 @@ public unsafe class VRSession(
         {
             return null;
         }
-        var data = vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
-        if (data == null)
-        {
-            return null;
-        }
-        var left = data.LeftHandTracked() ? data.LeftHand : lastData?.LeftHand;
-        var right = data.RightHandTracked() ? data.RightHand : lastData?.RightHand;
-        if (left == null || right == null)
-        {
-            return null;
-        }
-        return new HandTrackerExtension.HandData(left, right);
+        return vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
     }
 
     internal Point? ComputeMousePosition(Point point)
