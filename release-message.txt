@@ -1,2 +1,2 @@
-Publish Version 0.0.32
-Closes #10
+Publish Version 0.0.33
+Closes #7

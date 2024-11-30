@@ -372,6 +372,10 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         {
             // Virtual Desktop tries to emulate a controller with hand tracking but we want to ignore those inputs so detect that by waiting for a non emulated input
             controller.IsPhysicalController |= input.IsPhysicalController();
+            if (input.IsPhysicalController())
+            {
+                logger.Debug($"Got physical input {Convert.ToString((int)input.ButtonsPressed, 8)}");
+            }
             if (controller.IsPhysicalController)
             {
                 gamepadInput->LeftStickX = (int)(input.LeftStick.X * 99);

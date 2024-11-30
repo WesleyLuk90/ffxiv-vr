@@ -1,1 +1,2 @@
-[Feature] #10 Add separate option for flying height in third person, change config menu to tabs and split by view
+[Fix] Controllers stuck if the menu gestures are used
+[Feature] #7 Fade world to match ui fade
