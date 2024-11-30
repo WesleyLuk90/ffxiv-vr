@@ -15,6 +15,6 @@ public class VrInputState
 
     public bool IsPhysicalController()
     {
-        return (ButtonsPressed & ~(GamepadButtons.L1 | GamepadButtons.L2 | GamepadButtons.R1 | GamepadButtons.R2 | GamepadButtons.Start | GamepadButtons.Select)) != 0 || LeftStick.LengthSquared > 0 || RightStick.Length > 0;
+        return LeftStick.LengthSquared > 0 || RightStick.Length > 0;
     }
 }
