@@ -26,8 +26,12 @@ class ResizeState
 }
 unsafe public class ResolutionManager : IDisposable
 {
-    private const SET_WINDOW_POS_FLAGS SetWindowPositionFlags = SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_FRAMECHANGED;
+    private const SET_WINDOW_POS_FLAGS SetWindowPositionFlags = SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_FRAMECHANGED;
     private const uint ExitSizeMove = 0x0232;
+
+    // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos
+    private HWND TOPMOST = new HWND(-1);
+    private HWND NOTOPMOST = new HWND(-2);
 
     public readonly Logger logger;
     private Configuration configuration;
@@ -58,7 +62,14 @@ unsafe public class ResolutionManager : IDisposable
                 throw new Exception("Failed to GetWindowRect");
             }
 
-            if (!PInvoke.SetWindowPos(handle, HWND.Null, 0, 0, clientArea.Size.X + margins.Item1.X + margins.Item2.X, clientArea.Size.Y + margins.Item1.Y + margins.Item2.Y, SetWindowPositionFlags))
+            if (!PInvoke.SetWindowPos(
+                hWnd: handle,
+                hWndInsertAfter: configuration.WindowAlwaysOnTop ? TOPMOST : HWND.Null,
+                X: 0,
+                Y: 0,
+                cx: clientArea.Size.X + margins.Item1.X + margins.Item2.X,
+                cy: clientArea.Size.Y + margins.Item1.Y + margins.Item2.Y,
+                uFlags: SetWindowPositionFlags))
             {
                 throw new Exception("Failed to MoveWindow");
             }
@@ -196,7 +207,7 @@ unsafe public class ResolutionManager : IDisposable
         {
             if (resizeState is ResizeState state)
             {
-                PInvoke.SetWindowPos(handle, HWND.Null, state.OriginalWindow.left, state.OriginalWindow.top, state.OriginalWindow.Width, state.OriginalWindow.Height, SetWindowPositionFlags);
+                PInvoke.SetWindowPos(handle, NOTOPMOST, state.OriginalWindow.left, state.OriginalWindow.top, state.OriginalWindow.Width, state.OriginalWindow.Height, SetWindowPositionFlags);
             }
         }
         EnableSetCursor();
@@ -206,8 +217,8 @@ unsafe public class ResolutionManager : IDisposable
     {
         if (resizeState is ResizeState state)
         {
-            var xPosition = (float)(point.X) / state.ClientArea.Size.X * state.RenderResolution.X;
-            var yPosition = (float)(point.Y) / state.ClientArea.Size.Y * state.RenderResolution.Y;
+            var xPosition = (float)point.X / state.ClientArea.Size.X * state.RenderResolution.X;
+            var yPosition = (float)point.Y / state.ClientArea.Size.Y * state.RenderResolution.Y;
             return new Point((int)xPosition, (int)yPosition);
         }
         return null;

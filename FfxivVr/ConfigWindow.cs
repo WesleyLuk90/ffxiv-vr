@@ -32,6 +32,7 @@ internal class ConfigWindow : Window
                     toggleVR();
                 }
                 Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
+                Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);
                 ImGui.EndTabItem();
             }
             if (ImGui.BeginTabItem("View"))
