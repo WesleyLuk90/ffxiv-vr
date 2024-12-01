@@ -1,2 +1,1 @@
-[Feature] #2 Add icon to current target and soft target
-[Fix] Just use joysticks to detect physical controllers
+[Feature] #9 Add commands to change configuration
