@@ -1,2 +1,2 @@
-[Fix] Controllers stuck if the menu gestures are used
-[Feature] #7 Fade world to match ui fade
+[Feature] #2 Add icon to current target and soft target
+[Fix] Just use joysticks to detect physical controllers
