@@ -46,6 +46,7 @@ internal class DebugWindow : Window
             if (ImGui.BeginTabItem("Modes"))
             {
                 ImGui.Checkbox("Hide Head", ref Debugging.HideHead);
+                ImGui.InputInt("Index", ref Debugging.Index);
                 ImGui.EndTabItem();
             }
             ImGui.EndTabBar();
@@ -59,6 +60,8 @@ static class Debugging
     public static float XRotation = 0;
     public static float YRotation = 0;
     public static float ZRotation = 0;
+
+    public static int Index = 0;
     public static bool HideHead = false;
 
     public static Vector3D<float>? Location = null;

@@ -214,7 +214,7 @@ unsafe public class GameModifier
 
     internal void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
-        nameplateModifier.PinTargetNameplate(context, handlers);
+        nameplateModifier.UpdateVRNameplates(context, handlers);
     }
 
     internal void UpdateLetterboxing(InternalLetterboxing* internalLetterboxing)

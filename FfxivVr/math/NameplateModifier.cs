@@ -12,7 +12,7 @@ unsafe internal class NameplateModifier(Logger logger, IGameGui gameGui, ITarget
     private ITargetManager targetManager = targetManager;
     private Logger logger = logger;
 
-    public void PinTargetNameplate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
+    public void UpdateVRNameplates(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
         HideTargetArrow();
         var target = targetManager.Target;
@@ -25,6 +25,7 @@ unsafe internal class NameplateModifier(Logger logger, IGameGui gameGui, ITarget
                 var objectData = namePlateArray->ObjectData.GetPointer(handlers[i].ArrayIndex);
                 // Set this to the normal flag to prevent the target nameplate from moving around
                 objectData->DrawFlags |= 1 << 3;
+                objectData->MarkerIconId = 61510;
             }
         }
     }
