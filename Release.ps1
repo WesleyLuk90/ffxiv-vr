@@ -1,5 +1,10 @@
 git pull --ff-only
 
+if ( $LastExitCode -ne 0) {
+    echo "Unmerged changes detected"
+    Exit 1
+}
+
 $xml = [xml](Get-Content -Path .\FfxivVr\FfxivVR.csproj)
 
 $currentVersion = [version]$xml.Project.PropertyGroup.Version
