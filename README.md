@@ -49,3 +49,8 @@ If there is a large black box in front of you there is likely an incompatible pl
 
 -   No support for VR controllers
 -   Mouse interaction with the game world is not aligned/does not work, UI interaction should work
+
+## Advanced
+
+-   Configuration can be changed using commands using `/vr config <name> <value>`, e.g. `/vr config UISize 1.5`
+    -   For a list of available configuration see the options in the [code](https://github.com/WesleyLuk90/ffxiv-vr/blob/master/FfxivVr/ConfigWindow.cs#L34)

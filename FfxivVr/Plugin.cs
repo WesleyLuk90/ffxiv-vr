@@ -51,6 +51,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly FreeCamera freeCamera = new FreeCamera();
 
     private readonly HudLayoutManager hudLayoutManager;
+    private readonly ConfigManager configManager;
+
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -87,6 +89,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(debugWindow);
 
         hudLayoutManager = new HudLayoutManager(configuration, vrLifecycle, logger);
+        configManager = new ConfigManager(configuration, logger);
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
@@ -248,6 +251,14 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "recenter":
                     vrLifecycle.RecenterCamera();
+                    break;
+                case "config":
+                    if (arguments.ElementAtOrDefault(1) is not string name || arguments.ElementAtOrDefault(2) is not string value)
+                    {
+                        logger.Error("Invalid syntax, expected \"/vr config <name> <value>\"");
+                        break;
+                    }
+                    configManager.SetConfig(name, value);
                     break;
                 case "freecam":
                     if (freeCamera.Enabled)
