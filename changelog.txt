@@ -1,1 +1,2 @@
-[Feature] #9 Add commands to change configuration
+[Feature] #4 Add customizable gamepad controls
+[Feature] Add option to keep game window on top
