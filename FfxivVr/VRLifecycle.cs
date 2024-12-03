@@ -71,11 +71,13 @@ public unsafe class VRLifecycle : IDisposable
         builder.Services.AddSingleton<Renderer>();
         builder.Services.AddSingleton<WaitFrameService>();
         builder.Services.AddSingleton<VRInput>();
+        builder.Services.AddSingleton<IVRInput>(x => x.GetRequiredService<VRInput>());
         builder.Services.AddSingleton<EventHandler>();
         builder.Services.AddSingleton<FramePrediction>();
         builder.Services.AddSingleton<VRSession>();
         builder.Services.AddSingleton<VRShaders>();
         builder.Services.AddSingleton<DalamudRenderer>();
+        builder.Services.AddSingleton<InputManager>();
         return builder.Build();
     }
 

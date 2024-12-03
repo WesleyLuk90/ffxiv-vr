@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace FfxivVR;
@@ -24,7 +25,6 @@ internal class ConfigWindow : Window
     {
         if (ImGui.BeginTabBar("tabs"))
         {
-
             if (ImGui.BeginTabItem("General"))
             {
                 if (ImGui.Button(vrLifecycle.IsEnabled() ? "Stop VR" : "Start VR"))
@@ -53,6 +53,11 @@ internal class ConfigWindow : Window
                 ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
                 ImGui.EndTabItem();
             }
+            if (ImGui.BeginTabItem("Controls"))
+            {
+                RenderControlsTab();
+                ImGui.EndTabItem();
+            }
             if (ImGui.BeginTabItem("First Person"))
             {
                 Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
@@ -70,6 +75,64 @@ internal class ConfigWindow : Window
                 Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);
                 ImGui.EndTabItem();
             }
+            ImGui.EndTabBar();
+        }
+    }
+
+    private void RenderControlsTab()
+    {
+        if (ImGui.BeginTabBar("controls-tab"))
+        {
+            if (ImGui.BeginTabItem("Layer 1"))
+            {
+                RenderLayerEditor(0);
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Layer 2"))
+            {
+                RenderLayerEditor(1);
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Layer 3"))
+            {
+                RenderLayerEditor(2);
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Layer 4"))
+            {
+                RenderLayerEditor(3);
+                ImGui.EndTabItem();
+            }
+            ImGui.EndTabBar();
+        }
+    }
+
+    private void RenderLayerEditor(int layer)
+    {
+        VRActionDropdown($"A Button", ref config.Controls[layer].AButton, layer);
+        VRActionDropdown($"B Button", ref config.Controls[layer].BButton, layer);
+        VRActionDropdown($"X Button", ref config.Controls[layer].XButton, layer);
+        VRActionDropdown($"Y Button", ref config.Controls[layer].YButton, layer);
+        VRActionDropdown($"Left Grip", ref config.Controls[layer].LeftGrip, layer);
+        VRActionDropdown($"Left Trigger", ref config.Controls[layer].LeftTrigger, layer);
+        VRActionDropdown($"Left Stick", ref config.Controls[layer].LeftStick, layer);
+        VRActionDropdown($"Right Grip", ref config.Controls[layer].RightGrip, layer);
+        VRActionDropdown($"Right Trigger", ref config.Controls[layer].RightTrigger, layer);
+        VRActionDropdown($"Right Stick", ref config.Controls[layer].RightStick, layer);
+        VRActionDropdown($"Start", ref config.Controls[layer].Start, layer);
+        VRActionDropdown($"Select", ref config.Controls[layer].Select, layer);
+    }
+
+    private void VRActionDropdown(string label, ref VRAction button, int layer)
+    {
+        ImGui.Text(label);
+        ImGui.SameLine();
+        var values = Enum.GetValues<VRAction>().Select(a => a.ToString()).ToArray();
+        int selected = (int)button;
+        if (ImGui.Combo($"##{label}-{layer}", ref selected, values, values.Length))
+        {
+            button = (VRAction)selected;
+            config.Save();
         }
     }
 

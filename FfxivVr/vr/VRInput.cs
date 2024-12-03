@@ -1,13 +1,10 @@
-using Dalamud.Game.ClientState.GamePad;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace FfxivVR;
 
-public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpace, VRState vrState) : IDisposable
+public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpace, VRState vrState) : IDisposable, IVRInput
 {
     private readonly XR xr = xr;
     private readonly VRSystem system = system;
@@ -105,7 +102,7 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
     }
 
     // Need to be careful to only call this in one place because SyncAction is stateful
-    public VrInputState PollActions(long predictedTime)
+    private VrInputState PollActions(long predictedTime)
     {
         var input = new VrInputState();
         var activeActionSet = new ActiveActionSet(
@@ -126,18 +123,18 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
             LeftController: GetActionPose(leftSpace, predictedTime, palmPose, leftHandPath),
             RightController: GetActionPose(rightSpace, predictedTime, palmPose, rightHandPath)
         );
-        GetActionBool(aButton, input, GamepadButtons.South);
-        GetActionBool(bButton, input, GamepadButtons.East);
-        GetActionBool(xButton, input, GamepadButtons.West);
-        GetActionBool(yButton, input, GamepadButtons.North);
-        GetActionBool(startButton, input, GamepadButtons.Start);
-        GetActionBool(selectButton, input, GamepadButtons.Select);
-        GetActionBool(leftTrigger, input, GamepadButtons.L2);
-        GetActionBool(rightTrigger, input, GamepadButtons.R2);
-        GetActionBool(leftBumper, input, GamepadButtons.L1);
-        GetActionBool(rightBumper, input, GamepadButtons.R1);
-        GetActionBool(leftStickPush, input, GamepadButtons.L3);
-        GetActionBool(rightStickPush, input, GamepadButtons.R3);
+        GetActionBool(aButton, input, VRButton.A);
+        GetActionBool(bButton, input, VRButton.B);
+        GetActionBool(xButton, input, VRButton.X);
+        GetActionBool(yButton, input, VRButton.Y);
+        GetActionBool(startButton, input, VRButton.Start);
+        GetActionBool(selectButton, input, VRButton.Select);
+        GetActionBool(leftTrigger, input, VRButton.LeftTrigger);
+        GetActionBool(rightTrigger, input, VRButton.RightTrigger);
+        GetActionBool(leftBumper, input, VRButton.LeftGrip);
+        GetActionBool(rightBumper, input, VRButton.RightGrip);
+        GetActionBool(leftStickPush, input, VRButton.LeftStick);
+        GetActionBool(rightStickPush, input, VRButton.RightStick);
 
         var left = GetActionVector2f(leftAnalog);
         var right = GetActionVector2f(rightAnalog);
@@ -146,28 +143,7 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         return input;
     }
 
-    class RepeatState
-    {
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        int nextRepeat = 1;
-
-        private int NextRepeatMillis()
-        {
-            return 210 + nextRepeat * 50;
-        }
-        public bool DoRepeat()
-        {
-            if (stopwatch.ElapsedMilliseconds > NextRepeatMillis())
-            {
-                nextRepeat++;
-                return true;
-            }
-            return false;
-        }
-    }
-
-    private Dictionary<GamepadButtons, RepeatState> repeatStates = new();
-    private void GetActionBool(Silk.NET.OpenXR.Action action, VrInputState inputState, GamepadButtons button)
+    private void GetActionBool(Silk.NET.OpenXR.Action action, VrInputState inputState, VRButton vrButton)
     {
         var getInfo = new ActionStateGetInfo(
             action: action
@@ -176,24 +152,7 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         xr.GetActionStateBoolean(system.Session, ref getInfo, ref state).CheckResult("GetActionStateBoolean");
         if (state.CurrentState == 1)
         {
-            inputState.ButtonsRaw |= button;
-            if (repeatStates.GetValueOrDefault(button) is RepeatState repeatState && repeatState.DoRepeat())
-            {
-                inputState.ButtonsRepeat |= button;
-            }
-        }
-        if (state.ChangedSinceLastSync == 1)
-        {
-            if (state.CurrentState == 1)
-            {
-                inputState.ButtonsPressed |= button;
-                repeatStates[button] = new RepeatState();
-            }
-            else
-            {
-                inputState.ButtonsReleased |= button;
-                repeatStates.Remove(button);
-            }
+            inputState.Pressed.Add(vrButton);
         }
     }
     private Vector2D<float> GetActionVector2f(Silk.NET.OpenXR.Action action)
@@ -366,7 +325,7 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         }
     }
 
-    internal void UpdateGamepad(GamepadInput* gamepadInput)
+    public VrInputState? GetVrInputState()
     {
         if (PollActions(system.Now()) is VrInputState input && currentController is CurrentController controller)
         {
@@ -374,16 +333,9 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
             controller.IsPhysicalController |= input.IsPhysicalController();
             if (controller.IsPhysicalController)
             {
-                gamepadInput->LeftStickX = (int)(input.LeftStick.X * 99);
-                gamepadInput->LeftStickY = (int)(input.LeftStick.Y * 99);
-                gamepadInput->RightStickX = (int)(input.RightStick.X * 99);
-                gamepadInput->RightStickY = (int)(input.RightStick.Y * 99);
-
-                gamepadInput->ButtonsPressed = (ushort)input.ButtonsPressed;
-                gamepadInput->ButtonsReleased = (ushort)input.ButtonsReleased;
-                gamepadInput->ButtonsRaw = (ushort)input.ButtonsRaw;
-                gamepadInput->ButtonsRepeat = (ushort)input.ButtonsRepeat;
+                return input;
             }
         }
+        return null;
     }
 }

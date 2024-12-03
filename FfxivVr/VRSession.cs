@@ -27,7 +27,8 @@ public unsafe class VRSession(
     WaitFrameService waitFrameService,
     VRInput vrInput,
     EventHandler eventHandler,
-    FramePrediction framePrediction
+    FramePrediction framePrediction,
+    InputManager inputManager
 )
 {
     private readonly VRSystem vrSystem = vrSystem;
@@ -47,6 +48,7 @@ public unsafe class VRSession(
     private readonly ResolutionManager resolutionManager = resolutionManager;
     private readonly WaitFrameService waitFrameService = waitFrameService;
     private readonly FramePrediction framePrediction = framePrediction;
+    private readonly InputManager inputManager = inputManager;
     private readonly VRInput vrInput = vrInput;
 
     public void Initialize()
@@ -366,6 +368,6 @@ public unsafe class VRSession(
 
     internal void UpdateGamepad(GamepadInput* gamepadInput)
     {
-        vrInput.UpdateGamepad(gamepadInput);
+        inputManager.UpdateGamepad(gamepadInput);
     }
 }
