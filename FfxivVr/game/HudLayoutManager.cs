@@ -2,7 +2,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 namespace FfxivVR;
 
-class HudLayoutManager(Configuration configuration, VRLifecycle vRLifecycle, Logger logger)
+public class HudLayoutManager(Configuration configuration, VRLifecycle vRLifecycle, Logger logger)
 {
     private readonly Configuration configuration = configuration;
     private readonly VRLifecycle vRLifecycle = vRLifecycle;

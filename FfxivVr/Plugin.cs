@@ -1,7 +1,6 @@
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
-using Dalamud.Game.Config;
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
@@ -53,6 +52,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly HudLayoutManager hudLayoutManager;
     private readonly ConfigManager configManager;
 
+    private readonly Transitions transitions;
+
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
@@ -91,6 +92,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
         hudLayoutManager = new HudLayoutManager(configuration, vrLifecycle, logger);
         configManager = new ConfigManager(configuration, logger);
 
+        transitions = new Transitions(vrLifecycle, configuration, GameConfig, logger, diagnostics, companionPlugins, hudLayoutManager);
+
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
         NamePlateGui.OnDataUpdate += OnNamePlateUpdate;
@@ -99,7 +102,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private void Login()
     {
-        hudLayoutManager.RequestHudLayoutUpdate();
+        transitions.OnLogin();
     }
 
     private void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
@@ -111,6 +114,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     {
         companionPlugins.OnUnload();
         Framework.Update -= FrameworkUpdate;
+        ClientState.Login -= Login;
         NamePlateGui.OnNamePlateUpdate -= OnNamePlateUpdate;
         gameHooks.Dispose();
 
@@ -146,11 +150,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 var nextFirstPerson = gameState.IsFirstPerson();
                 if (nextFirstPerson && isFirstPerson == false)
                 {
-                    ThirdToFirstPerson();
+                    transitions.ThirdToFirstPerson();
                 }
                 if (!nextFirstPerson && isFirstPerson == true)
                 {
-                    FirstToThirdPerson();
+                    transitions.FirstToThirdPerson();
                 }
                 isFirstPerson = nextFirstPerson;
             }
@@ -194,38 +198,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
             heightDelta: GamepadState.RightStick.Y * timeDelta * speed,
             rotationDelta: -GamepadState.RightStick.X * timeDelta * rotationSpeed
         );
-    }
-
-    private void FirstToThirdPerson()
-    {
-        if (!vrLifecycle.IsEnabled())
-        {
-            return;
-        }
-        if (configuration.RecenterOnViewChange)
-        {
-            vrLifecycle.RecenterCamera();
-        }
-        if (configuration.DisableAutoFaceTargetInFirstPerson)
-        {
-            GameConfig.Set(UiControlOption.AutoFaceTargetOnAction, true);
-        }
-    }
-
-    private void ThirdToFirstPerson()
-    {
-        if (!vrLifecycle.IsEnabled())
-        {
-            return;
-        }
-        if (configuration.RecenterOnViewChange)
-        {
-            vrLifecycle.RecenterCamera();
-        }
-        if (configuration.DisableAutoFaceTargetInFirstPerson)
-        {
-            GameConfig.Set(UiControlOption.AutoFaceTargetOnAction, false);
-        }
     }
 
     private unsafe void OnCommand(string command, string args)
@@ -297,33 +269,17 @@ public unsafe sealed class Plugin : IDalamudPlugin
     }
     public void StartVR()
     {
-        if (!GameConfig.TryGet(SystemConfigOption.ScreenMode, out uint screenMode))
+        if (!transitions.PreStartVR())
         {
-            logger.Error("Failed to lookup screen mode");
-        }
-        if (screenMode == 1)
-        {
-            logger.Error("VR does not work in full screen. Please switch to windowed or borderless window.");
             return;
         }
-        if (!GameConfig.TryGet(SystemConfigOption.Gamma, out uint gamma))
-        {
-            logger.Error("Failed to lookup screen mode");
-        }
-        if (gamma == 50) // Gamma of 50 breaks the render, adjust it slightly
-        {
-            GameConfig.Set(SystemConfigOption.Gamma, 51);
-        }
-        diagnostics.OnStart();
         vrLifecycle.EnableVR();
-        companionPlugins.OnActivate();
-        hudLayoutManager.RequestHudLayoutUpdate();
+        transitions.PostStartVR();
     }
     private void StopVR()
     {
-        diagnostics.OnStop();
+        transitions.PreStopVR();
         vrLifecycle.DisableVR();
-        companionPlugins.OnDeactivate();
-        hudLayoutManager.RequestHudLayoutUpdate();
+        transitions.PostStopVR();
     }
 }
