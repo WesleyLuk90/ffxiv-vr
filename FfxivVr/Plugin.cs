@@ -57,6 +57,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     public Plugin()
     {
         logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
+        logger.Info($"Config {(PluginInterface.GetPluginConfig() as Configuration).Controls[0].LeftGrip}");
         configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)

@@ -1,6 +1,5 @@
 ﻿using Dalamud.Configuration;
 using System;
-using System.Collections.Generic;
 
 namespace FfxivVR;
 
@@ -38,7 +37,7 @@ public class Configuration : IPluginConfiguration
     public bool KeepCameraHorizontal = true;
     public bool WindowAlwaysOnTop = false;
 
-    public List<ControlLayer> Controls = [
+    public ControlLayer[] Controls = [
         new ControlLayer(),
         new ControlLayer(),
         new ControlLayer(),
