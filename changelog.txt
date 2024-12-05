@@ -1,2 +1,2 @@
-[Feature] #4 Add customizable gamepad controls
-[Feature] Add option to keep game window on top
+[Fix] Fix control configuration loading
+[Fix] #22 Reenable auto face target on vr stop and logout
