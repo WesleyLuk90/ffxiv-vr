@@ -30,6 +30,11 @@ public class Transitions(
         {
             vrLifecycle.RecenterCamera();
         }
+        MaybeEnableAutoFaceTarget();
+    }
+
+    private void MaybeEnableAutoFaceTarget()
+    {
         if (configuration.DisableAutoFaceTargetInFirstPerson)
         {
             gameConfig.Set(UiControlOption.AutoFaceTargetOnAction, true);
@@ -90,10 +95,16 @@ public class Transitions(
     {
         companionPlugins.OnDeactivate();
         hudLayoutManager.RequestHudLayoutUpdate();
+        MaybeEnableAutoFaceTarget();
     }
 
     internal void OnLogin()
     {
         hudLayoutManager.RequestHudLayoutUpdate();
+    }
+
+    internal void OnLogout()
+    {
+        MaybeEnableAutoFaceTarget();
     }
 }

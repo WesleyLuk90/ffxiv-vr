@@ -98,6 +98,12 @@ public unsafe sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
         NamePlateGui.OnDataUpdate += OnNamePlateUpdate;
         ClientState.Login += Login;
+        ClientState.Logout += Logout;
+    }
+
+    private void Logout(int type, int code)
+    {
+        transitions.OnLogout();
     }
 
     private void Login()
@@ -115,6 +121,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         companionPlugins.OnUnload();
         Framework.Update -= FrameworkUpdate;
         ClientState.Login -= Login;
+        ClientState.Logout -= Logout;
         NamePlateGui.OnNamePlateUpdate -= OnNamePlateUpdate;
         gameHooks.Dispose();
 
