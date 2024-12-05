@@ -8,7 +8,9 @@ Based on the original [xivr-Ex Plugin](https://github.com/ProjectMimer/xivr-Ex)
 
 -   VR in FFXIV
 -   First person mode with body view
+-   Customizable VR Controller bindings
 -   Hand tracking
+-   Controller hand tracking
 
 ## Instructions
 
@@ -47,7 +49,6 @@ If there is a large black box in front of you there is likely an incompatible pl
 
 ## Known Issues
 
--   No support for VR controllers
 -   Mouse interaction with the game world is not aligned/does not work, UI interaction should work
 
 ## Advanced
