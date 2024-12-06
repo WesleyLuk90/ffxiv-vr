@@ -1,2 +1,3 @@
-[Fix] Fix control configuration loading
-[Fix] #22 Reenable auto face target on vr stop and logout
+[Fix] Improve controller hand position
+[Fix] Improve controller detection, allow abxy
+[Fix] Improve fade handling
