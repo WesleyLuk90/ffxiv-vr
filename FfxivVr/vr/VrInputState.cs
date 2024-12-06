@@ -11,6 +11,6 @@ public class VrInputState
     public HashSet<VRButton> Pressed = new();
     public bool IsPhysicalController()
     {
-        return LeftStick.LengthSquared > 0 || RightStick.Length > 0;
+        return Pressed.Contains(VRButton.A) || Pressed.Contains(VRButton.B) || Pressed.Contains(VRButton.X) || Pressed.Contains(VRButton.Y) || LeftStick.LengthSquared > 0 || RightStick.Length > 0;
     }
 }
