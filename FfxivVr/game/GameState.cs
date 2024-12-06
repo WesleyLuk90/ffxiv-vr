@@ -103,18 +103,39 @@ unsafe public class GameState
         return InternalGameCamera.FromCamera(GetActiveCamera());
     }
 
-    public AddonFade* GetAddonFade()
+    private AddonFade* FadeMiddle = null;
+    private AddonFade* FadeBack = null;
+    private AddonFade* GetFadeMiddle()
     {
-        return (AddonFade*)gameGui.GetAddonByName("FadeMiddle");
+        if (FadeMiddle != null)
+        {
+            return FadeMiddle;
+        }
+        FadeMiddle = (AddonFade*)gameGui.GetAddonByName("FadeMiddle");
+        return FadeMiddle;
+    }
+    private AddonFade* GetFadeBack()
+    {
+        if (FadeBack != null)
+        {
+            return FadeBack;
+        }
+        FadeBack = (AddonFade*)gameGui.GetAddonByName("FadeBack");
+        return FadeBack;
     }
 
     public float GetFade()
     {
         var fade = 0f;
-        var addon = GetAddonFade();
-        if (addon != null)
+        var middle = GetFadeMiddle();
+        if (middle != null)
         {
-            fade = AddonFade.GetAlpha(addon);
+            fade = AddonFade.GetAlpha(middle);
+        }
+        var back = GetFadeBack();
+        if (back != null)
+        {
+            fade = float.Max(fade, AddonFade.GetAlpha(back));
         }
         return fade;
     }
