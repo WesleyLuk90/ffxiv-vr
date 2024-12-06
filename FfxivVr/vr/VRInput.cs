@@ -62,8 +62,8 @@ public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpa
         rightAnalog = CreateAction(actionType: ActionType.Vector2fInput, "right-analog");
 
         SuggestBindings([
-            CreateSuggestedBinding(palmPose, "/user/hand/left/input/grip/pose"),
-            CreateSuggestedBinding(palmPose, "/user/hand/right/input/grip/pose"),
+            CreateSuggestedBinding(palmPose, "/user/hand/left/input/palm_ext/pose"),
+            CreateSuggestedBinding(palmPose, "/user/hand/right/input/palm_ext/pose"),
 
             CreateSuggestedBinding(leftAnalog, "/user/hand/left/input/thumbstick"),
             CreateSuggestedBinding(rightAnalog, "/user/hand/right/input/thumbstick"),

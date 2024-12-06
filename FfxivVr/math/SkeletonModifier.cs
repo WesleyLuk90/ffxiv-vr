@@ -166,7 +166,7 @@ unsafe internal class SkeletonModifier(Logger logger)
             }
             else if (trackingData.GetLeftController() is Posef leftController)
             {
-                var wrist = ControllerToWrist(leftController, MathFactory.XRotation(float.DegreesToRadians(-90)) * MathFactory.ZRotation(float.DegreesToRadians(90)));
+                var wrist = ControllerToWrist(leftController, MathFactory.ZRotation(float.DegreesToRadians(90)));
                 UpdateArmIK(wrist, pose, structure, head, HumanBones.ArmLeft, HumanBones.ForearmLeft, HumanBones.HandLeft, skeletonRotation);
                 RotateHand(wrist, HumanBones.HandLeft, HumanBones.WristLeft, HumanBones.ForearmLeft, structure, pose, skeletonRotation);
             }
@@ -183,7 +183,7 @@ unsafe internal class SkeletonModifier(Logger logger)
             }
             else if (trackingData.GetRightController() is Posef rightController)
             {
-                var wrist = ControllerToWrist(rightController, MathFactory.XRotation(float.DegreesToRadians(-90)) * MathFactory.ZRotation(float.DegreesToRadians(-90)));
+                var wrist = ControllerToWrist(rightController, MathFactory.ZRotation(float.DegreesToRadians(-90)));
                 UpdateArmIK(wrist, pose, structure, head, HumanBones.ArmRight, HumanBones.ForearmRight, HumanBones.HandRight, skeletonRotation);
                 RotateHand(wrist, HumanBones.HandRight, HumanBones.WristRight, HumanBones.ForearmRight, structure, pose, skeletonRotation);
             }
@@ -193,7 +193,7 @@ unsafe internal class SkeletonModifier(Logger logger)
     private Posef ControllerToWrist(Posef leftController, Quaternion<float> rotation)
     {
         var wristRotation = leftController.Orientation.ToQuaternion() * rotation;
-        var wristPosition = leftController.Position.ToVector3D() - Vector3D.Transform(new Vector3D<float>(0, 0, -0.09f), wristRotation);
+        var wristPosition = leftController.Position.ToVector3D() - Vector3D.Transform(new Vector3D<float>(0, 0, -0.08f), wristRotation);
         return new Posef(wristRotation.ToQuaternionf(), wristPosition.ToVector3f());
     }
 

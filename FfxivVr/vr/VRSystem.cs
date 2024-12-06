@@ -1,8 +1,10 @@
 using Silk.NET.Core;
 using Silk.NET.OpenXR;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 public unsafe class VRSystem : IDisposable
@@ -31,41 +33,53 @@ public unsafe class VRSystem : IDisposable
 
     public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
 
+    private List<string> wantedExtensions = [
+        "XR_KHR_D3D11_enable",
+        "XR_KHR_win32_convert_performance_counter_time",
+        "XR_EXT_hand_tracking",
+        "XR_EXT_palm_pose",
+    ];
     public void Initialize()
     {
         ApplicationInfo appInfo = new ApplicationInfo(applicationVersion: 1, engineVersion: 1, apiVersion: 1UL << 48);
         appInfo.SetApplicationName("FFXIV VR");
 
-        var extensions = xr.GetInstanceExtensionProperties(layerName: null);
-        var names = string.Join(",", extensions.Select(e => e.GetExtensionName()).ToList());
+        var availableExtensions = xr.GetInstanceExtensionProperties(layerName: null);
+        var names = string.Join(",", availableExtensions.Select(e => e.GetExtensionName()).ToList());
 
-        logger.Debug($"Available extensions ({extensions.Count}): {names}");
+        logger.Debug($"Available extensions ({availableExtensions.Count}): {names}");
 
-        var dx11Extension = extensions
-            .Where(p => p.GetExtensionName() == "XR_KHR_D3D11_enable")
-            .First();
-        var performanceCounterExtension = extensions
-            .Where(p => p.GetExtensionName() == "XR_KHR_win32_convert_performance_counter_time")
-            .First();
-
-        var handTrackingExtensionIndex = extensions.FindIndex(p => p.GetExtensionName() == "XR_EXT_hand_tracking");
-        HandTrackingExtensionEnabled = handTrackingExtensionIndex > -1;
-
-        byte*[] extensionsToEnable;
-        if (HandTrackingExtensionEnabled)
+        var foundExtensions = new List<ExtensionProperties>();
+        wantedExtensions.ForEach(wantedExtension =>
         {
-            var handTrackingExtension = extensions[handTrackingExtensionIndex];
-            extensionsToEnable = [dx11Extension.ExtensionName, performanceCounterExtension.ExtensionName, handTrackingExtension.ExtensionName];
-        }
-        else
+            availableExtensions.ForEach(available =>
+            {
+                if (available.GetExtensionName() == wantedExtension)
+                {
+                    foundExtensions.Add(available);
+                }
+            });
+        });
+        logger.Debug($"Enabling extensions {string.Join(", ", foundExtensions.Select(e => e.GetExtensionName()))}");
+
+        HandTrackingExtensionEnabled = foundExtensions.Any(e => e.GetExtensionName() == "XR_EXT_hand_tracking");
+        byte*[] extensionsToEnable = new byte*[foundExtensions.Count()];
+        for (var i = 0; i < foundExtensions.Count(); i++)
         {
-            extensionsToEnable = [dx11Extension.ExtensionName, performanceCounterExtension.ExtensionName];
+            extensionsToEnable[i] = (byte*)Marshal.StringToHGlobalAnsi(foundExtensions[i].GetExtensionName());
         }
         fixed (byte** ptr = &extensionsToEnable[0])
         {
-            InstanceCreateInfo createInfo = new InstanceCreateInfo(createFlags: 0, enabledExtensionCount: (uint)extensionsToEnable.Length, enabledExtensionNames: ptr);
+            InstanceCreateInfo createInfo = new InstanceCreateInfo(
+                createFlags: 0,
+                enabledExtensionCount: (uint)extensionsToEnable.Length,
+                enabledExtensionNames: ptr);
             createInfo.ApplicationInfo = appInfo;
             xr.CreateInstance(&createInfo, ref Instance).CheckResult("CreateInstance");
+        }
+        foreach (var stringPointer in extensionsToEnable)
+        {
+            Marshal.FreeHGlobal((IntPtr)stringPointer);
         }
 
         var instanceProperties = new InstanceProperties(next: null);
