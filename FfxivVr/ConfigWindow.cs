@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -10,7 +11,14 @@ internal class ConfigWindow : Window
     private readonly Configuration config;
     private readonly VRLifecycle vrLifecycle;
     private readonly Action toggleVR;
-    public ConfigWindow(Configuration configuration, VRLifecycle vrLifecycle, Action toggleVR) : base("FFXIV VR Settings")
+    private readonly GameConfigManager gameConfigManager;
+
+    public ConfigWindow(
+        Configuration configuration,
+        VRLifecycle vrLifecycle,
+        Action toggleVR,
+        GameConfigManager gameConfigManager
+        ) : base("FFXIV VR Settings")
     {
         Flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize;
 
@@ -19,6 +27,7 @@ internal class ConfigWindow : Window
         this.config = configuration;
         this.vrLifecycle = vrLifecycle;
         this.toggleVR = toggleVR;
+        this.gameConfigManager = gameConfigManager;
     }
 
     public override void Draw()
@@ -77,7 +86,84 @@ internal class ConfigWindow : Window
                 Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);
                 ImGui.EndTabItem();
             }
+            if (ImGui.BeginTabItem("Game Config"))
+            {
+                RenderGameConfig();
+                ImGui.EndTabItem();
+            }
             ImGui.EndTabBar();
+        }
+    }
+
+    private void RenderGameConfig()
+    {
+        ImGui.Text("Change game settings when VR is started");
+        gameConfigManager.Options.ForEach(RenderConfigOption);
+    }
+
+    private void RenderConfigOption(GameOption option)
+    {
+        ImGui.Text(option.Label ?? option.GetID());
+        if (option.IsBoolean())
+        {
+            int selected = ((int?)config.GetVRGameSetting(option.GetID()) ?? -1) + 1;
+            if (ImGui.Combo($"##{option}-select", ref selected, ["Don't Change", "Off", "On"], 3))
+            {
+                if (selected == 0)
+                {
+                    config.SetVRGameSetting(option.GetID(), null);
+                }
+                else
+                {
+                    config.SetVRGameSetting(option.GetID(), (uint?)(selected - 1));
+                }
+            }
+        }
+        else if (option.Options is List<string> options)
+        {
+            int selected = ((int?)config.GetVRGameSetting(option.GetID()) ?? -1) + 1;
+            var allOptions = new List<string>() { "Don't Change" };
+            allOptions.AddRange(options);
+            if (ImGui.Combo($"##{option}-select", ref selected, allOptions.ToArray(), options.Count() + 1))
+            {
+                if (selected == 0)
+                {
+                    config.SetVRGameSetting(option.GetID(), null);
+                }
+                else
+                {
+                    config.SetVRGameSetting(option.GetID(), (uint?)(selected - 1));
+                }
+            }
+        }
+        else
+        {
+            uint? configValue = config.GetVRGameSetting(option.GetID());
+            bool disabled = configValue == null;
+            int value = (int)(configValue ?? option.Properties.Default);
+            if (ImGui.Checkbox($"Don't Change##{option}-box", ref disabled))
+            {
+                if (disabled)
+                {
+                    config.SetVRGameSetting(option.GetID(), null);
+                }
+                else
+                {
+                    config.SetVRGameSetting(option.GetID(), option.Properties.Default);
+                }
+            }
+            if (disabled)
+            {
+                ImGui.BeginDisabled();
+            }
+            if (ImGui.SliderInt($"##{option}-select", ref value, (int)option.Properties.Minimum, (int)option.Properties.Maximum))
+            {
+                config.SetVRGameSetting(option.GetID(), (uint?)value);
+            }
+            if (disabled)
+            {
+                ImGui.EndDisabled();
+            }
         }
     }
 

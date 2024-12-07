@@ -10,7 +10,8 @@ public class Transitions(
     Logger logger,
     VRDiagnostics diagnostics,
     CompanionPlugins companionPlugins,
-    HudLayoutManager hudLayoutManager
+    HudLayoutManager hudLayoutManager,
+    GameConfigManager gameConfigManager
 )
 {
     private readonly VRLifecycle vrLifecycle = vrLifecycle;
@@ -19,6 +20,7 @@ public class Transitions(
     private readonly Logger logger = logger;
     private readonly VRDiagnostics diagnostics = diagnostics;
     private readonly CompanionPlugins companionPlugins = companionPlugins;
+    private readonly GameConfigManager gameConfigManager = gameConfigManager;
 
     public void FirstToThirdPerson()
     {
@@ -59,6 +61,7 @@ public class Transitions(
 
     public bool PreStartVR()
     {
+        gameConfigManager.Apply();
         if (!gameConfig.TryGet(SystemConfigOption.ScreenMode, out uint screenMode))
         {
             logger.Error("Failed to lookup screen mode");
@@ -96,15 +99,18 @@ public class Transitions(
         companionPlugins.OnDeactivate();
         hudLayoutManager.RequestHudLayoutUpdate();
         MaybeEnableAutoFaceTarget();
+        gameConfigManager.Revert();
     }
 
     internal void OnLogin()
     {
         hudLayoutManager.RequestHudLayoutUpdate();
+        gameConfigManager.Apply();
     }
 
     internal void OnLogout()
     {
         MaybeEnableAutoFaceTarget();
+        gameConfigManager.Revert();
     }
 }

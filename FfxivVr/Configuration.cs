@@ -1,5 +1,6 @@
 ﻿using Dalamud.Configuration;
 using System;
+using System.Collections.Generic;
 
 namespace FfxivVR;
 
@@ -45,6 +46,29 @@ public class Configuration : IPluginConfiguration
         new ControlLayer(),
         new ControlLayer(),
     ];
+
+    public Dictionary<string, uint> VRGameSettings = new();
+
+    public uint? GetVRGameSetting(string id)
+    {
+        if (VRGameSettings.ContainsKey(id))
+        {
+            return VRGameSettings[id];
+        }
+        return null;
+    }
+    public void SetVRGameSetting(string id, uint? value)
+    {
+        if (value is uint v)
+        {
+            VRGameSettings[id] = v;
+        }
+        else
+        {
+            VRGameSettings.Remove(id);
+        }
+        Save();
+    }
 
     public void Save()
     {

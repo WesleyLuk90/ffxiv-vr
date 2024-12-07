@@ -51,7 +51,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private readonly HudLayoutManager hudLayoutManager;
     private readonly ConfigManager configManager;
-
+    private readonly GameConfigManager gameConfigManager;
     private readonly Transitions transitions;
 
     public Plugin()
@@ -84,7 +84,9 @@ public unsafe sealed class Plugin : IDalamudPlugin
         gameHooks.Initialize();
         Framework.Update += FrameworkUpdate;
 
-        configWindow = new ConfigWindow(configuration, vrLifecycle, ToggleVR);
+        gameConfigManager = new GameConfigManager(GameConfig, logger, configuration);
+
+        configWindow = new ConfigWindow(configuration, vrLifecycle, ToggleVR, gameConfigManager);
         WindowSystem.AddWindow(configWindow);
         debugWindow = new DebugWindow();
         WindowSystem.AddWindow(debugWindow);
@@ -92,7 +94,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
         hudLayoutManager = new HudLayoutManager(configuration, vrLifecycle, logger);
         configManager = new ConfigManager(configuration, logger);
 
-        transitions = new Transitions(vrLifecycle, configuration, GameConfig, logger, diagnostics, companionPlugins, hudLayoutManager);
+
+        transitions = new Transitions(vrLifecycle, configuration, GameConfig, logger, diagnostics, companionPlugins, hudLayoutManager, gameConfigManager);
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
@@ -143,6 +146,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
         exceptionHandler.FaultBarrier(() =>
         {
             MaybeOnBootStartVR();
+        });
+
+        exceptionHandler.FaultBarrier(() =>
+        {
+            gameConfigManager.Initialize();
         });
     }
 
