@@ -81,7 +81,6 @@ public unsafe class VRSystem : IDisposable
         {
             Marshal.FreeHGlobal((IntPtr)stringPointer);
         }
-
         var instanceProperties = new InstanceProperties(next: null);
         xr.GetInstanceProperties(Instance, &instanceProperties).CheckResult("GetInstanceProperties");
 
@@ -101,7 +100,6 @@ public unsafe class VRSystem : IDisposable
         var result = xr.GetSystem(Instance, &getInfo, ref SystemId);
         if (result == Result.ErrorFormFactorUnavailable)
         {
-            logger.Error("Headset not found");
             throw new FormFactorUnavailableException();
         }
         result.CheckResult("GetSystem");

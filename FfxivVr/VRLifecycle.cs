@@ -8,6 +8,7 @@ using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using static FfxivVR.VRSystem;
 
 namespace FfxivVR;
 public unsafe class VRLifecycle : IDisposable
@@ -97,12 +98,18 @@ public unsafe class VRLifecycle : IDisposable
 
             vrSession.Initialize();
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            logger.Info("Failed to start VR");
+            if (e is FormFactorUnavailableException)
+            {
+                logger.Error("Failed to start VR, headset not found");
+            }
+            else
+            {
+                logger.Error($"Failed to start VR {e}");
+            }
             vrSession = null;
             this.host?.Dispose();
-            throw;
         }
     }
 
