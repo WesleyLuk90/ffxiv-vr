@@ -21,6 +21,7 @@ public class Configuration : IPluginConfiguration
     public bool ControllerTracking = false;
 
     public bool MatchFloorPosition = false;
+    public float FloorHeightOffset = 0;
     public bool DisableCameraDirectionFlying = false;
     public bool DisableCameraDirectionFlyingThirdPerson = false;
 

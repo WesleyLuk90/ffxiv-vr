@@ -70,7 +70,8 @@ internal class ConfigWindow : Window
             }
             if (ImGui.BeginTabItem("Third Person"))
             {
-                Checkbox("Match game to real floor position", ref config.MatchFloorPosition);
+                Checkbox("Fixed camera height", ref config.MatchFloorPosition);
+                Slider("Height offset", ref config.FloorHeightOffset, defaultValue: 0, min: -3, max: 3);
                 Checkbox("Keep the camera level with the floor", ref config.KeepCameraHorizontal);
                 Checkbox("Keep the cutscene camera level with the floor", ref config.KeepCutsceneCameraHorizontal);
                 Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);
@@ -168,10 +169,10 @@ internal class ConfigWindow : Window
             config.Save();
         }
     }
-    private void Slider(string label, ref float value, float defaultValue = 1.0f)
+    private void Slider(string label, ref float value, float defaultValue = 1.0f, float min = 0.1f, float max = 10)
     {
         var tempValue = value;
-        if (ImGui.SliderFloat(label, ref tempValue, 0.1f, 10f))
+        if (ImGui.SliderFloat(label, ref tempValue, min, max))
         {
             value = tempValue;
             config.Save();

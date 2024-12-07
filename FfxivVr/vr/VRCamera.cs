@@ -81,7 +81,7 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         {
             return new LockedFloorCamera(
                 groundPosition: characterBase->Position.Y,
-                height: height,
+                height: height + configuration.FloorHeightOffset,
                 distance: d,
                 worldScale: configuration.WorldScale);
         }
