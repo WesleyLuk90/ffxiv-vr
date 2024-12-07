@@ -65,6 +65,10 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         {
             return freeCamera;
         }
+        else if (gameState.IsOccupiedInCutSceneEvent() && !configuration.KeepCutsceneCameraHorizontal)
+        {
+            return new OrbitCamera();
+        }
         else if (gameState.IsFirstPerson() && configuration.FollowCharacter)
         {
             return new FollowingFirstPersonCamera();

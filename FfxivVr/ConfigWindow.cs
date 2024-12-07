@@ -72,6 +72,7 @@ internal class ConfigWindow : Window
             {
                 Checkbox("Match game to real floor position", ref config.MatchFloorPosition);
                 Checkbox("Keep the camera level with the floor", ref config.KeepCameraHorizontal);
+                Checkbox("Keep the cutscene camera level with the floor", ref config.KeepCutsceneCameraHorizontal);
                 Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);
                 ImGui.EndTabItem();
             }

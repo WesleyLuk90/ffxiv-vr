@@ -139,4 +139,13 @@ unsafe public class GameState
         }
         return fade;
     }
+
+    internal bool IsOccupiedInCutSceneEvent()
+    {
+        // Set during
+        // Inn login/logout
+        // Quest cutscene
+        // Dungeon cutscene
+        return Conditions.IsOccupiedInCutSceneEvent;
+    }
 }

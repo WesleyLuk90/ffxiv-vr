@@ -35,6 +35,7 @@ public class Configuration : IPluginConfiguration
 
     public bool ShowBodyInFirstPerson = true;
     public bool KeepCameraHorizontal = true;
+    public bool KeepCutsceneCameraHorizontal = true;
     public bool WindowAlwaysOnTop = false;
 
     public ControlLayer[] Controls = [
