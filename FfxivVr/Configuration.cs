@@ -39,6 +39,7 @@ public class Configuration : IPluginConfiguration
     public bool KeepCameraHorizontal = true;
     public bool KeepCutsceneCameraHorizontal = true;
     public bool WindowAlwaysOnTop = false;
+    public int UITransitionAngle = 180;
 
     public ControlLayer[] Controls = [
         new ControlLayer(),

@@ -20,7 +20,6 @@ unsafe public class Renderer(
     Configuration configuration,
     DalamudRenderer dalamudRenderer,
     VRCamera vrCamera,
-    VRDiagnostics diagnostics,
     ResolutionManager resolutionManager,
     GameState gameState)
 {
@@ -35,10 +34,8 @@ unsafe public class Renderer(
     private readonly Configuration configuration = configuration;
     private readonly DalamudRenderer dalamudRenderer = dalamudRenderer;
     private readonly VRCamera vrCamera = vrCamera;
-    private readonly VRDiagnostics diagnostics = diagnostics;
     private readonly ResolutionManager resolutionManager = resolutionManager;
     private readonly GameState gameState = gameState;
-
     private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(
@@ -82,11 +79,11 @@ unsafe public class Renderer(
         return views;
     }
 
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, FrameState frameState, View[] views, Eye eye)
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView)
     {
-        var swapchainView = swapchains.Views[eye.ToIndex()];
+        var swapchainView = swapchains.Views[vrView.Eye.ToIndex()];
         CheckResolution(swapchainView);
-        var view = views[eye.ToIndex()];
+        var view = vrView.View;
         uint colorImageIndex = 0;
         xr.AcquireSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null, ref colorImageIndex).CheckResult("AcquireSwapchainImage");
         var currentColorSwapchainImage = swapchainView.ColorSwapchainInfo.Views[colorImageIndex];
@@ -142,8 +139,8 @@ unsafe public class Renderer(
         shaders.SetShaders(context);
         resources.DisableDepthStencil(context);
 
-        var currentEyeRenderTarget = resources.SceneRenderTargets[eye.ToIndex()];
-        if (eye == Eye.Left)
+        var currentEyeRenderTarget = resources.SceneRenderTargets[vrView.Eye.ToIndex()];
+        if (vrView.Eye == Eye.Left)
         {
             logger.Trace("Rendering UI");
             RenderUITexture(context, width, height);
@@ -151,7 +148,7 @@ unsafe public class Renderer(
 
         logger.Trace("Rendering Game");
         resources.SetSceneBlendState(context);
-        var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
+        var depthTarget = resources.SceneDepthTargets[vrView.Eye.ToIndex()];
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
 
         RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
@@ -162,11 +159,10 @@ unsafe public class Renderer(
             resources.EnableDepthStencil(context);
         }
 
-        RenderUI(context, vrViewProjectionMatrix);
+        RenderUI(context, vrViewProjectionMatrix, vrView.UIRotation);
 
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
         xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
-        diagnostics.OnRender(eye);
         return compositionLayerProjectionView;
     }
 
@@ -188,11 +184,10 @@ unsafe public class Renderer(
             resolutionErrorChecked = true;
         }
     }
-    private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj)
+    private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj, float rotation)
     {
-        var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance));
+        var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance)) * Matrix4X4.CreateFromQuaternion(MathFactory.YRotation(rotation));
         var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
-
         resources.SetCompositingBlendState(context);
         var uiScale = resources.UIRenderTarget.Scale() * Matrix4X4.CreateScale(configuration.UISize);
         RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, uiScale * modelViewProjection, false);
@@ -320,7 +315,6 @@ unsafe public class Renderer(
             var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
             context->CopyResource((ID3D11Resource*)depthTarget.Texture, (ID3D11Resource*)depthTexture->D3D11Texture2D);
         }
-        diagnostics.OnCopy(eye);
 
     }
 

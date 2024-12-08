@@ -21,7 +21,6 @@ public unsafe class VRLifecycle : IDisposable
     private IHost? host;
     private VRSession? vrSession;
     private readonly HookStatus hookStatus;
-    private readonly VRDiagnostics diagnostics;
     private readonly GameModifier gameModifier;
 
     private readonly FreeCamera freeCamera;
@@ -33,7 +32,6 @@ public unsafe class VRLifecycle : IDisposable
         GameState gameState,
         RenderPipelineInjector renderPipelineInjector,
         HookStatus hookStatus,
-        VRDiagnostics diagnostics,
         GameModifier gameModifier,
         FreeCamera freeCamera)
     {
@@ -43,7 +41,6 @@ public unsafe class VRLifecycle : IDisposable
         this.gameState = gameState;
         this.renderPipelineInjector = renderPipelineInjector;
         this.hookStatus = hookStatus;
-        this.diagnostics = diagnostics;
         this.gameModifier = gameModifier;
         this.freeCamera = freeCamera;
     }
@@ -59,7 +56,6 @@ public unsafe class VRLifecycle : IDisposable
         builder.Services.AddSingleton(gameState);
         builder.Services.AddSingleton(renderPipelineInjector);
         builder.Services.AddSingleton(hookStatus);
-        builder.Services.AddSingleton(diagnostics);
         builder.Services.AddSingleton(gameModifier);
         builder.Services.AddSingleton(freeCamera);
         builder.Services.AddSingleton<VRSystem>();
@@ -79,6 +75,8 @@ public unsafe class VRLifecycle : IDisposable
         builder.Services.AddSingleton<VRShaders>();
         builder.Services.AddSingleton<DalamudRenderer>();
         builder.Services.AddSingleton<InputManager>();
+        builder.Services.AddSingleton<VRUI>();
+        builder.Services.AddSingleton<GameClock>();
         return builder.Build();
     }
 

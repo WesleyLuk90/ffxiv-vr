@@ -60,6 +60,7 @@ internal class ConfigWindow : Window
                 Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
                 ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
                 ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
+                SliderInt("UI Snap Angle", ref config.UITransitionAngle, min: 0, max: 180);
                 ImGui.EndTabItem();
             }
             if (ImGui.BeginTabItem("Controls"))
@@ -232,7 +233,7 @@ internal class ConfigWindow : Window
             index = v + 1;
         }
         ImGui.Text(label);
-        if (ImGui.Combo($"##{label}", ref index, options, options.Length))
+        if (ImGui.Combo(EmptyLabel(label), ref index, options, options.Length))
         {
             if (index == 0)
             {
@@ -258,7 +259,8 @@ internal class ConfigWindow : Window
     private void Slider(string label, ref float value, float defaultValue = 1.0f, float min = 0.1f, float max = 10)
     {
         var tempValue = value;
-        if (ImGui.SliderFloat(label, ref tempValue, min, max))
+        ImGui.Text(label);
+        if (ImGui.SliderFloat(EmptyLabel(label), ref tempValue, min, max))
         {
             value = tempValue;
             config.Save();
@@ -269,5 +271,20 @@ internal class ConfigWindow : Window
             value = defaultValue;
             config.Save();
         }
+    }
+    private void SliderInt(string label, ref int value, int min = 0, int max = 10)
+    {
+        var tempValue = value;
+        ImGui.Text(label);
+        if (ImGui.SliderInt(EmptyLabel(label), ref tempValue, min, max))
+        {
+            value = tempValue;
+            config.Save();
+        }
+    }
+
+    private string EmptyLabel(string label)
+    {
+        return $"##{label}";
     }
 }

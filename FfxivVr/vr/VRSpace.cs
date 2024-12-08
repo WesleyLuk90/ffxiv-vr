@@ -2,21 +2,15 @@
 using Silk.NET.OpenXR;
 
 namespace FfxivVR;
-unsafe public class VRSpace
+unsafe public class VRSpace(XR xr, Logger logger, VRSystem system, VRUI vrUI)
 {
-    private readonly XR xr;
-    private readonly Logger logger;
-    private readonly VRSystem system;
+    private readonly XR xr = xr;
+    private readonly Logger logger = logger;
+    private readonly VRSystem system = system;
+    private readonly VRUI vrUI = vrUI;
     public Space LocalSpace = new Space();
     private Space ViewSpace = new Space();
     private Space? StageReferenceSpace = null;
-    public VRSpace(XR xr, Logger logger, VRSystem system)
-    {
-        this.xr = xr;
-        this.logger = logger;
-        this.system = system;
-    }
-
 
     internal void Initialize()
     {
@@ -73,6 +67,7 @@ unsafe public class VRSpace
         );
         xr.CreateReferenceSpace(system.Session, ref localSpaceCreateInfo, ref LocalSpace).CheckResult("CreateReferenceSpace");
         xr.DestroySpace(oldSpace).CheckResult("DestroySpace");
+        vrUI.ResetAngle();
     }
 
     private Posef GetCurrentPose()
@@ -109,6 +104,7 @@ unsafe public class VRSpace
         );
         xr.CreateReferenceSpace(system.Session, ref localSpaceCreateInfo, ref LocalSpace).CheckResult("CreateReferenceSpace");
         xr.DestroySpace(oldSpace).CheckResult("DestroySpace");
+        vrUI.ResetAngle();
     }
 
     public float? GetLocalSpaceHeight(long predictedDisplayTime)

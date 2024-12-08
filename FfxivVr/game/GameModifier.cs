@@ -221,4 +221,13 @@ unsafe public class GameModifier
     {
         internalLetterboxing->ShouldLetterBox &= ~LetterBoxingOption.EnableLetterboxing;
     }
+
+    internal void SetCameraRotation(float rotation)
+    {
+        var rawCamera = gameState.GetInternalSceneCamera();
+        if (rawCamera != null)
+        {
+            rawCamera->CurrentHRotation = rotation;
+        }
+    }
 }

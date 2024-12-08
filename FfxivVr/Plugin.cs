@@ -35,7 +35,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private Logger logger { get; init; }
 
     private readonly ExceptionHandler exceptionHandler;
-    private readonly VRDiagnostics diagnostics;
     private readonly VRLifecycle vrLifecycle;
     private readonly GamepadManager gamepadManager;
     private readonly GameHooks gameHooks;
@@ -74,9 +73,8 @@ public unsafe sealed class Plugin : IDalamudPlugin
         var hookStatus = new HookStatus(PluginInterface);
         this.hookStatus = hookStatus;
         var xr = new XR(XR.CreateDefaultContext([dllPath]));
-        diagnostics = new VRDiagnostics(logger);
         gameModifier = new GameModifier(logger, gameState, GameGui, TargetManager, ClientState);
-        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, hookStatus, diagnostics, gameModifier, freeCamera);
+        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, hookStatus, gameModifier, freeCamera);
         gamepadManager = new GamepadManager(GamepadState, freeCamera);
         GameHookService.InitializeFromAttributes(pipelineInjector);
         gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, hookStatus, gameState);
@@ -95,7 +93,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         configManager = new ConfigManager(configuration, logger);
 
 
-        transitions = new Transitions(vrLifecycle, configuration, GameConfig, logger, diagnostics, companionPlugins, hudLayoutManager, gameConfigManager);
+        transitions = new Transitions(vrLifecycle, configuration, GameConfig, logger, companionPlugins, hudLayoutManager, gameConfigManager);
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
@@ -233,9 +231,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
                 case "off":
                     StopVR();
                     break;
-                case "info":
-                    diagnostics.Print();
-                    break;
                 case "recenter":
                     vrLifecycle.RecenterCamera();
                     break;
@@ -293,7 +288,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
     }
     private void StopVR()
     {
-        transitions.PreStopVR();
         vrLifecycle.DisableVR();
         transitions.PostStopVR();
     }

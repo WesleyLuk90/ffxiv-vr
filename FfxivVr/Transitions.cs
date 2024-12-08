@@ -8,7 +8,6 @@ public class Transitions(
     Configuration configuration,
     IGameConfig gameConfig,
     Logger logger,
-    VRDiagnostics diagnostics,
     CompanionPlugins companionPlugins,
     HudLayoutManager hudLayoutManager,
     GameConfigManager gameConfigManager
@@ -18,7 +17,6 @@ public class Transitions(
     private readonly Configuration configuration = configuration;
     private readonly IGameConfig gameConfig = gameConfig;
     private readonly Logger logger = logger;
-    private readonly VRDiagnostics diagnostics = diagnostics;
     private readonly CompanionPlugins companionPlugins = companionPlugins;
     private readonly GameConfigManager gameConfigManager = gameConfigManager;
 
@@ -79,13 +77,7 @@ public class Transitions(
         {
             gameConfig.Set(SystemConfigOption.Gamma, 51);
         }
-        diagnostics.OnStart();
         return true;
-    }
-
-    public void PreStopVR()
-    {
-        diagnostics.OnStop();
     }
 
     internal void PostStartVR()

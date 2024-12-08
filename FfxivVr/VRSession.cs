@@ -28,7 +28,9 @@ public unsafe class VRSession(
     VRInput vrInput,
     EventHandler eventHandler,
     FramePrediction framePrediction,
-    InputManager inputManager
+    InputManager inputManager,
+    VRUI vrUI,
+    GameClock gameClock
 )
 {
     private readonly VRSystem vrSystem = vrSystem;
@@ -49,6 +51,8 @@ public unsafe class VRSession(
     private readonly WaitFrameService waitFrameService = waitFrameService;
     private readonly FramePrediction framePrediction = framePrediction;
     private readonly InputManager inputManager = inputManager;
+    private readonly VRUI vrUI = vrUI;
+    private readonly GameClock gameClock = gameClock;
     private readonly VRInput vrInput = vrInput;
 
     public void Initialize()
@@ -62,64 +66,13 @@ public unsafe class VRSession(
         vrInput.Initialize();
     }
 
-    public class CameraPhase
-    {
-        public Eye Eye;
-        public View[] Views;
-        public VRCameraMode CameraMode;
-
-        public Task<FrameState> WaitFrameTask { get; }
-        public TrackingData TrackingData;
-        public CameraPhase(Eye eye, View[] views, Task<FrameState> waitFrameTask, TrackingData trackingData, VRCameraMode cameraType)
-        {
-            Eye = eye;
-            Views = views;
-            WaitFrameTask = waitFrameTask;
-            TrackingData = trackingData;
-            CameraMode = cameraType;
-        }
-
-        public View CurrentView()
-        {
-            return Views[Eye.ToIndex()];
-        }
-    }
 
     // Stores the hands data from the last frame so we keep the hands in the same spot of we lose tracking
     private TrackingData? lastTrackingData;
     private CameraPhase? cameraPhase;
 
-    abstract class RenderPhase;
-    class LeftRenderPhase : RenderPhase
-    {
-        public View[] Views;
-
-        public Task<FrameState> WaitFrameTask { get; }
-
-        public LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask)
-        {
-            Views = views;
-            WaitFrameTask = waitFrameTask;
-        }
-    }
-    class RightRenderPhase : RenderPhase
-    {
-        public FrameState FrameState;
-        public CompositionLayerProjectionView LeftLayer;
-
-
-        public View[] Views;
-
-        public RightRenderPhase(FrameState frameState, CompositionLayerProjectionView leftLayer, View[] views)
-        {
-            FrameState = frameState;
-            Views = views;
-            LeftLayer = leftLayer;
-        }
-
-    }
-
     private RenderPhase? renderPhase;
+
 
     public bool PrePresent(ID3D11DeviceContext* context)
     {
@@ -139,10 +92,8 @@ public unsafe class VRSession(
         }
         if (renderPhase is LeftRenderPhase leftRenderPhase)
         {
-            var task = leftRenderPhase.WaitFrameTask;
             logger.Trace("Wait for VR frame sync");
-            task.Wait();
-            var frameState = task.Result;
+            var frameState = leftRenderPhase.WaitFrame();
             framePrediction.MarkPredictedFrameTime(frameState.PredictedDisplayTime);
             renderer.StartFrame();
             // Skip presenting the left view to avoid flicker when displaying the right view
@@ -150,8 +101,8 @@ public unsafe class VRSession(
             if (frameState.ShouldRender == 1)
             {
                 logger.Trace("Render left eye");
-                var leftLayer = renderer.RenderEye(context, frameState, leftRenderPhase.Views, Eye.Left);
-                renderPhase = new RightRenderPhase(frameState, leftLayer, leftRenderPhase.Views);
+                var leftLayer = renderer.RenderEye(context, leftRenderPhase.CreateEyeRender());
+                renderPhase = leftRenderPhase.Next(frameState, leftLayer);
             }
             else
             {
@@ -163,7 +114,7 @@ public unsafe class VRSession(
         else if (renderPhase is RightRenderPhase rightRenderPhase)
         {
             logger.Trace("Render right eye");
-            var rightLayer = renderer.RenderEye(context, rightRenderPhase.FrameState, rightRenderPhase.Views, Eye.Right);
+            var rightLayer = renderer.RenderEye(context, rightRenderPhase.CreateEyeRender());
             renderer.EndFrame(context, rightRenderPhase.FrameState, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
             logger.Trace("End frame");
             renderPhase = null;
@@ -176,7 +127,7 @@ public unsafe class VRSession(
                     {
                         logger.Trace("Switching camera phase to right eye");
                         phase.Eye = Eye.Right;
-                        renderPhase = new LeftRenderPhase(phase.Views, cameraPhase.WaitFrameTask);
+                        renderPhase = phase.StartRender();
                         break;
                     }
                 case Eye.Right:
@@ -201,7 +152,7 @@ public unsafe class VRSession(
         if (renderPhase is LeftRenderPhase left)
         {
             renderer.StartFrame();
-            renderer.SkipFrame(left.WaitFrameTask.Result);
+            renderer.SkipFrame(left.WaitFrame());
         }
         if (renderPhase is RightRenderPhase right)
         {
@@ -289,6 +240,7 @@ public unsafe class VRSession(
 
     internal void PrepareVRRender()
     {
+        var ticks = gameClock.GetTicks();
         if (State.SessionRunning)
         {
             logger.Trace("Starting cycle");
@@ -303,7 +255,7 @@ public unsafe class VRSession(
             });
 
             VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight);
-            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, GetTrackingData(predictedTime), cameraType);
+            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, GetTrackingData(predictedTime), cameraType, vrUI.GetRotation(views[0], ticks));
 
             if (Conditions.IsInFlight || Conditions.IsDiving)
             {
