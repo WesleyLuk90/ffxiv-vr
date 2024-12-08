@@ -11,6 +11,7 @@ public class VrInputState
     public HashSet<VRButton> Pressed = new();
     public bool IsPhysicalController()
     {
-        return Pressed.Contains(VRButton.A) || Pressed.Contains(VRButton.B) || Pressed.Contains(VRButton.X) || Pressed.Contains(VRButton.Y) || LeftStick.LengthSquared > 0 || RightStick.Length > 0;
+        // B and Y are sometimes triggered with virtual desktop hand tracking so ignore them
+        return Pressed.Contains(VRButton.A) || Pressed.Contains(VRButton.X) || LeftStick.LengthSquared > 0 || RightStick.Length > 0;
     }
 }
