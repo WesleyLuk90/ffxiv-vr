@@ -6,7 +6,7 @@
         "Description":  "A VR plugin for FFXIV.",
         "Changelog":  "",
         "InternalName":  "FfxivVR",
-        "AssemblyVersion":  "0.0.38",
+        "AssemblyVersion":  "0.0.39",
         "RepoUrl":  "https://github.com/WesleyLuk90/ffxiv-vr",
         "ApplicableVersion":  "any",
         "DalamudApiLevel":  11,
@@ -14,12 +14,12 @@
         "LoadRequiredState":  2,
         "LoadSync":  true,
         "IconUrl":  "",
-        "DownloadLinkInstall":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.38/FfxivVR.zip",
+        "DownloadLinkInstall":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.39/FfxivVR.zip",
         "IsHide":  false,
         "IsTestingExclusive":  false,
-        "DownloadLinkTesting":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.38/FfxivVR.zip",
-        "DownloadLinkUpdate":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.38/FfxivVR.zip",
+        "DownloadLinkTesting":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.39/FfxivVR.zip",
+        "DownloadLinkUpdate":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.39/FfxivVR.zip",
         "DownloadCount":  0,
-        "LastUpdated":  1733436394
+        "LastUpdated":  1733588106
     }
 ]

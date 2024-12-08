@@ -1,3 +1,4 @@
-[Fix] Improve controller hand position
-[Fix] Improve controller detection, allow abxy
-[Fix] Improve fade handling
+[Feature] #13 Add options to change game settings for VR
+[Feature] #25 Change match floor option to locked height and add offset option
+[Feature] Add option to keep cutscene camera not level
+[Fix] Use palm pose instead of grip
