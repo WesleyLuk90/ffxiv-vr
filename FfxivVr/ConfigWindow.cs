@@ -1,4 +1,5 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud.Interface.Utility.Raii;
+using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -32,67 +33,80 @@ internal class ConfigWindow : Window
 
     public override void Draw()
     {
-        if (ImGui.BeginTabBar("tabs"))
+        using (ImRaii.TabBar("tabs"))
         {
-            if (ImGui.BeginTabItem("General"))
+            using (var tab = ImRaii.TabItem("General"))
             {
-                if (ImGui.Button(vrLifecycle.IsEnabled() ? "Stop VR" : "Start VR"))
+                if (tab.Success)
                 {
-                    toggleVR();
+                    if (ImGui.Button(vrLifecycle.IsEnabled() ? "Stop VR" : "Start VR"))
+                    {
+                        toggleVR();
+                    }
+                    Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
+                    Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);
                 }
-                Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
-                Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);
-                ImGui.EndTabItem();
             }
-            if (ImGui.BeginTabItem("View"))
+            using (var tab = ImRaii.TabItem("View"))
             {
-                Checkbox("Recenter Camera on View Change", ref config.RecenterOnViewChange);
-                Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
-                Slider("World Scale", ref config.WorldScale);
-                Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    Checkbox("Recenter Camera on View Change", ref config.RecenterOnViewChange);
+                    Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
+                    Slider("World Scale", ref config.WorldScale);
+                    Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
+                }
             }
-            if (ImGui.BeginTabItem("UI"))
+            using (var tab = ImRaii.TabItem("UI"))
             {
-                Slider("UI Distance", ref config.UIDistance);
-                Slider("UI Size", ref config.UISize);
-                Checkbox("Keep UI In Front", ref config.KeepUIInFront);
-                Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
-                ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
-                ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
-                SliderInt("UI Snap Angle", ref config.UITransitionAngle, min: 0, max: 180);
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    Slider("UI Distance", ref config.UIDistance);
+                    Slider("UI Size", ref config.UISize);
+                    Checkbox("Keep UI In Front", ref config.KeepUIInFront);
+                    Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
+                    ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
+                    ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
+                    SliderInt("UI Snap Angle", ref config.UITransitionAngle, min: 0, max: 180);
+                }
             }
-            if (ImGui.BeginTabItem("Controls"))
+            using (var tab = ImRaii.TabItem("Controls"))
             {
-                RenderControlsTab();
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    RenderControlsTab();
+                }
             }
-            if (ImGui.BeginTabItem("First Person"))
+            using (var tab = ImRaii.TabItem("First Person"))
             {
-                Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
-                Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
-                Checkbox("Follow Head", ref config.FollowCharacter);
-                Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
-                Checkbox("Enable hand tracking", ref config.HandTracking);
-                Checkbox("Enable controller tracking", ref config.ControllerTracking);
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
+                    Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
+                    Checkbox("Follow Head", ref config.FollowCharacter);
+                    Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
+                    Checkbox("Enable hand tracking", ref config.HandTracking);
+                    Checkbox("Enable controller tracking", ref config.ControllerTracking);
+                }
             }
-            if (ImGui.BeginTabItem("Third Person"))
+            using (var tab = ImRaii.TabItem("Third Person"))
             {
-                Checkbox("Fixed camera height", ref config.MatchFloorPosition);
-                Slider("Height offset", ref config.FloorHeightOffset, defaultValue: 0, min: -3, max: 3);
-                Checkbox("Keep the camera level with the floor", ref config.KeepCameraHorizontal);
-                Checkbox("Keep the cutscene camera level with the floor", ref config.KeepCutsceneCameraHorizontal);
-                Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    Checkbox("Fixed camera height", ref config.MatchFloorPosition);
+                    Slider("Height offset", ref config.FloorHeightOffset, defaultValue: 0, min: -3, max: 3);
+                    Checkbox("Keep the camera level with the floor", ref config.KeepCameraHorizontal);
+                    Checkbox("Keep the cutscene camera level with the floor", ref config.KeepCutsceneCameraHorizontal);
+                    Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);
+                }
             }
-            if (ImGui.BeginTabItem("Game Config"))
+            using (var tab = ImRaii.TabItem("Game Config"))
             {
-                RenderGameConfig();
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    RenderGameConfig();
+                }
             }
-            ImGui.EndTabBar();
         }
     }
 
@@ -153,46 +167,48 @@ internal class ConfigWindow : Window
                     config.SetVRGameSetting(option.GetID(), option.Properties.Default);
                 }
             }
-            if (disabled)
+            using (ImRaii.Disabled(disabled))
             {
-                ImGui.BeginDisabled();
-            }
-            if (ImGui.SliderInt($"##{option}-select", ref value, (int)option.Properties.Minimum, (int)option.Properties.Maximum))
-            {
-                config.SetVRGameSetting(option.GetID(), (uint?)value);
-            }
-            if (disabled)
-            {
-                ImGui.EndDisabled();
+                if (ImGui.SliderInt($"##{option}-select", ref value, (int)option.Properties.Minimum, (int)option.Properties.Maximum))
+                {
+                    config.SetVRGameSetting(option.GetID(), (uint?)value);
+                }
             }
         }
     }
 
     private void RenderControlsTab()
     {
-        if (ImGui.BeginTabBar("controls-tab"))
+        using (ImRaii.TabBar("controls-tab"))
         {
-            if (ImGui.BeginTabItem("Layer 1"))
+            using (var tab = ImRaii.TabItem("Layer 1"))
             {
-                RenderLayerEditor(0);
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    RenderLayerEditor(0);
+                }
             }
-            if (ImGui.BeginTabItem("Layer 2"))
+            using (var tab = ImRaii.TabItem("Layer 2"))
             {
-                RenderLayerEditor(1);
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    RenderLayerEditor(1);
+                }
             }
-            if (ImGui.BeginTabItem("Layer 3"))
+            using (var tab = ImRaii.TabItem("Layer 3"))
             {
-                RenderLayerEditor(2);
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    RenderLayerEditor(2);
+                }
             }
-            if (ImGui.BeginTabItem("Layer 4"))
+            using (var tab = ImRaii.TabItem("Layer 4"))
             {
-                RenderLayerEditor(3);
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    RenderLayerEditor(3);
+                }
             }
-            ImGui.EndTabBar();
         }
     }
 
