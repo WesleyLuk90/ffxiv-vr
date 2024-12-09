@@ -42,10 +42,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private readonly GameState gameState = new GameState(ClientState, GameGui);
     private readonly ConfigWindow configWindow;
     private readonly WindowSystem WindowSystem = new("FFXIV VR");
-    private readonly CompanionPlugins companionPlugins = new CompanionPlugins();
-
     private readonly GameModifier gameModifier;
-
     private readonly FreeCamera freeCamera = new FreeCamera();
 
     private readonly HudLayoutManager hudLayoutManager;
@@ -93,7 +90,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         configManager = new ConfigManager(configuration, logger);
 
 
-        transitions = new Transitions(vrLifecycle, configuration, GameConfig, logger, companionPlugins, hudLayoutManager, gameConfigManager);
+        transitions = new Transitions(vrLifecycle, configuration, GameConfig, logger, hudLayoutManager, gameConfigManager);
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
@@ -119,7 +116,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
-        companionPlugins.OnUnload();
         Framework.Update -= FrameworkUpdate;
         ClientState.Login -= Login;
         ClientState.Logout -= Logout;

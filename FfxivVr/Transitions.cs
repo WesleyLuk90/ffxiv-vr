@@ -8,7 +8,6 @@ public class Transitions(
     Configuration configuration,
     IGameConfig gameConfig,
     Logger logger,
-    CompanionPlugins companionPlugins,
     HudLayoutManager hudLayoutManager,
     GameConfigManager gameConfigManager
 )
@@ -17,7 +16,6 @@ public class Transitions(
     private readonly Configuration configuration = configuration;
     private readonly IGameConfig gameConfig = gameConfig;
     private readonly Logger logger = logger;
-    private readonly CompanionPlugins companionPlugins = companionPlugins;
     private readonly GameConfigManager gameConfigManager = gameConfigManager;
 
     public void FirstToThirdPerson()
@@ -82,13 +80,11 @@ public class Transitions(
 
     internal void PostStartVR()
     {
-        companionPlugins.OnActivate();
         hudLayoutManager.RequestHudLayoutUpdate();
     }
 
     internal void PostStopVR()
     {
-        companionPlugins.OnDeactivate();
         hudLayoutManager.RequestHudLayoutUpdate();
         MaybeEnableAutoFaceTarget();
         gameConfigManager.Revert();
