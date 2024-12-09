@@ -1,4 +1,4 @@
-[Feature] #13 Add options to change game settings for VR
-[Feature] #25 Change match floor option to locked height and add offset option
-[Feature] Add option to keep cutscene camera not level
-[Fix] Use palm pose instead of grip
+[Fix] #23 Fix target circle placement, use head targeting
+[Fix] Add edge smoothing option
+[Feature] Add option to keep UI in front
+[Fix] Adjust physical controller detection
