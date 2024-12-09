@@ -165,6 +165,7 @@ public class GameConfigManager(
         Options.Add(new GameOption(SystemConfigOption.GraphicsRezoScale, gameConfig).Initialize("Resolution Scale"));
         Options.Add(new GameOption(SystemConfigOption.DynamicRezoType, gameConfig).Initialize("Enable Dynamic Resolution"));
         Options.Add(new GameOption(SystemConfigOption.DynamicRezoThreshold, gameConfig).Initialize("Framerate Threshold", ["Always Enabled", "Below 30 fps", "Below 60 fps"]));
+        Options.Add(new GameOption(SystemConfigOption.AntiAliasing_DX11, gameConfig).Initialize("Edge Smoothing", ["Off", "FXAA", "TSCMAA + Camera Jitter", "TSCMAA"]));
 
         Options.Add(new GameOption(SystemConfigOption.ReflectionType_DX11, gameConfig).Initialize("Real-time Reflections", ["Off", "Standard", "High", "Maximum"]));
         Options.Add(new GameOption(SystemConfigOption.GrassQuality_DX11, gameConfig).Initialize("Grass Quality", ["Off", "Low", "Normal", "High"]));
