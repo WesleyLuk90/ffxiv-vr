@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Silk.NET.DXGI;
@@ -61,6 +62,7 @@ unsafe public class GameHooks : IDisposable
         InitializeHook(MousePointScreenToClientHook, nameof(MousePointScreenToClientHook));
         InitializeHook(UpdateLetterboxingHook, nameof(UpdateLetterboxingHook));
         InitializeHook(GamepadPollHook, nameof(GamepadPollHook));
+        InitializeHook(MousePointToRayHook, nameof(MousePointToRayHook));
     }
     private void InitializeHook<T>(Hook<T>? hook, string name) where T : Delegate
     {
@@ -245,5 +247,24 @@ unsafe public class GameHooks : IDisposable
             vrLifecycle.UpdateGamepad(gamepadInput);
         });
         return returnVaue;
+    }
+    private delegate Ray* MousePointToRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* gameCamera, Ray* ray, int mousePosX, int mousePosY);
+    // https://github.com/ProjectMimer/xivr-Ex/blob/main/xivr-Ex/xivr_hooks.cs#L2191
+    [Signature("E8 ?? ?? ?? ?? 4C 8B E0 48 8B EB", DetourName = nameof(MousePointToRayDetour))]
+    private Hook<MousePointToRay>? MousePointToRayHook = null;
+
+    private Ray* MousePointToRayDetour(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* gameCamera, Ray* ray, int mousePosX, int mousePosY)
+    {
+        // Constantly called
+        // logger.Debug("MousePointToRayDetour");
+        var value = MousePointToRayHook!.Original(gameCamera, ray, mousePosX, mousePosY);
+        exceptionHandler.FaultBarrier(() =>
+        {
+            if (vrLifecycle.GetTargetRay(gameCamera) is Ray ray)
+            {
+                *value = ray;
+            }
+        });
+        return value;
     }
 }

@@ -15,10 +15,9 @@ namespace FfxivVR
             Log?.Info(log);
         }
 
-        public bool TraceEnabled = false;
         internal void Trace(string message)
         {
-            if (!TraceEnabled)
+            if (!Debugging.Trace)
             {
                 return;
             }

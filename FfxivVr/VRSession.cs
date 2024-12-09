@@ -1,7 +1,9 @@
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Graphics;
 using Silk.NET.Direct3D11;
+using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System.Collections.Generic;
 using System.Drawing;
@@ -126,7 +128,7 @@ public unsafe class VRSession(
                 case Eye.Left:
                     {
                         logger.Trace("Switching camera phase to right eye");
-                        phase.Eye = Eye.Right;
+                        phase.SwitchToRightEye();
                         renderPhase = phase.StartRender();
                         break;
                     }
@@ -177,7 +179,7 @@ public unsafe class VRSession(
         {
             logger.Trace($"Set {phase.Eye} camera matrix");
             View view = phase.CurrentView();
-            vrCamera.UpdateCamera(camera, phase.CameraMode, view);
+            vrCamera.UpdateCamera(camera, phase.GetGameCamera(vrCamera.CreateGameCamera), phase.CameraMode, view);
         }
     }
 
@@ -203,8 +205,11 @@ public unsafe class VRSession(
                 var position = camera->Position.ToVector3D();
                 var lookAt = camera->LookAtVector.ToVector3D();
 
-                var gameCamera = new GameCamera(position, lookAt, null);
-
+                var gameCamera = phase.GetGameCamera(vrCamera.CreateGameCamera);
+                if (gameCamera == null)
+                {
+                    return;
+                }
                 gameModifier.UpdateMotionControls(
                     phase.TrackingData,
                     vrSystem.RuntimeAdjustments,
@@ -321,5 +326,34 @@ public unsafe class VRSession(
     internal void UpdateGamepad(GamepadInput* gamepadInput)
     {
         inputManager.UpdateGamepad(gamepadInput);
+    }
+
+    internal Ray? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* sceneCamera)
+    {
+        logger.Trace("GetTargetRay");
+        if (cameraPhase is CameraPhase phase)
+        {
+            var camera = gameState.GetCurrentCamera();
+            if (camera == null || camera != sceneCamera)
+            {
+                return null;
+            }
+
+            if (phase.GetGameCamera(vrCamera.CreateGameCamera) is not GameCamera gameCamera)
+            {
+                return null;
+            }
+
+            var rotationMatrix = phase.CameraMode.GetRotationMatrix(gameCamera);
+            var direction = Vector3D.Transform(new Vector3D<float>(0, 0, -1), Matrix4X4.CreateFromQuaternion(phase.Views[0].Pose.Orientation.ToQuaternion()) * rotationMatrix);
+            return new Ray(
+                camera->Position,
+                direction.ToVector3()
+            );
+        }
+        else
+        {
+            return null;
+        }
     }
 }

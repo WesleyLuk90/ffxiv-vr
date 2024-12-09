@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
+using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -254,6 +255,14 @@ public unsafe class VRLifecycle : IDisposable
         lock (this)
         {
             vrSession?.UpdateGamepad(gamepadInput);
+        }
+    }
+
+    internal Ray? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
+    {
+        lock (this)
+        {
+            return vrSession?.GetTargetRay(camera);
         }
     }
 }

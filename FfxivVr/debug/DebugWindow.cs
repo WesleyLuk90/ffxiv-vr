@@ -45,6 +45,7 @@ internal class DebugWindow : Window
             }
             if (ImGui.BeginTabItem("Modes"))
             {
+                ImGui.Checkbox("Trace Logging", ref Debugging.Trace);
                 ImGui.Checkbox("Hide Head", ref Debugging.HideHead);
                 ImGui.InputInt("Index", ref Debugging.Index);
                 ImGui.SliderFloat("Float", ref Debugging.Float, -1, 1);
@@ -65,6 +66,8 @@ static class Debugging
     public static int Index = 0;
     public static float Float = 0;
     public static bool HideHead = false;
+
+    public static bool Trace = false;
 
     public static Vector3D<float>? Location = null;
 

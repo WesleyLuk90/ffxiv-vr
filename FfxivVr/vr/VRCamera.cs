@@ -95,15 +95,28 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         }
     }
 
-    internal unsafe void UpdateCamera(Camera* camera, VRCameraMode cameraType, View view)
+    public unsafe GameCamera? CreateGameCamera()
+    {
+        var camera = gameState.GetCurrentCamera();
+        if (camera == null)
+        {
+            return null;
+        }
+        var position = camera->Position.ToVector3D();
+        var lookAt = camera->LookAtVector.ToVector3D();
+
+        return new GameCamera(position, lookAt, gameModifier.GetHeadPosition());
+    }
+
+    internal unsafe void UpdateCamera(Camera* camera, GameCamera? gameCamera, VRCameraMode cameraType, View view)
     {
         camera->RenderCamera->ProjectionMatrix = ComputeGameProjectionMatrix(view);
         camera->RenderCamera->ProjectionMatrix2 = camera->RenderCamera->ProjectionMatrix;
 
-        var position = camera->Position.ToVector3D();
-        var lookAt = camera->LookAtVector.ToVector3D();
-
-        var gameCamera = new GameCamera(position, lookAt, gameModifier.GetHeadPosition());
+        if (gameCamera == null)
+        {
+            return;
+        }
         camera->RenderCamera->ViewMatrix = ComputeGameViewMatrix(view, cameraType, gameCamera).ToMatrix4x4();
         camera->ViewMatrix = camera->RenderCamera->ViewMatrix;
 
