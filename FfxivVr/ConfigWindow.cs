@@ -37,7 +37,7 @@ internal class ConfigWindow : Window
         {
             using (var tab = ImRaii.TabItem("General"))
             {
-                if (tab.Success)
+                if (tab)
                 {
                     if (ImGui.Button(vrLifecycle.IsEnabled() ? "Stop VR" : "Start VR"))
                     {
@@ -51,7 +51,7 @@ internal class ConfigWindow : Window
             {
                 if (tab)
                 {
-                    Checkbox("Recenter Camera on View Change", ref config.RecenterOnViewChange);
+                    Checkbox("Recenter Camera on View Change", ref config.RecenterOnViewChange, "Recenters the camera when switching between first and third person.");
                     Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
                     Slider("World Scale", ref config.WorldScale);
                     Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
@@ -67,7 +67,7 @@ internal class ConfigWindow : Window
                     Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
                     ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
                     ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
-                    SliderInt("UI Snap Angle", ref config.UITransitionAngle, min: 0, max: 180);
+                    SliderInt("UI Snap Angle", ref config.UITransitionAngle, min: 0, max: 180, "How far away you need to turn before the UI snaps in front of you. Set to 180 to disable.");
                 }
             }
             using (var tab = ImRaii.TabItem("Controls"))
@@ -83,10 +83,10 @@ internal class ConfigWindow : Window
                 {
                     Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
                     Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
-                    Checkbox("Follow Head", ref config.FollowCharacter);
+                    Checkbox("Follow Head", ref config.FollowCharacter, "Moves the camera to match your characters head.");
                     Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
-                    Checkbox("Enable hand tracking", ref config.HandTracking);
-                    Checkbox("Enable controller tracking", ref config.ControllerTracking);
+                    Checkbox("Enable hand tracking", ref config.HandTracking, "Uses your headsets hand tracking to control your characters hands and fingers, not all headsets are supported.");
+                    Checkbox("Enable controller tracking", ref config.ControllerTracking, "Uses the VR controllers to control your characters hands.");
                 }
             }
             using (var tab = ImRaii.TabItem("Third Person"))
@@ -95,8 +95,8 @@ internal class ConfigWindow : Window
                 {
                     Checkbox("Fixed camera height", ref config.MatchFloorPosition);
                     Slider("Height offset", ref config.FloorHeightOffset, defaultValue: 0, min: -3, max: 3);
-                    Checkbox("Keep the camera level with the floor", ref config.KeepCameraHorizontal);
-                    Checkbox("Keep the cutscene camera level with the floor", ref config.KeepCutsceneCameraHorizontal);
+                    Checkbox("Keep the camera level", ref config.KeepCameraHorizontal);
+                    Checkbox("Keep the cutscene camera level", ref config.KeepCutsceneCameraHorizontal, "Disable to ensure camera looks at the original cutscene direction.");
                     Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);
                 }
             }
@@ -263,13 +263,28 @@ internal class ConfigWindow : Window
         }
     }
 
-    private void Checkbox(string label, ref bool value)
+    private void Checkbox(string label, ref bool value, string? help = null)
     {
         var tempValue = value;
         if (ImGui.Checkbox(label, ref tempValue))
         {
             value = tempValue;
             config.Save();
+        }
+        Tooltip(help);
+    }
+
+    private void Tooltip(string? help = null)
+    {
+        if (help is string helpMessage)
+        {
+            if (ImGui.IsItemHovered())
+            {
+                using (ImRaii.Tooltip())
+                {
+                    ImGui.Text(helpMessage);
+                }
+            }
         }
     }
     private void Slider(string label, ref float value, float defaultValue = 1.0f, float min = 0.1f, float max = 10)
@@ -288,7 +303,7 @@ internal class ConfigWindow : Window
             config.Save();
         }
     }
-    private void SliderInt(string label, ref int value, int min = 0, int max = 10)
+    private void SliderInt(string label, ref int value, int min = 0, int max = 10, string? help = null)
     {
         var tempValue = value;
         ImGui.Text(label);
@@ -297,6 +312,7 @@ internal class ConfigWindow : Window
             value = tempValue;
             config.Save();
         }
+        Tooltip(help);
     }
 
     private string EmptyLabel(string label)
