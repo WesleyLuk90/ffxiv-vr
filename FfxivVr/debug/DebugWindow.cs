@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using Silk.NET.Maths;
@@ -18,40 +19,42 @@ internal class DebugWindow : Window
 
     public override void Draw()
     {
-        if (ImGui.BeginTabBar("tabs"))
+        using (ImRaii.TabBar("tabs"))
         {
-
-            if (ImGui.BeginTabItem("Debug"))
+            using (var tab = ImRaii.TabItem("Debug"))
             {
-                var input = Debugging.DebugInfo;
-                var toShow = string.Join("\n", input.OrderBy(e => e.Key).Select((entry) => $"{entry.Key}: {entry.Value}"));
-                ImGui.InputTextMultiline("##Debug", ref toShow, 10000, new Vector2(400, 400));
-                var xRotation = Debugging.XRotation;
-                if (ImGui.SliderAngle("X Rotation", ref xRotation, -180, 180))
+                if (tab)
                 {
-                    Debugging.XRotation = xRotation;
+                    var input = Debugging.DebugInfo;
+                    var toShow = string.Join("\n", input.OrderBy(e => e.Key).Select((entry) => $"{entry.Key}: {entry.Value}"));
+                    ImGui.InputTextMultiline("##Debug", ref toShow, 10000, new Vector2(400, 400));
+                    var xRotation = Debugging.XRotation;
+                    if (ImGui.SliderAngle("X Rotation", ref xRotation, -180, 180))
+                    {
+                        Debugging.XRotation = xRotation;
+                    }
+                    var yRotation = Debugging.YRotation;
+                    if (ImGui.SliderAngle("Y Rotation", ref yRotation, -180, 180))
+                    {
+                        Debugging.YRotation = yRotation;
+                    }
+                    var zRotation = Debugging.ZRotation;
+                    if (ImGui.SliderAngle("Z Rotation", ref zRotation, -180, 180))
+                    {
+                        Debugging.ZRotation = zRotation;
+                    }
                 }
-                var yRotation = Debugging.YRotation;
-                if (ImGui.SliderAngle("Y Rotation", ref yRotation, -180, 180))
-                {
-                    Debugging.YRotation = yRotation;
-                }
-                var zRotation = Debugging.ZRotation;
-                if (ImGui.SliderAngle("Z Rotation", ref zRotation, -180, 180))
-                {
-                    Debugging.ZRotation = zRotation;
-                }
-                ImGui.EndTabItem();
             }
-            if (ImGui.BeginTabItem("Modes"))
+            using (var tab = ImRaii.TabItem("Controls"))
             {
-                ImGui.Checkbox("Trace Logging", ref Debugging.Trace);
-                ImGui.Checkbox("Hide Head", ref Debugging.HideHead);
-                ImGui.InputInt("Index", ref Debugging.Index);
-                ImGui.SliderFloat("Float", ref Debugging.Float, -1, 1);
-                ImGui.EndTabItem();
+                if (tab)
+                {
+                    ImGui.Checkbox("Trace Logging", ref Debugging.Trace);
+                    ImGui.Checkbox("Force Hide Head", ref Debugging.HideHead);
+                    ImGui.InputInt("Index", ref Debugging.Index);
+                    ImGui.SliderFloat("Float", ref Debugging.Float, -1, 1);
+                }
             }
-            ImGui.EndTabBar();
         }
     }
 }
