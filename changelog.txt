@@ -1,1 +1,1 @@
-[Fix] Fix graphics settings not changing the first time if start vr at boot enabled
+[Fix] Additional fixes for making graphics settings get applied
