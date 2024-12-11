@@ -141,11 +141,6 @@ public unsafe sealed class Plugin : IDalamudPlugin
         {
             MaybeOnBootStartVR();
         });
-
-        exceptionHandler.FaultBarrier(() =>
-        {
-            gameConfigManager.Initialize();
-        });
     }
 
     private bool? isFirstPerson = null;
@@ -279,16 +274,15 @@ public unsafe sealed class Plugin : IDalamudPlugin
         {
             return;
         }
-        try
-        {
-            vrLifecycle.EnableVR();
-        }
-        catch (Exception)
+        vrLifecycle.EnableVR();
+        if (vrLifecycle.IsEnabled())
         {
             transitions.PostStartVR();
-            throw;
         }
-        transitions.PostStartVR();
+        else
+        {
+            transitions.PostStopVR();
+        }
     }
     private void StopVR()
     {

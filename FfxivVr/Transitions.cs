@@ -93,7 +93,10 @@ public class Transitions(
     internal void OnLogin()
     {
         hudLayoutManager.RequestHudLayoutUpdate();
-        gameConfigManager.Apply();
+        if (vrLifecycle.IsEnabled())
+        {
+            gameConfigManager.Apply();
+        }
     }
 
     internal void OnLogout()

@@ -149,9 +149,14 @@ public class GameConfigManager(
     private readonly IGameConfig gameConfig = gameConfig;
     private readonly Logger logger = logger;
     private readonly Configuration configuration = configuration;
-    public readonly List<GameOption> Options = new();
+    private readonly List<GameOption> Options = new();
 
-    public void Initialize()
+    public List<GameOption> GetOptions()
+    {
+        Initialize();
+        return Options;
+    }
+    private void Initialize()
     {
         if (Options.Count > 0)
         {
@@ -211,10 +216,12 @@ public class GameConfigManager(
     private Dictionary<string, uint>? OriginalSettings;
     public void Apply()
     {
+        Initialize();
         if (OriginalSettings != null)
         {
             return;
         }
+
         var original = new Dictionary<string, uint>();
         Options.ForEach(o =>
         {
@@ -231,6 +238,7 @@ public class GameConfigManager(
     {
         if (OriginalSettings is Dictionary<string, uint> toRevert)
         {
+            OriginalSettings = null;
             Options.ForEach(o =>
             {
                 if (toRevert.ContainsKey(o.GetID()))
@@ -240,7 +248,6 @@ public class GameConfigManager(
                     o.SetValue(value);
                 }
             });
-            OriginalSettings = null;
         }
     }
 }

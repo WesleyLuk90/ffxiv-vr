@@ -113,7 +113,7 @@ internal class ConfigWindow : Window
     private void RenderGameConfig()
     {
         ImGui.Text("Change game settings when VR is started");
-        gameConfigManager.Options.ForEach(RenderConfigOption);
+        gameConfigManager.GetOptions().ForEach(RenderConfigOption);
     }
 
     private void RenderConfigOption(GameOption option)
