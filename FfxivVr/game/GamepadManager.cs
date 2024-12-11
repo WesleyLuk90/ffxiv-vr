@@ -3,7 +3,7 @@ using System;
 using System.Reflection;
 
 namespace FfxivVR;
-internal class GamepadManager
+public class GamepadManager
 {
     private readonly IGamepadState gamepadState;
     private readonly PropertyInfo NavEnableGamepadProperty;

@@ -1,5 +1,4 @@
-﻿using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
+﻿using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using Silk.NET.Maths;
@@ -8,7 +7,7 @@ using System.Linq;
 using System.Numerics;
 
 namespace FfxivVR;
-internal class DebugWindow : Window
+public class DebugWindow : Window
 {
     public DebugWindow() : base("FFXIV VR Debug")
     {
@@ -93,18 +92,18 @@ static class Debugging
 
     public static void DrawLocation()
     {
-        if (Location is not Vector3D<float> loc)
-        {
-            return;
-        }
-        ImGuiHelpers.ForceNextWindowMainViewport();
-        ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(0, 0));
-        ImGui.Begin("Canvas",
-            ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar |
-            ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoFocusOnAppearing);
-        ImGui.SetWindowSize(ImGui.GetIO().DisplaySize);
-        Plugin.GameGui.WorldToScreen(new Vector3(loc.X, loc.Y, loc.Z), out Vector2 vec);
-        ImGui.GetWindowDrawList().AddCircleFilled(vec, 10, ImGui.GetColorU32(new Vector4(0.8f, 0f, 0f, 1f)));
-        ImGui.End();
+        // if (Location is not Vector3D<float> loc)
+        // {
+        //     return;
+        // }
+        // ImGuiHelpers.ForceNextWindowMainViewport();
+        // ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(0, 0));
+        // ImGui.Begin("Canvas",
+        //     ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar |
+        //     ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoFocusOnAppearing);
+        // ImGui.SetWindowSize(ImGui.GetIO().DisplaySize);
+        // gameGui.WorldToScreen(new Vector3(loc.X, loc.Y, loc.Z), out Vector2 vec);
+        // ImGui.GetWindowDrawList().AddCircleFilled(vec, 10, ImGui.GetColorU32(new Vector4(0.8f, 0f, 0f, 1f)));
+        // ImGui.End();
     }
 }

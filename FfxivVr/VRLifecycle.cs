@@ -3,9 +3,7 @@ using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Silk.NET.Direct3D11;
-using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -14,72 +12,29 @@ using static FfxivVR.VRSystem;
 namespace FfxivVR;
 public unsafe class VRLifecycle : IDisposable
 {
-    private readonly Logger logger;
-    private readonly XR xr;
-    private readonly Configuration configuration;
-    private readonly GameState gameState;
-    private readonly RenderPipelineInjector renderPipelineInjector;
-    private IHost? host;
+    private readonly IServiceScopeFactory scopeFactory;
+    private IServiceScope? scope;
     private VRSession? vrSession;
-    private readonly HookStatus hookStatus;
+    private readonly Logger logger;
+    private readonly Configuration configuration;
     private readonly GameModifier gameModifier;
 
     private readonly FreeCamera freeCamera;
 
     public VRLifecycle(
+        IServiceScopeFactory scopeFactory,
         Logger logger,
-        XR xr,
         Configuration configuration,
-        GameState gameState,
-        RenderPipelineInjector renderPipelineInjector,
-        HookStatus hookStatus,
         GameModifier gameModifier,
         FreeCamera freeCamera)
     {
+        this.scopeFactory = scopeFactory;
         this.logger = logger;
-        this.xr = xr;
         this.configuration = configuration;
-        this.gameState = gameState;
-        this.renderPipelineInjector = renderPipelineInjector;
-        this.hookStatus = hookStatus;
         this.gameModifier = gameModifier;
         this.freeCamera = freeCamera;
     }
 
-    private IHost CreateSession()
-    {
-        var builder = Host.CreateApplicationBuilder();
-
-        builder.Services.AddSingleton(xr);
-        builder.Services.AddSingleton(logger);
-        builder.Services.AddSingleton(new DxDevice(GetDevice()));
-        builder.Services.AddSingleton(configuration);
-        builder.Services.AddSingleton(gameState);
-        builder.Services.AddSingleton(renderPipelineInjector);
-        builder.Services.AddSingleton(hookStatus);
-        builder.Services.AddSingleton(gameModifier);
-        builder.Services.AddSingleton(freeCamera);
-        builder.Services.AddSingleton<VRSystem>();
-        builder.Services.AddSingleton<VRState>();
-        builder.Services.AddSingleton<VRSwapchains>();
-        builder.Services.AddSingleton<Resources>();
-        builder.Services.AddSingleton<VRSpace>();
-        builder.Services.AddSingleton<VRCamera>();
-        builder.Services.AddSingleton<ResolutionManager>();
-        builder.Services.AddSingleton<Renderer>();
-        builder.Services.AddSingleton<WaitFrameService>();
-        builder.Services.AddSingleton<VRInput>();
-        builder.Services.AddSingleton<IVRInput>(x => x.GetRequiredService<VRInput>());
-        builder.Services.AddSingleton<EventHandler>();
-        builder.Services.AddSingleton<FramePrediction>();
-        builder.Services.AddSingleton<VRSession>();
-        builder.Services.AddSingleton<VRShaders>();
-        builder.Services.AddSingleton<DalamudRenderer>();
-        builder.Services.AddSingleton<InputManager>();
-        builder.Services.AddSingleton<VRUI>();
-        builder.Services.AddSingleton<GameClock>();
-        return builder.Build();
-    }
 
     public void EnableVR()
     {
@@ -91,9 +46,9 @@ public unsafe class VRLifecycle : IDisposable
         logger.Info("Starting VR");
         try
         {
-            var host = CreateSession();
-            this.host = host;
-            vrSession = host.Services.GetRequiredService<VRSession>(); ;
+            var scope = scopeFactory.CreateScope();
+            this.scope = scope;
+            vrSession = scope.ServiceProvider.GetRequiredService<VRSession>(); ;
 
             vrSession.Initialize();
         }
@@ -108,7 +63,8 @@ public unsafe class VRLifecycle : IDisposable
                 logger.Error($"Failed to start VR {e}");
             }
             vrSession = null;
-            this.host?.Dispose();
+            this.scope?.Dispose();
+            this.scope = null;
         }
     }
 
@@ -132,15 +88,11 @@ public unsafe class VRLifecycle : IDisposable
             logger.Info("Stopping VR");
             lock (this)
             {
-                host?.Dispose();
+                this.scope?.Dispose();
+                this.scope = null;
             }
             vrSession = null;
         }
-    }
-
-    private static ID3D11Device* GetDevice()
-    {
-        return (ID3D11Device*)Device.Instance()->D3D11Forwarder;
     }
 
     private static ID3D11DeviceContext* GetContext()

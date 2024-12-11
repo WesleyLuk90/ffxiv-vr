@@ -1,4 +1,5 @@
 ﻿using Dalamud;
+using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Silk.NET.Maths;
@@ -41,11 +42,11 @@ unsafe public class ResolutionManager : IDisposable
     private UInt64 DisableSetCursorPosOverride = 0x05C6909090909090;
 
     private const string g_DisableSetCursorPosAddr = "FF ?? ?? ?? ?? 00 C6 05 ?? ?? ?? ?? 00 0F B6 43 38";
-    public ResolutionManager(Logger logger, Configuration configuration)
+    public ResolutionManager(Logger logger, Configuration configuration, ISigScanner sigScanner)
     {
         this.logger = logger;
         this.configuration = configuration;
-        DisableSetCursorPosAddr = (UInt64)Plugin.SigScanner!.ScanText(g_DisableSetCursorPosAddr);
+        DisableSetCursorPosAddr = (ulong)sigScanner!.ScanText(g_DisableSetCursorPosAddr);
         logger.Debug($"Found DisableSetCursorPosAddr address {DisableSetCursorPosAddr}");
     }
     public void ChangeResolution(Vector2D<uint> resolution)

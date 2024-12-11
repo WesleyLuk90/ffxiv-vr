@@ -7,17 +7,17 @@ using System.Linq;
 using System.Numerics;
 
 namespace FfxivVR;
-internal class ConfigWindow : Window
+public class ConfigWindow : Window
 {
     private readonly Configuration config;
     private readonly VRLifecycle vrLifecycle;
-    private readonly Action toggleVR;
+    private readonly VRStartStop vrStartStop;
     private readonly GameConfigManager gameConfigManager;
 
     public ConfigWindow(
         Configuration configuration,
         VRLifecycle vrLifecycle,
-        Action toggleVR,
+        VRStartStop vrStartStop,
         GameConfigManager gameConfigManager
         ) : base("FFXIV VR Settings")
     {
@@ -27,7 +27,8 @@ internal class ConfigWindow : Window
 
         this.config = configuration;
         this.vrLifecycle = vrLifecycle;
-        this.toggleVR = toggleVR;
+        this.vrStartStop = vrStartStop;
+        // this.toggleVR = toggleVR;
         this.gameConfigManager = gameConfigManager;
     }
 
@@ -41,7 +42,7 @@ internal class ConfigWindow : Window
                 {
                     if (ImGui.Button(vrLifecycle.IsEnabled() ? "Stop VR" : "Start VR"))
                     {
-                        toggleVR();
+                        vrStartStop.ToggleVR();
                     }
                     Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
                     Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);

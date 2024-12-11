@@ -18,6 +18,15 @@
           "Microsoft.TestPlatform.TestHost": "17.6.0"
         }
       },
+      "Moq": {
+        "type": "Direct",
+        "requested": "[4.20.72, )",
+        "resolved": "4.20.72",
+        "contentHash": "EA55cjyNn8eTNWrgrdZJH5QLFp2L43oxl1tlkoYUKIE9pRwL784OWiTXeCV5ApS+AMYEAlt7Fo03A2XfouvHmQ==",
+        "dependencies": {
+          "Castle.Core": "5.1.1"
+        }
+      },
       "NUnit": {
         "type": "Direct",
         "requested": "[3.13.3, )",
@@ -38,6 +47,23 @@
         "requested": "[4.2.1, )",
         "resolved": "4.2.1",
         "contentHash": "kgH8VKsrcZZgNGQXRpVCrM7TnNz9li3b/snH+YmnXUNqsaWa1Xw9EQWHpbzq4Li2FbTjTE/E5N5HdLNXzZ8BpQ=="
+      },
+      "OpenXR.Loader": {
+        "type": "Direct",
+        "requested": "[1.0.10.2, )",
+        "resolved": "1.0.10.2",
+        "contentHash": "L6fNOSC1FanLkGIaiBjQT124E2xFa6uLDI43U8nlI3JEMFh1O2fLhlllSzkSoJyVLwbuldYoo55Z8ZJmSsNx/Q==",
+        "dependencies": {
+          "OpenXR.Headers": "1.0.10.2"
+        }
+      },
+      "Castle.Core": {
+        "type": "Transitive",
+        "resolved": "5.1.1",
+        "contentHash": "rpYtIczkzGpf+EkZgDr9CClTdemhsrwA/W5hMoPjLkRFnXzH44zDLoovXeKtmxb1ykXK9aJVODSpiJml8CTw2g==",
+        "dependencies": {
+          "System.Diagnostics.EventLog": "6.0.0"
+        }
       },
       "DalamudPackager": {
         "type": "Transitive",
@@ -396,14 +422,6 @@
         "type": "Transitive",
         "resolved": "1.0.10.2",
         "contentHash": "sUpa63pxk4ZpE+cnUiQ0non6MXT4pB/pmANETTk4vIQr0zNyYyPtSFalTon8IvwYE6OyhF6QqeUZkE4kfeUhRg=="
-      },
-      "OpenXR.Loader": {
-        "type": "Transitive",
-        "resolved": "1.0.10.2",
-        "contentHash": "L6fNOSC1FanLkGIaiBjQT124E2xFa6uLDI43U8nlI3JEMFh1O2fLhlllSzkSoJyVLwbuldYoo55Z8ZJmSsNx/Q==",
-        "dependencies": {
-          "OpenXR.Headers": "1.0.10.2"
-        }
       },
       "Silk.NET.Core": {
         "type": "Transitive",

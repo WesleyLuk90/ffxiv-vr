@@ -1,5 +1,3 @@
-using Dalamud.Game;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Interface.Windowing;
@@ -7,11 +5,11 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Silk.NET.Maths;
-using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace FfxivVR;
@@ -24,36 +22,31 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
     [PluginService] internal static IGameInteropProvider GameHookService { get; private set; } = null!;
-    [PluginService] internal static ISigScanner SigScanner { get; private set; } = null!;
-    [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
-    [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
     [PluginService] internal static IGamepadState GamepadState { get; private set; } = null!;
     [PluginService] internal static INamePlateGui NamePlateGui { get; private set; } = null!;
-    [PluginService] internal static IGameConfig GameConfig { get; private set; } = null!;
 
     private const string CommandName = "/vr";
-    private Logger logger { get; init; }
+    private readonly Logger logger;
 
     private readonly ExceptionHandler exceptionHandler;
     private readonly VRLifecycle vrLifecycle;
+    private readonly VRStartStop vrStartStop;
     private readonly GamepadManager gamepadManager;
-    private readonly GameHooks gameHooks;
     private readonly Configuration configuration;
-    private readonly GameState gameState = new GameState(ClientState, GameGui);
+    private readonly GameState gameState;
     private readonly ConfigWindow configWindow;
     private readonly WindowSystem WindowSystem = new("FFXIV VR");
-    private readonly GameModifier gameModifier;
-    private readonly FreeCamera freeCamera = new FreeCamera();
+    private readonly FreeCamera freeCamera;
 
     private readonly HudLayoutManager hudLayoutManager;
     private readonly ConfigManager configManager;
-    private readonly GameConfigManager gameConfigManager;
     private readonly Transitions transitions;
 
+    private IHost AppHost;
     public Plugin()
     {
-        logger = PluginInterface.Create<Logger>() ?? throw new NullReferenceException("Failed to create logger");
-        configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        var appFactory = PluginInterface.Create<AppFactory>() ?? throw new NullReferenceException("Failed to create logger");
+        AppHost = appFactory.CreateSession();
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -62,41 +55,35 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
         ChatGui.Print("Loaded VR Plugin");
 
-        var dir = PluginInterface.AssemblyLocation.Directory ?? throw new NullReferenceException("Assembly Location missing");
-        var dllPath = Path.Combine(dir.ToString(), "openxr_loader.dll");
-
-        exceptionHandler = new ExceptionHandler(logger);
-        var pipelineInjector = new RenderPipelineInjector(SigScanner, logger);
-        var hookStatus = new HookStatus(PluginInterface);
-        this.hookStatus = hookStatus;
-        var xr = new XR(XR.CreateDefaultContext([dllPath]));
-        gameModifier = new GameModifier(logger, gameState, GameGui, TargetManager, ClientState);
-        vrLifecycle = new VRLifecycle(logger, xr, configuration, gameState, pipelineInjector, hookStatus, gameModifier, freeCamera);
-        gamepadManager = new GamepadManager(GamepadState, freeCamera);
-        GameHookService.InitializeFromAttributes(pipelineInjector);
-        gameHooks = new GameHooks(vrLifecycle, exceptionHandler, logger, hookStatus, gameState);
-        GameHookService.InitializeFromAttributes(gameHooks);
+        GameHookService.InitializeFromAttributes(AppHost.Services.GetRequiredService<RenderPipelineInjector>());
+        var gameHooks = AppHost.Services.GetRequiredService<GameHooks>();
+        GameHookService.InitializeFromAttributes(AppHost.Services.GetRequiredService<GameHooks>());
         gameHooks.Initialize();
         Framework.Update += FrameworkUpdate;
 
-        gameConfigManager = new GameConfigManager(GameConfig, logger, configuration);
-
-        configWindow = new ConfigWindow(configuration, vrLifecycle, ToggleVR, gameConfigManager);
-        WindowSystem.AddWindow(configWindow);
-        debugWindow = new DebugWindow();
-        WindowSystem.AddWindow(debugWindow);
-
-        hudLayoutManager = new HudLayoutManager(configuration, vrLifecycle, logger);
-        configManager = new ConfigManager(configuration, logger);
-
-
-        transitions = new Transitions(vrLifecycle, configuration, GameConfig, logger, hudLayoutManager, gameConfigManager);
+        WindowSystem.AddWindow(AppHost.Services.GetRequiredService<ConfigWindow>());
+        WindowSystem.AddWindow(AppHost.Services.GetRequiredService<DebugWindow>());
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
         NamePlateGui.OnDataUpdate += OnNamePlateUpdate;
         ClientState.Login += Login;
         ClientState.Logout += Logout;
+
+        logger = AppHost.Services.GetRequiredService<Logger>();
+        exceptionHandler = AppHost.Services.GetRequiredService<ExceptionHandler>();
+        vrLifecycle = AppHost.Services.GetRequiredService<VRLifecycle>();
+        vrStartStop = AppHost.Services.GetRequiredService<VRStartStop>();
+        gamepadManager = AppHost.Services.GetRequiredService<GamepadManager>();
+        configuration = AppHost.Services.GetRequiredService<Configuration>();
+        gameState = AppHost.Services.GetRequiredService<GameState>();
+        configWindow = AppHost.Services.GetRequiredService<ConfigWindow>();
+        freeCamera = AppHost.Services.GetRequiredService<FreeCamera>();
+        hudLayoutManager = AppHost.Services.GetRequiredService<HudLayoutManager>();
+        configManager = AppHost.Services.GetRequiredService<ConfigManager>();
+        transitions = AppHost.Services.GetRequiredService<Transitions>();
+        debugWindow = AppHost.Services.GetRequiredService<DebugWindow>();
+        hookStatus = AppHost.Services.GetRequiredService<HookStatus>();
     }
 
     private void Logout(int type, int code)
@@ -120,11 +107,9 @@ public unsafe sealed class Plugin : IDalamudPlugin
         ClientState.Login -= Login;
         ClientState.Logout -= Logout;
         NamePlateGui.OnNamePlateUpdate -= OnNamePlateUpdate;
-        gameHooks.Dispose();
+        AppHost.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
-
-        vrLifecycle.Dispose();
     }
 
     private void ToggleConfigUI()
@@ -182,7 +167,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         {
             try
             {
-                StartVR();
+                vrStartStop.StartVR();
             }
             catch (VRSystem.FormFactorUnavailableException)
             {
@@ -216,11 +201,11 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
                 case "start":
                 case "on":
-                    StartVR();
+                    vrStartStop.StartVR();
                     break;
                 case "stop":
                 case "off":
-                    StopVR();
+                    vrStartStop.StopVR();
                     break;
                 case "recenter":
                     vrLifecycle.RecenterCamera();
@@ -256,37 +241,5 @@ public unsafe sealed class Plugin : IDalamudPlugin
                     break;
             }
         }
-    }
-    public void ToggleVR()
-    {
-        if (vrLifecycle.IsEnabled())
-        {
-            StopVR();
-        }
-        else
-        {
-            StartVR();
-        }
-    }
-    public void StartVR()
-    {
-        if (!transitions.PreStartVR())
-        {
-            return;
-        }
-        vrLifecycle.EnableVR();
-        if (vrLifecycle.IsEnabled())
-        {
-            transitions.PostStartVR();
-        }
-        else
-        {
-            transitions.PostStopVR();
-        }
-    }
-    private void StopVR()
-    {
-        vrLifecycle.DisableVR();
-        transitions.PostStopVR();
     }
 }
