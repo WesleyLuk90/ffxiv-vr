@@ -279,7 +279,15 @@ public unsafe sealed class Plugin : IDalamudPlugin
         {
             return;
         }
-        vrLifecycle.EnableVR();
+        try
+        {
+            vrLifecycle.EnableVR();
+        }
+        catch (Exception)
+        {
+            transitions.PostStartVR();
+            throw;
+        }
         transitions.PostStartVR();
     }
     private void StopVR()
