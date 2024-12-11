@@ -14,7 +14,7 @@ Based on the original [xivr-Ex Plugin](https://github.com/ProjectMimer/xivr-Ex)
 
 ## Instructions
 
-1. Disable GShade and ReShade, they might cause crashes with this plugin
+1. Completely delete GShade and ReShade, check that the DLL files have been removed from your FFXIV folder, they might cause crashes with this plugin
 2. Add `https://raw.githubusercontent.com/WesleyLuk90/ffxiv-vr/refs/heads/master/PluginRepo/pluginmaster.json` as a custom plugin repo in Dalamud settings
 3. Install the FFXIV VR plugin
 4. If you're using SteamVR enable `Dalamud Settings > Wait for plugins before game loads` and restart the game
@@ -43,7 +43,7 @@ If you're using Quest Link and running into issues, try shutting down Meta Quest
 
 Sometimes SteamVR will get stuck waiting for the game or just take a minute. Try waiting a bit longer or stop VR, toggle the plugin and start VR again.
 
-If you're running into crashes try disabling GShade and ReShade as they have been reported to cause crashes.
+GShade and ReShade must be completely deleted, check that they did not leave DLL files in your FFXIV folder, they're known to cause crashes/freezes with this plugin.
 
 If there is a large black box in front of you there is likely an incompatible plugin enabled. Try disabling other plugins to determine if that is the cause. Splatoon and vnavmesh have been reported to cause this issue.
 
