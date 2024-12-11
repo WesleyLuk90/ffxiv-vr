@@ -24,6 +24,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IGameInteropProvider GameHookService { get; private set; } = null!;
     [PluginService] internal static IGamepadState GamepadState { get; private set; } = null!;
     [PluginService] internal static INamePlateGui NamePlateGui { get; private set; } = null!;
+    [PluginService] internal static IPluginLog EarlyLogger { get; private set; } = null!;
 
     private const string CommandName = "/vr";
     private readonly Logger logger;
@@ -45,15 +46,14 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private IHost AppHost;
     public Plugin()
     {
-        var appFactory = PluginInterface.Create<AppFactory>() ?? throw new NullReferenceException("Failed to create logger");
+        EarlyLogger.Debug("Loading VR Plugin");
+        var appFactory = PluginInterface.Create<AppFactory>() ?? throw new NullReferenceException("Failed to create AppFactory");
         AppHost = appFactory.CreateSession();
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "Run /vr start and /vr stop to toggle VR. Run /vr to open settings."
         });
-
-        ChatGui.Print("Loaded VR Plugin");
 
         GameHookService.InitializeFromAttributes(AppHost.Services.GetRequiredService<RenderPipelineInjector>());
         var gameHooks = AppHost.Services.GetRequiredService<GameHooks>();
@@ -84,6 +84,9 @@ public unsafe sealed class Plugin : IDalamudPlugin
         transitions = AppHost.Services.GetRequiredService<Transitions>();
         debugWindow = AppHost.Services.GetRequiredService<DebugWindow>();
         hookStatus = AppHost.Services.GetRequiredService<HookStatus>();
+        debugging = AppHost.Services.GetRequiredService<Debugging>();
+
+        EarlyLogger.Debug("Loaded VR Plugin");
     }
 
     private void Logout(int type, int code)
@@ -119,7 +122,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 
     private void DrawUI()
     {
-        Debugging.DrawLocation();
+        debugging.DrawLocation();
         WindowSystem.Draw();
         // We require dalamud ui to be ready so wait for the draw call
         exceptionHandler.FaultBarrier(() =>
@@ -156,6 +159,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
     private bool LaunchAtStartChecked = false;
     private DebugWindow debugWindow;
     private HookStatus hookStatus;
+    private Debugging debugging;
 
     private void MaybeOnBootStartVR()
     {

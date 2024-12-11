@@ -162,6 +162,7 @@ public class GameConfigManager(
         {
             return;
         }
+        logger.Debug("Loading game configuration");
         // Display Settings
         Options.Add(new GameOption(SystemConfigOption.CharaLight, gameConfig).Initialize("Character Lighting"));
         Options.Add(new GameOption(SystemConfigOption.Fps, gameConfig).Initialize("Frame Rate", ["None", "Main Display Refresh Rate", "60 fps", "30 fps"]));

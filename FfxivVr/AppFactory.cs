@@ -29,7 +29,6 @@ public unsafe class AppFactory
     private ID3D11Device* device = null;
     public AppFactory()
     {
-        device = (ID3D11Device*)Device.Instance()->D3D11Forwarder;
     }
     public AppFactory(ID3D11Device* device)
     {
@@ -41,7 +40,6 @@ public unsafe class AppFactory
 
         builder.Services.AddSingleton(CreateXR());
         builder.Services.AddSingleton(LoadConfiguration());
-        builder.Services.AddSingleton(new DxDevice(device));
 
         builder.Services.AddSingleton(PluginInterface);
         builder.Services.AddSingleton(SigScanner);
@@ -56,6 +54,7 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<ConfigManager>();
         builder.Services.AddSingleton<ConfigWindow>();
         builder.Services.AddSingleton<DebugWindow>();
+        builder.Services.AddSingleton<Debugging>();
         builder.Services.AddSingleton<ExceptionHandler>();
         builder.Services.AddSingleton<FreeCamera>();
         builder.Services.AddSingleton<GameConfigManager>();
@@ -69,7 +68,9 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<RenderPipelineInjector>();
         builder.Services.AddSingleton<Transitions>();
         builder.Services.AddSingleton<VRLifecycle>();
+        builder.Services.AddSingleton<VRStartStop>();
 
+        builder.Services.AddScoped<DxDevice>(x => new DxDevice(GetDevice()));
         builder.Services.AddScoped<DalamudRenderer>();
         builder.Services.AddScoped<EventHandler>();
         builder.Services.AddScoped<FramePrediction>();
@@ -90,6 +91,15 @@ public unsafe class AppFactory
         builder.Services.AddScoped<VRUI>();
         builder.Services.AddScoped<WaitFrameService>();
         return builder.Build();
+    }
+
+    private ID3D11Device* GetDevice()
+    {
+        if (device != null)
+        {
+            return device;
+        }
+        return (ID3D11Device*)Device.Instance()->D3D11Forwarder;
     }
 
     private Configuration LoadConfiguration()

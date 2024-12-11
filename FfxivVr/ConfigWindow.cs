@@ -28,7 +28,6 @@ public class ConfigWindow : Window
         this.config = configuration;
         this.vrLifecycle = vrLifecycle;
         this.vrStartStop = vrStartStop;
-        // this.toggleVR = toggleVR;
         this.gameConfigManager = gameConfigManager;
     }
 

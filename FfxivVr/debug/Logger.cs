@@ -3,7 +3,8 @@ using Dalamud.Plugin.Services;
 namespace FfxivVR;
 public class Logger(
     IPluginLog log,
-    IChatGui chatGui
+    IChatGui chatGui,
+    Debugging debugging
 )
 {
     private readonly IChatGui chatGui = chatGui;
@@ -17,7 +18,7 @@ public class Logger(
     }
     internal void Trace(string message)
     {
-        if (!Debugging.Trace)
+        if (!debugging.Trace)
         {
             return;
         }

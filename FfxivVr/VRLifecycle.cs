@@ -19,20 +19,20 @@ public unsafe class VRLifecycle : IDisposable
     private readonly Configuration configuration;
     private readonly GameModifier gameModifier;
 
-    private readonly FreeCamera freeCamera;
+    private readonly Debugging debugging;
 
     public VRLifecycle(
         IServiceScopeFactory scopeFactory,
         Logger logger,
         Configuration configuration,
         GameModifier gameModifier,
-        FreeCamera freeCamera)
+        Debugging debugging)
     {
         this.scopeFactory = scopeFactory;
         this.logger = logger;
         this.configuration = configuration;
         this.gameModifier = gameModifier;
-        this.freeCamera = freeCamera;
+        this.debugging = debugging;
     }
 
 
@@ -144,7 +144,7 @@ public unsafe class VRLifecycle : IDisposable
 
     internal void UpdateVisibility()
     {
-        if (Debugging.HideHead)
+        if (debugging.HideHead)
         {
             gameModifier.HideHeadMesh(force: true);
         }

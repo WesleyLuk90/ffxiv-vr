@@ -1,5 +1,7 @@
-﻿using Dalamud.Interface.Utility.Raii;
+﻿using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin.Services;
 using ImGuiNET;
 using Silk.NET.Maths;
 using System.Collections.Concurrent;
@@ -9,11 +11,14 @@ using System.Numerics;
 namespace FfxivVR;
 public class DebugWindow : Window
 {
-    public DebugWindow() : base("FFXIV VR Debug")
+    private readonly Debugging debugging;
+
+    public DebugWindow(Debugging debugging) : base("FFXIV VR Debug")
     {
         Flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoResize;
         Size = new Vector2(450, 700);
+        this.debugging = debugging;
     }
 
     public override void Draw()
@@ -24,23 +29,23 @@ public class DebugWindow : Window
             {
                 if (tab)
                 {
-                    var input = Debugging.DebugInfo;
+                    var input = debugging.DebugInfo;
                     var toShow = string.Join("\n", input.OrderBy(e => e.Key).Select((entry) => $"{entry.Key}: {entry.Value}"));
                     ImGui.InputTextMultiline("##Debug", ref toShow, 10000, new Vector2(400, 400));
-                    var xRotation = Debugging.XRotation;
+                    var xRotation = debugging.XRotation;
                     if (ImGui.SliderAngle("X Rotation", ref xRotation, -180, 180))
                     {
-                        Debugging.XRotation = xRotation;
+                        debugging.XRotation = xRotation;
                     }
-                    var yRotation = Debugging.YRotation;
+                    var yRotation = debugging.YRotation;
                     if (ImGui.SliderAngle("Y Rotation", ref yRotation, -180, 180))
                     {
-                        Debugging.YRotation = yRotation;
+                        debugging.YRotation = yRotation;
                     }
-                    var zRotation = Debugging.ZRotation;
+                    var zRotation = debugging.ZRotation;
                     if (ImGui.SliderAngle("Z Rotation", ref zRotation, -180, 180))
                     {
-                        Debugging.ZRotation = zRotation;
+                        debugging.ZRotation = zRotation;
                     }
                 }
             }
@@ -48,32 +53,35 @@ public class DebugWindow : Window
             {
                 if (tab)
                 {
-                    ImGui.Checkbox("Trace Logging", ref Debugging.Trace);
-                    ImGui.Checkbox("Force Hide Head", ref Debugging.HideHead);
-                    ImGui.InputInt("Index", ref Debugging.Index);
-                    ImGui.SliderFloat("Float", ref Debugging.Float, -1, 1);
+                    ImGui.Checkbox("Trace Logging", ref debugging.Trace);
+                    ImGui.Checkbox("Force Hide Head", ref debugging.HideHead);
+                    ImGui.InputInt("Index", ref debugging.Index);
+                    ImGui.SliderFloat("Float", ref debugging.Float, -1, 1);
                 }
             }
         }
     }
 }
 
-static class Debugging
+public class Debugging(
+    IGameGui gameGui
+)
 {
-    public static ConcurrentDictionary<string, string> DebugInfo = new();
-    public static float XRotation = 0;
-    public static float YRotation = 0;
-    public static float ZRotation = 0;
+    public ConcurrentDictionary<string, string> DebugInfo = new();
+    public float XRotation = 0;
+    public float YRotation = 0;
+    public float ZRotation = 0;
 
-    public static int Index = 0;
-    public static float Float = 0;
-    public static bool HideHead = false;
+    public int Index = 0;
+    public float Float = 0;
+    public bool HideHead = false;
 
-    public static bool Trace = false;
+    public bool Trace = false;
 
-    public static Vector3D<float>? Location = null;
+    public Vector3D<float>? Location = null;
+    private readonly IGameGui gameGui = gameGui;
 
-    public static void DebugShow(string key, object? value)
+    public void DebugShow(string key, object? value)
     {
         if (value is Vector3D<float> vec)
         {
@@ -85,25 +93,25 @@ static class Debugging
         }
         DebugInfo[key] = value?.ToString() ?? "null";
     }
-    public static Quaternion<float> GetRotation()
+    public Quaternion<float> GetRotation()
     {
         return Quaternion<float>.CreateFromYawPitchRoll(YRotation, XRotation, ZRotation);
     }
 
-    public static void DrawLocation()
+    public void DrawLocation()
     {
-        // if (Location is not Vector3D<float> loc)
-        // {
-        //     return;
-        // }
-        // ImGuiHelpers.ForceNextWindowMainViewport();
-        // ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(0, 0));
-        // ImGui.Begin("Canvas",
-        //     ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar |
-        //     ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoFocusOnAppearing);
-        // ImGui.SetWindowSize(ImGui.GetIO().DisplaySize);
-        // gameGui.WorldToScreen(new Vector3(loc.X, loc.Y, loc.Z), out Vector2 vec);
-        // ImGui.GetWindowDrawList().AddCircleFilled(vec, 10, ImGui.GetColorU32(new Vector4(0.8f, 0f, 0f, 1f)));
-        // ImGui.End();
+        if (Location is not Vector3D<float> loc)
+        {
+            return;
+        }
+        ImGuiHelpers.ForceNextWindowMainViewport();
+        ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(0, 0));
+        ImGui.Begin("Canvas",
+            ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoTitleBar |
+            ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoFocusOnAppearing);
+        ImGui.SetWindowSize(ImGui.GetIO().DisplaySize);
+        gameGui.WorldToScreen(new Vector3(loc.X, loc.Y, loc.Z), out Vector2 vec);
+        ImGui.GetWindowDrawList().AddCircleFilled(vec, 10, ImGui.GetColorU32(new Vector4(0.8f, 0f, 0f, 1f)));
+        ImGui.End();
     }
 }
