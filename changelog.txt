@@ -1,4 +1,1 @@
-[Fix] #23 Fix target circle placement, use head targeting
-[Fix] Add edge smoothing option
-[Feature] Add option to keep UI in front
-[Fix] Adjust physical controller detection
+[Fix] Fix graphics settings not changing the first time if start vr at boot enabled
