@@ -12,12 +12,6 @@ public class Transitions(
     GameConfigManager gameConfigManager
 )
 {
-    private readonly VRLifecycle vrLifecycle = vrLifecycle;
-    private readonly Configuration configuration = configuration;
-    private readonly IGameConfig gameConfig = gameConfig;
-    private readonly Logger logger = logger;
-    private readonly GameConfigManager gameConfigManager = gameConfigManager;
-
     public void FirstToThirdPerson()
     {
         if (!vrLifecycle.IsEnabled())
