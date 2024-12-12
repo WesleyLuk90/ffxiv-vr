@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
@@ -11,7 +12,14 @@ using System.Drawing;
 using static FfxivVR.RenderPipelineInjector;
 
 namespace FfxivVR;
-unsafe public class GameHooks : IDisposable
+unsafe public class GameHooks(
+    VRLifecycle vrLifecycle,
+    ExceptionHandler exceptionHandler,
+    Logger logger,
+    HookStatus hookStatus,
+    IGameInteropProvider gameInteropProvider,
+    GameState gameState
+) : IDisposable
 {
     /**
      * Call order
@@ -22,20 +30,6 @@ unsafe public class GameHooks : IDisposable
      * Present end
      * Framework end
      */
-    private readonly VRLifecycle vrLifecycle;
-    private readonly ExceptionHandler exceptionHandler;
-    private readonly Logger logger;
-    private readonly HookStatus hookStatus;
-    private readonly GameState gameState;
-
-    public GameHooks(VRLifecycle vrLifecycle, ExceptionHandler exceptionHandler, Logger logger, HookStatus hookStatus, GameState gameState)
-    {
-        this.vrLifecycle = vrLifecycle;
-        this.exceptionHandler = exceptionHandler;
-        this.logger = logger;
-        this.hookStatus = hookStatus;
-        this.gameState = gameState;
-    }
 
     private List<Action> DisposeActions = new List<Action>();
     public void Dispose()
@@ -52,6 +46,7 @@ unsafe public class GameHooks : IDisposable
 
     public void Initialize()
     {
+        gameInteropProvider.InitializeFromAttributes(this);
         InitializeHook(FrameworkTickHook, nameof(FrameworkTickHook));
         InitializeHook(DXGIPresentHook, nameof(DXGIPresentHook));
         InitializeHook(SetMatricesHook, nameof(SetMatricesHook));

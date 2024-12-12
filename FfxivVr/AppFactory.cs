@@ -25,6 +25,10 @@ public unsafe class AppFactory
     [PluginService] public static IGameConfig GameConfig { get; set; } = null!;
     [PluginService] public static ITargetManager TargetManager { get; set; } = null!;
     [PluginService] public static IGamepadState GamepadState { get; set; } = null!;
+    [PluginService] public static IGameInteropProvider GameInteropProvider { get; set; } = null!;
+    [PluginService] public static ICommandManager CommandManager { get; set; } = null!;
+    [PluginService] public static IFramework Framework { get; set; } = null!;
+    [PluginService] public static INamePlateGui NamePlateGui { get; set; } = null!;
 
     private ID3D11Device* device = null;
     public AppFactory()
@@ -50,14 +54,20 @@ public unsafe class AppFactory
         builder.Services.AddSingleton(GameConfig);
         builder.Services.AddSingleton(TargetManager);
         builder.Services.AddSingleton(GamepadState);
+        builder.Services.AddSingleton(GameInteropProvider);
+        builder.Services.AddSingleton(CommandManager);
+        builder.Services.AddSingleton(Framework);
+        builder.Services.AddSingleton(NamePlateGui);
 
+        builder.Services.AddSingleton<CommandHander>();
         builder.Services.AddSingleton<ConfigManager>();
         builder.Services.AddSingleton<ConfigWindow>();
-        builder.Services.AddSingleton<DebugWindow>();
         builder.Services.AddSingleton<Debugging>();
+        builder.Services.AddSingleton<DebugWindow>();
         builder.Services.AddSingleton<ExceptionHandler>();
         builder.Services.AddSingleton<FreeCamera>();
         builder.Services.AddSingleton<GameConfigManager>();
+        builder.Services.AddSingleton<GameEvents>();
         builder.Services.AddSingleton<GameHooks>();
         builder.Services.AddSingleton<GameModifier>();
         builder.Services.AddSingleton<GamepadManager>();
@@ -65,12 +75,13 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<HookStatus>();
         builder.Services.AddSingleton<HudLayoutManager>();
         builder.Services.AddSingleton<Logger>();
+        builder.Services.AddSingleton<PluginUI>();
         builder.Services.AddSingleton<RenderPipelineInjector>();
         builder.Services.AddSingleton<Transitions>();
         builder.Services.AddSingleton<VRLifecycle>();
         builder.Services.AddSingleton<VRStartStop>();
 
-        builder.Services.AddScoped<DxDevice>(x => new DxDevice(GetDevice()));
+        builder.Services.AddScoped(x => new DxDevice(GetDevice()));
         builder.Services.AddScoped<DalamudRenderer>();
         builder.Services.AddScoped<EventHandler>();
         builder.Services.AddScoped<FramePrediction>();

@@ -26,30 +26,21 @@ public unsafe class AppFactoryTests
         AppFactory.TargetManager = new Mock<ITargetManager>().Object;
         AppFactory.GameConfig = new Mock<IGameConfig>().Object;
         AppFactory.GamepadState = new Mock<IGamepadState>().Object;
+        AppFactory.GameInteropProvider = new Mock<IGameInteropProvider>().Object;
+        AppFactory.CommandManager = new Mock<ICommandManager>().Object;
+        AppFactory.Framework = new Mock<IFramework>().Object;
+        AppFactory.NamePlateGui = new Mock<INamePlateGui>().Object;
+
 
         var factory = new AppFactory(device: null);
 
         var host = factory.CreateSession();
 
-        host.Services.GetRequiredService<GameHooks>();
         host.Services.GetRequiredService<RenderPipelineInjector>();
         host.Services.GetRequiredService<GameHooks>();
-        host.Services.GetRequiredService<GameHooks>();
-        host.Services.GetRequiredService<ConfigWindow>();
-        host.Services.GetRequiredService<DebugWindow>();
-        host.Services.GetRequiredService<Logger>();
-        host.Services.GetRequiredService<ExceptionHandler>();
-        host.Services.GetRequiredService<VRLifecycle>();
-        host.Services.GetRequiredService<GamepadManager>();
-        host.Services.GetRequiredService<Configuration>();
-        host.Services.GetRequiredService<GameState>();
-        host.Services.GetRequiredService<ConfigWindow>();
-        host.Services.GetRequiredService<FreeCamera>();
-        host.Services.GetRequiredService<HudLayoutManager>();
-        host.Services.GetRequiredService<ConfigManager>();
-        host.Services.GetRequiredService<Transitions>();
-        host.Services.GetRequiredService<DebugWindow>();
-        host.Services.GetRequiredService<HookStatus>();
+        host.Services.GetRequiredService<CommandHander>();
+        host.Services.GetRequiredService<GameEvents>();
+        host.Services.GetRequiredService<PluginUI>();
 
         var scope = host.Services.CreateScope();
         scope.ServiceProvider.GetRequiredService<VRLifecycle>();

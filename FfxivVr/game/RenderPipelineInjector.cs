@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using System;
 using System.Runtime.InteropServices;
@@ -30,8 +31,12 @@ public unsafe class RenderPipelineInjector
             };
     private nint tls_index;
 
+    public void Initialize()
+    {
+        gameInteropProvider.InitializeFromAttributes(this);
+    }
     private const string g_tls_index = "8B 0D ?? ?? ?? ?? 45 33 E4 41";
-    public RenderPipelineInjector(ISigScanner sigScanner, Logger logger)
+    public RenderPipelineInjector(ISigScanner sigScanner, Logger logger, IGameInteropProvider gameInteropProvider)
     {
         tls_index = sigScanner.GetStaticAddressFromSig(g_tls_index);
         getThreadedDataHandle = GCHandle.Alloc(GetThreadedDataASM, GCHandleType.Pinned);
@@ -48,6 +53,7 @@ public unsafe class RenderPipelineInjector
         GetThreadedDataFn = Marshal.GetDelegateForFunctionPointer<GetThreadedDataDg>(getThreadedDataHandle.AddrOfPinnedObject());
 
         this.logger = logger;
+        this.gameInteropProvider = gameInteropProvider;
     }
 
     public UInt64 GetThreadedOffset()
@@ -81,6 +87,7 @@ public unsafe class RenderPipelineInjector
     }
 
     private readonly Logger logger;
+    private readonly IGameInteropProvider gameInteropProvider;
 
     public void QueueClearCommand()
     {
