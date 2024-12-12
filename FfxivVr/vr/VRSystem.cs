@@ -124,7 +124,30 @@ public unsafe class VRSystem(
             logger.Info("Hand tracking is not supported by your runtime");
         }
 
+        if (foundExtensions.Any(e => e.GetExtensionName() == FBBodyTracking.ExtensionName))
+        {
+            CreateBodyTracking();
+        }
+        if (configuration.BodyTracking && BodyTracker == null)
+        {
+            logger.Info("Body tracking is not supported by your runtime");
+        }
+
     }
+
+    private void CreateBodyTracking()
+    {
+        var properties = new SystemBodyTrackingPropertiesFB(next: null);
+        var systemProperties = new SystemProperties(next: &properties);
+        xr.GetSystemProperties(Instance, SystemId, &systemProperties).CheckResult("GetSystemProperties");
+        if (properties.SupportsBodyTracking == 1 && GetExtension<FBBodyTracking>() is FBBodyTracking ext)
+        {
+            logger.Debug("Initializing BodyTracking");
+            BodyTracker = new BodyTracking(ext, logger);
+            BodyTracker.Initialize(Session);
+        }
+    }
+
     private void CreateHandTracking()
     {
         var properties = new SystemHandTrackingPropertiesEXT(next: null);
@@ -151,12 +174,15 @@ public unsafe class VRSystem(
     public void Dispose()
     {
         HandTracker?.Dispose();
+        BodyTracker?.Dispose();
         xr.DestroySession(Session).LogResult("DestroySession", logger);
         xr.DestroyInstance(Instance).LogResult("DestroyInstance", logger);
     }
 
     private KhrWin32ConvertPerformanceCounterTime perfCounterExt = null!;
     public HandTracking? HandTracker { get; private set; } = null;
+
+    public BodyTracking? BodyTracker { get; private set; } = null;
 
     public long Now()
     {

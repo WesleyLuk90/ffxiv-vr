@@ -64,7 +64,7 @@ public class CommandHander(
                     else
                     {
                         var active = gameState.GetCurrentCamera();
-                        var gameCamera = new GameCamera(active->Position.ToVector3D(), active->LookAtVector.ToVector3D(), null);
+                        var gameCamera = new GameCamera(active->Position.ToVector3D(), active->LookAtVector.ToVector3D(), null, null);
                         freeCamera.Reset(gameCamera.Position, gameCamera.GetYRotation());
                         freeCamera.Enabled = true;
                         logger.Info("Enabled free cam");
@@ -79,7 +79,6 @@ public class CommandHander(
             }
         }
     }
-
 
     public void Dispose()
     {

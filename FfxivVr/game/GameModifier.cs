@@ -132,7 +132,7 @@ unsafe public class GameModifier(
 
     // Test with Alte Roite mount
     // Stand on a slope with a mount
-    public Vector3D<float>? GetHeadPosition()
+    public Matrix4X4<float>? GetCharacterPositionTransform()
     {
         var characterBase = GetCharacterBase();
         if (characterBase == null)
@@ -161,14 +161,18 @@ unsafe public class GameModifier(
         var actorScale = Matrix4X4.CreateScale(actorModel->Height);
         var skeleton = characterBase->Skeleton;
         var headPosition = skeletonModifier.GetHeadPosition(skeleton);
-        if (headPosition is Vector3D<float> head)
-        {
-            return Vector3D.Transform(head, actorScale * headTransforms);
-        }
-        else
+        return actorScale * headTransforms;
+    }
+
+    internal Vector3D<float>? GetHeadOffset()
+    {
+        var characterBase = GetCharacterBase();
+        if (characterBase == null)
         {
             return null;
         }
+        var skeleton = characterBase->Skeleton;
+        return skeletonModifier.GetHeadPosition(skeleton);
     }
 
     internal void UpdateMotionControls(TrackingData trackingData, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)

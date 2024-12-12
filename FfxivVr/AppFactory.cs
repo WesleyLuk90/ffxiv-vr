@@ -30,11 +30,11 @@ public unsafe class AppFactory
     [PluginService] public static IFramework Framework { get; set; } = null!;
     [PluginService] public static INamePlateGui NamePlateGui { get; set; } = null!;
 
-    private ID3D11Device* device = null;
+    private DxDevice? device = null;
     public AppFactory()
     {
     }
-    public AppFactory(ID3D11Device* device)
+    public AppFactory(DxDevice device)
     {
         this.device = device;
     }
@@ -84,7 +84,7 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<VRLifecycle>();
         builder.Services.AddSingleton<VRStartStop>();
 
-        builder.Services.AddScoped(x => new DxDevice(GetDevice()));
+        builder.Services.AddScoped(x => GetDevice());
         builder.Services.AddScoped<DalamudRenderer>();
         builder.Services.AddScoped<EventHandler>();
         builder.Services.AddScoped<FramePrediction>();
@@ -107,13 +107,13 @@ public unsafe class AppFactory
         return builder.Build();
     }
 
-    private ID3D11Device* GetDevice()
+    private DxDevice GetDevice()
     {
         if (device != null)
         {
             return device;
         }
-        return (ID3D11Device*)Device.Instance()->D3D11Forwarder;
+        return new DxDevice((ID3D11Device*)Device.Instance()->D3D11Forwarder);
     }
 
     private Configuration LoadConfiguration()

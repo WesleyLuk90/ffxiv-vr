@@ -14,7 +14,7 @@ public unsafe class VRLifecycle : IDisposable
 {
     private readonly IServiceScopeFactory scopeFactory;
     private IServiceScope? scope;
-    private VRSession? vrSession;
+    public VRSession? vrSession;
     private readonly Logger logger;
     private readonly Configuration configuration;
     private readonly GameModifier gameModifier;

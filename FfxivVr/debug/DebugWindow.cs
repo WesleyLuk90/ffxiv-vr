@@ -55,6 +55,7 @@ public class DebugWindow : Window
                 {
                     ImGui.Checkbox("Trace Logging", ref debugging.Trace);
                     ImGui.Checkbox("Force Hide Head", ref debugging.HideHead);
+                    ImGui.Checkbox("Enable tracking in 3rd person", ref debugging.ForceTracking);
                     ImGui.InputInt("Index", ref debugging.Index);
                     ImGui.SliderFloat("Float", ref debugging.Float, -1, 1);
                 }
@@ -81,6 +82,7 @@ public class Debugging(
     public Vector3D<float>? Location = null;
     private readonly IGameGui gameGui = gameGui;
 
+    public bool ForceTracking = false;
     public void DebugShow(string key, object? value)
     {
         if (value is Vector3D<float> vec)

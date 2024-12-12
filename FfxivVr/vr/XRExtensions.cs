@@ -57,4 +57,9 @@ internal unsafe static class XRExtensions
         enumerate(count, &count, result).CheckResult(action);
         return result;
     }
+
+    internal static bool IsValidOrientation(this SpaceLocationFlags flags)
+    {
+        return (flags & SpaceLocationFlags.OrientationValidBit) != 0;
+    }
 }

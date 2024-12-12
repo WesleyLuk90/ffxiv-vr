@@ -56,7 +56,7 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         return Matrix4X4.Multiply(viewInverted, proj);
     }
 
-    public unsafe VRCameraMode GetVRCameraType(float? localSpaceHeight)
+    public unsafe VRCameraMode GetVRCameraType(float? localSpaceHeight, bool hasBodyData)
     {
         var characterBase = gameModifier.GetCharacterBase();
         var distance = gameState.GetGameCameraDistance();
@@ -67,6 +67,10 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         else if (gameState.IsOccupiedInCutSceneEvent() && !configuration.KeepCutsceneCameraHorizontal)
         {
             return new OrbitCamera();
+        }
+        else if (gameState.IsFirstPerson() && hasBodyData)
+        {
+            return new BodyTrackingCamera();
         }
         else if (gameState.IsFirstPerson() && configuration.FollowCharacter)
         {
@@ -94,6 +98,8 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         }
     }
 
+    private Vector3D<float>? savedHeadPosition = null;
+
     public unsafe GameCamera? CreateGameCamera()
     {
         var camera = gameState.GetCurrentCamera();
@@ -104,7 +110,31 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         var position = camera->Position.ToVector3D();
         var lookAt = camera->LookAtVector.ToVector3D();
 
-        return new GameCamera(position, lookAt, gameModifier.GetHeadPosition());
+        var transform = gameModifier.GetCharacterPositionTransform();
+        var head = gameModifier.GetHeadOffset();
+        if (savedHeadPosition == null)
+        {
+            savedHeadPosition = head;
+        }
+        Vector3D<float>? globalHead = null;
+        Vector3D<float>? globalSaved = null;
+        if (transform is { } t)
+        {
+            if (head is { } h)
+            {
+                globalHead = Vector3D.Transform(h, t);
+            }
+            if (savedHeadPosition is { } sh)
+            {
+                globalSaved = Vector3D.Transform(sh, t);
+            }
+        }
+        return new GameCamera(position, lookAt, globalHead, globalSaved);
+    }
+
+    internal void ResetSavedHeadPosition()
+    {
+        savedHeadPosition = null;
     }
 
     internal unsafe void UpdateCamera(Camera* camera, GameCamera? gameCamera, VRCameraMode cameraType, View view)

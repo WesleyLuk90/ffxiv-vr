@@ -4,6 +4,7 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.Collections.Generic;
 using static FfxivVR.Resources;
 
 namespace FfxivVR;
@@ -65,7 +66,7 @@ unsafe public class Renderer(
         return views;
     }
 
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView)
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView, List<Vector3D<float>>? extra = null)
     {
         var swapchainView = swapchains.Views[vrView.Eye.ToIndex()];
         CheckResolution(swapchainView);
@@ -146,6 +147,8 @@ unsafe public class Renderer(
         }
 
         RenderUI(context, vrViewProjectionMatrix, vrView.UIRotation);
+
+        extra?.ForEach(p => RenderPoint(context, 0.01f, p, vrViewProjectionMatrix));
 
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
         xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");

@@ -4,13 +4,14 @@ using System;
 namespace FfxivVR;
 
 // Need to be careful here as the game camera values change slightly between the left and right frame rendering
-public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition)
+public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition, Vector3D<float>? savedHeadPosition)
 {
     public readonly Vector3D<float> GameCameraForwardVector = lookAt - position;
 
     public Vector3D<float> Position { get; } = position;
     public Vector3D<float> LookAt { get; } = lookAt;
     public Vector3D<float>? HeadPosition { get; } = headPosition;
+    public Vector3D<float>? SavedHeadPosition { get; } = savedHeadPosition;
 
     public virtual float GetYRotation()
     {
@@ -73,6 +74,21 @@ class FollowingFirstPersonCamera : VRCameraMode
         if (gameCamera.HeadPosition is Vector3D<float> headPosition)
         {
             return headPosition;
+        }
+        else
+        {
+            return gameCamera.Position;
+        }
+    }
+}
+class BodyTrackingCamera : VRCameraMode
+{
+
+    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
+    {
+        if (gameCamera.SavedHeadPosition is Vector3D<float> resetCameraPosition)
+        {
+            return resetCameraPosition;
         }
         else
         {

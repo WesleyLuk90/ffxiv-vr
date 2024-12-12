@@ -11,7 +11,7 @@ using System.IO;
 
 public unsafe class AppFactoryTests
 {
-    [Test]
+    [Test, Timeout(10000)]
     public void CreateSession()
     {
         var pluginInterface = new Mock<IDalamudPluginInterface>();
@@ -31,7 +31,7 @@ public unsafe class AppFactoryTests
         AppFactory.Framework = new Mock<IFramework>().Object;
         AppFactory.NamePlateGui = new Mock<INamePlateGui>().Object;
 
-        var factory = new AppFactory(device: null);
+        var factory = new AppFactory(device: new DxDevice(null));
 
         var host = factory.CreateSession();
 

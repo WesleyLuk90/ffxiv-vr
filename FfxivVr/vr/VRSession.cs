@@ -7,7 +7,6 @@ using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace FfxivVR;
@@ -33,7 +32,8 @@ public unsafe class VRSession(
     FramePrediction framePrediction,
     InputManager inputManager,
     VRUI vrUI,
-    GameClock gameClock
+    GameClock gameClock,
+    Debugging debugging
 )
 {
     public readonly VRState State = State;
@@ -54,7 +54,6 @@ public unsafe class VRSession(
     private CameraPhase? cameraPhase;
 
     private RenderPhase? renderPhase;
-
     public bool PrePresent(ID3D11DeviceContext* context)
     {
         var shouldPresent = true;
@@ -165,6 +164,7 @@ public unsafe class VRSession(
     internal void RecenterCamera()
     {
         vrSpace.RecenterCamera(vrSystem.Now());
+        vrCamera.ResetSavedHeadPosition();
     }
 
     internal void UpdateVisibility()
@@ -237,9 +237,9 @@ public unsafe class VRSession(
                 var frameState = waitFrameService.WaitFrame();
                 return frameState;
             });
-
-            VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight);
-            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, GetTrackingData(predictedTime), cameraType, vrUI.GetRotation(views[0], ticks));
+            var trackingData = GetTrackingData(predictedTime);
+            VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight, trackingData.HasBodyData());
+            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, trackingData, cameraType, vrUI.GetRotation(views[0], ticks));
 
             if (Conditions.IsInFlight || Conditions.IsDiving)
             {
@@ -262,20 +262,22 @@ public unsafe class VRSession(
 
     private TrackingData GetTrackingData(long predictedTime)
     {
-        if (!gameState.IsFirstPerson())
+        if (!gameState.IsFirstPerson() && !debugging.ForceTracking)
         {
             return TrackingData.Disabled();
         }
         var hands = configuration.HandTracking ? GetHandTrackingData(predictedTime) : null;
         var controllers = configuration.ControllerTracking ? vrInput.GetControllerPose() : null;
 
+        var bodyData = configuration.BodyTracking ? vrSystem.BodyTracker?.GetData(vrSpace.LocalSpace, predictedTime) : null;
+
         if (lastTrackingData is TrackingData last)
         {
-            return last.Update(configuration.HandTracking, hands, configuration.ControllerTracking, controllers);
+            return last.Update(configuration.HandTracking, hands, configuration.ControllerTracking, controllers, bodyData);
         }
         else
         {
-            return TrackingData.CreateNew(hands, controllers);
+            return TrackingData.CreateNew(hands, controllers, bodyData);
         }
     }
 

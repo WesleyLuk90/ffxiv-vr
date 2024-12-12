@@ -8,6 +8,9 @@ public static class HumanBones
     public static string SpineB = "j_sebo_b";
     public static string SpineC = "j_sebo_c";
 
+    public static string ShoulderLeft = "j_sako_l";
+    public static string ShoulderRight = "j_sako_r";
+
     public static string ArmLeft = "j_ude_a_l";
     public static string ForearmLeft = "j_ude_b_l";
     public static string HandLeft = "j_te_l";
@@ -38,4 +41,5 @@ public static class HumanBones
     public static string PinkyFingerRightA = "j_ko_a_r";
     public static string PinkyFingerRightB = "j_ko_b_r";
 
+    public static string WeaponBoneSubstring = "buki";
 }

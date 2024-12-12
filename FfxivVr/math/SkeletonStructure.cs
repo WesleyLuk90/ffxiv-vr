@@ -45,27 +45,33 @@ public unsafe class SkeletonStructure
         return bonesByType.GetValueOrDefault(boneName);
     }
 
-    public List<Bone> GetChildren(Bone bone)
+    public List<Bone> GetChildren(Bone bone, Func<string, bool>? filter)
     {
         var children = bonesByInternalIndex[bone.Index].Children;
         var list = new List<Bone>(children.Count);
         foreach (var child in children)
         {
-            list.Add(bonesByInternalIndex[child]);
+            if (filter?.Invoke(bonesByInternalIndex[child].Name) ?? true)
+            {
+                list.Add(bonesByInternalIndex[child]);
+            }
         }
         return list;
     }
 
-    public List<Bone> GetDescendants(Bone bone)
+    public List<Bone> GetDescendants(Bone bone, Func<string, bool>? filter)
     {
-        var bones = GetChildren(bone);
+        var bones = GetChildren(bone, filter);
         for (int i = 0; i < bones.Count; i++)
         {
             var children = bonesByInternalIndex[bones[i].Index].Children;
             bones.EnsureCapacity(bones.Count + children.Count);
             foreach (var child in children)
             {
-                bones.Add(bonesByInternalIndex[child]);
+                if (filter?.Invoke(bonesByInternalIndex[child].Name) ?? true)
+                {
+                    bones.Add(bonesByInternalIndex[child]);
+                }
             }
         }
         return bones;
