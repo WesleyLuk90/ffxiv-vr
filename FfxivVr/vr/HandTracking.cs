@@ -1,28 +1,21 @@
-﻿using Silk.NET.Core;
-using Silk.NET.OpenXR;
+﻿using Silk.NET.OpenXR;
+using Silk.NET.OpenXR.Extensions.EXT;
 using System;
 using System.Linq;
 
 namespace FfxivVR;
-public unsafe class HandTracking(
-    PfnVoidFunction xrCreateHandTrackerEXT,
-    PfnVoidFunction xrDestroyHandTrackerEXT,
-    PfnVoidFunction xrLocateHandJointsEXT) : IDisposable
-{
-    delegate* unmanaged[Cdecl]<Session, HandTrackerCreateInfoEXT*, HandTrackerEXT*, Result> xrCreateHandTrackerEXT =
-        (delegate* unmanaged[Cdecl]<Session, HandTrackerCreateInfoEXT*, HandTrackerEXT*, Result>)xrCreateHandTrackerEXT.Handle;
-    delegate* unmanaged[Cdecl]<HandTrackerEXT, HandJointsLocateInfoEXT*, HandJointLocationsEXT*, Result> xrLocateHandJointsEXT =
-        (delegate* unmanaged[Cdecl]<HandTrackerEXT, HandJointsLocateInfoEXT*, HandJointLocationsEXT*, Result>)xrLocateHandJointsEXT.Handle;
-    delegate* unmanaged[Cdecl]<HandTrackerEXT, Result> xrDestroyHandTrackerEXT =
-        (delegate* unmanaged[Cdecl]<HandTrackerEXT, Result>)xrDestroyHandTrackerEXT.Handle;
 
+public unsafe class HandTracking(
+    ExtHandTracking handTracking
+) : IDisposable
+{
     private HandTrackerEXT leftHandTracker = new HandTrackerEXT();
     private HandTrackerEXT rightHandTracker = new HandTrackerEXT();
 
     public void Dispose()
     {
-        xrDestroyHandTrackerEXT(leftHandTracker).CheckResult("DestroyHandTrackerEXT");
-        xrDestroyHandTrackerEXT(rightHandTracker).CheckResult("DestroyHandTrackerEXT");
+        handTracking.DestroyHandTracker(leftHandTracker).CheckResult("DestroyHandTrackerEXT");
+        handTracking.DestroyHandTracker(rightHandTracker).CheckResult("DestroyHandTrackerEXT");
     }
 
     public void Initialize(Session session)
@@ -30,12 +23,12 @@ public unsafe class HandTracking(
         HandTrackerCreateInfoEXT leftCreateInfo = new HandTrackerCreateInfoEXT(hand: HandEXT.LeftExt, handJointSet: HandJointSetEXT.DefaultExt);
         fixed (HandTrackerEXT* ptr = &leftHandTracker)
         {
-            xrCreateHandTrackerEXT(session, &leftCreateInfo, ptr).CheckResult("CreateHandTrackerEXT");
+            handTracking.CreateHandTracker(session, &leftCreateInfo, ptr).CheckResult("CreateHandTrackerEXT");
         }
         HandTrackerCreateInfoEXT rightCreateInfo = new HandTrackerCreateInfoEXT(hand: HandEXT.RightExt, handJointSet: HandJointSetEXT.DefaultExt);
         fixed (HandTrackerEXT* ptr = &rightHandTracker)
         {
-            xrCreateHandTrackerEXT(session, &rightCreateInfo, ptr).CheckResult("CreateHandTrackerEXT");
+            handTracking.CreateHandTracker(session, &rightCreateInfo, ptr).CheckResult("CreateHandTrackerEXT");
         }
     }
 
@@ -55,7 +48,7 @@ public unsafe class HandTracking(
                 jointCount: JointCount,
                 jointLocations: ptr
             );
-            xrLocateHandJointsEXT(leftHandTracker, &locateInfo, &locations).CheckResult("LocateHandJointsEXT");
+            handTracking.LocateHandJoints(leftHandTracker, &locateInfo, &locations).CheckResult("LocateHandJointsEXT");
         }
         var rightHand = new HandJointLocationEXT[JointCount];
         var rightSpan = new Span<HandJointLocationEXT>(rightHand);
@@ -65,7 +58,7 @@ public unsafe class HandTracking(
                 jointCount: JointCount,
                 jointLocations: ptr
             );
-            xrLocateHandJointsEXT(rightHandTracker, &locateInfo, &locations).CheckResult("LocateHandJointsEXT");
+            handTracking.LocateHandJoints(rightHandTracker, &locateInfo, &locations).CheckResult("LocateHandJointsEXT");
         }
         var leftValid = leftHand.Any(j => j.LocationFlags != 0);
         var rightValid = rightHand.Any(j => j.LocationFlags != 0);

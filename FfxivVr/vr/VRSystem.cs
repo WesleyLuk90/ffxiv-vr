@@ -1,5 +1,8 @@
-using Silk.NET.Core;
+using Silk.NET.Core.Native;
 using Silk.NET.OpenXR;
+using Silk.NET.OpenXR.Extensions.EXT;
+using Silk.NET.OpenXR.Extensions.FB;
+using Silk.NET.OpenXR.Extensions.KHR;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,10 +29,11 @@ public unsafe class VRSystem(
     public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
 
     private List<string> wantedExtensions = [
-        "XR_KHR_D3D11_enable",
-        "XR_KHR_win32_convert_performance_counter_time",
-        "XR_EXT_hand_tracking",
+        KhrD3D11Enable.ExtensionName,
+        KhrWin32ConvertPerformanceCounterTime.ExtensionName,
+        ExtHandTracking.ExtensionName,
         "XR_EXT_palm_pose",
+        FBBodyTracking.ExtensionName,
     ];
     public void Initialize()
     {
@@ -54,7 +58,6 @@ public unsafe class VRSystem(
         });
         logger.Debug($"Enabling extensions {string.Join(", ", foundExtensions.Select(e => e.GetExtensionName()))}");
 
-        HandTrackingExtensionEnabled = foundExtensions.Any(e => e.GetExtensionName() == "XR_EXT_hand_tracking");
         byte*[] extensionsToEnable = new byte*[foundExtensions.Count()];
         for (var i = 0; i < foundExtensions.Count(); i++)
         {
@@ -95,79 +98,71 @@ public unsafe class VRSystem(
             throw new FormFactorUnavailableException();
         }
         result.CheckResult("GetSystem");
-        PfnVoidFunction getRequirementsPointer = new PfnVoidFunction();
-        xr.GetInstanceProcAddr(Instance, "xrGetD3D11GraphicsRequirementsKHR", &getRequirementsPointer).CheckResult("GetInstanceProcAddr");
-        var getRequirements = (delegate* unmanaged[Cdecl]<Instance, ulong, GraphicsRequirementsD3D11KHR*, Result>)getRequirementsPointer.Handle;
+        var d3d11Ext = GetExtension<KhrD3D11Enable>() ?? throw new Exception("Failed to load KhrD3D11Enable extension");
 
         GraphicsRequirementsD3D11KHR requirements = new GraphicsRequirementsD3D11KHR(next: null);
-        getRequirements(Instance, SystemId, &requirements).CheckResult("xrGetD3D11GraphicsRequirementsKHR");
+        d3d11Ext.GetD3D11GraphicsRequirements(Instance, SystemId, &requirements).CheckResult("GetD3D11GraphicsRequirements");
         logger.Debug($"Requirements Adapter {requirements.AdapterLuid} Feature level {requirements.MinFeatureLevel}");
 
-        PfnVoidFunction performanceToTimePointer = new PfnVoidFunction();
-        xr.GetInstanceProcAddr(Instance, "xrConvertWin32PerformanceCounterToTimeKHR", &performanceToTimePointer).CheckResult("GetInstanceProcAddr");
-        performanceToTime = (delegate* unmanaged[Cdecl]<Instance, long*, long*, Result>)performanceToTimePointer.Handle;
+        perfCounterExt = GetExtension<KhrWin32ConvertPerformanceCounterTime>() ?? throw new Exception("Failed to load KhrWin32ConvertPerformanceCounterTime extension"); ;
 
         var binding = new GraphicsBindingD3D11KHR(device: device.Device);
         var sessionInfo = new SessionCreateInfo(systemId: SystemId, createFlags: 0, next: &binding);
         xr.CreateSession(Instance, ref sessionInfo, ref Session).CheckResult("CreateSession");
 
-        if (HandTrackingExtensionEnabled)
+        CreateExtensions(foundExtensions);
+    }
+
+    private void CreateExtensions(List<ExtensionProperties> foundExtensions)
+    {
+        if (foundExtensions.Any(e => e.GetExtensionName() == ExtHandTracking.ExtensionName))
         {
             CreateHandTracking();
         }
-        else if (configuration.HandTracking)
+        if (configuration.HandTracking && HandTracker == null)
         {
             logger.Info("Hand tracking is not supported by your runtime");
         }
-    }
 
+    }
     private void CreateHandTracking()
     {
-        var handTrackingProperties = new SystemHandTrackingPropertiesEXT(next: null);
-        var systemProperties = new SystemProperties(next: &handTrackingProperties);
+        var properties = new SystemHandTrackingPropertiesEXT(next: null);
+        var systemProperties = new SystemProperties(next: &properties);
         xr.GetSystemProperties(Instance, SystemId, &systemProperties).CheckResult("GetSystemProperties");
 
-        logger.Debug($"Hand tracking enabled {handTrackingProperties.SupportsHandTracking}");
+        if (properties.SupportsHandTracking == 1 && GetExtension<ExtHandTracking>() is ExtHandTracking ext)
+        {
+            logger.Debug("Initializing HandTracking");
+            HandTracker = new HandTracking(ext);
+            HandTracker.Initialize(Session);
+        }
+    }
 
-        if (handTrackingProperties.SupportsHandTracking == 1)
+    private T? GetExtension<T>() where T : NativeExtension<XR>
+    {
+        if (!xr.TryGetInstanceExtension<T>(null, Instance, out T handTracking))
         {
-            PfnVoidFunction xrCreateHandTrackerEXT = new PfnVoidFunction();
-            xr.GetInstanceProcAddr(Instance, "xrCreateHandTrackerEXT", &xrCreateHandTrackerEXT).CheckResult("GetInstanceProcAddr");
-            PfnVoidFunction xrDestroyHandTrackerEXT = new PfnVoidFunction();
-            xr.GetInstanceProcAddr(Instance, "xrDestroyHandTrackerEXT", &xrDestroyHandTrackerEXT).CheckResult("GetInstanceProcAddr");
-            PfnVoidFunction xrLocateHandJointsEXT = new PfnVoidFunction();
-            xr.GetInstanceProcAddr(Instance, "xrLocateHandJointsEXT", &xrLocateHandJointsEXT).CheckResult("GetInstanceProcAddr");
-            HandTrackerExtension = new HandTracking(
-                xrCreateHandTrackerEXT: xrCreateHandTrackerEXT,
-                xrDestroyHandTrackerEXT: xrDestroyHandTrackerEXT,
-                xrLocateHandJointsEXT: xrLocateHandJointsEXT
-            );
-            HandTrackerExtension.Initialize(Session);
+            return null;
         }
-        else if (configuration.HandTracking)
-        {
-            logger.Info("Hand tracking is not supported");
-        }
+        return handTracking;
     }
 
     public void Dispose()
     {
-        HandTrackerExtension?.Dispose();
+        HandTracker?.Dispose();
         xr.DestroySession(Session).LogResult("DestroySession", logger);
         xr.DestroyInstance(Instance).LogResult("DestroyInstance", logger);
     }
 
-    private delegate* unmanaged[Cdecl]<Instance, long*, long*, Result> performanceToTime = null;
-
-    public HandTracking? HandTrackerExtension = null;
-
-    public bool HandTrackingExtensionEnabled { get; private set; }
+    private KhrWin32ConvertPerformanceCounterTime perfCounterExt = null!;
+    public HandTracking? HandTracker { get; private set; } = null;
 
     public long Now()
     {
         var timestamp = Stopwatch.GetTimestamp();
         long time;
-        performanceToTime(Instance, &timestamp, &time).CheckResult("performanceToTime");
+        perfCounterExt.ConvertWin32PerformanceCounterToTime(Instance, &timestamp, &time).CheckResult("ConvertTimeToWin32PerformanceCounter");
         return time;
 
     }

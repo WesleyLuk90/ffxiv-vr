@@ -7,6 +7,7 @@ using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace FfxivVR;
@@ -35,28 +36,7 @@ public unsafe class VRSession(
     GameClock gameClock
 )
 {
-    private readonly VRSystem vrSystem = vrSystem;
-    private readonly Logger logger = logger;
     public readonly VRState State = State;
-    private readonly Renderer renderer = renderer;
-    private readonly GameModifier gameModifier = gameModifier;
-    private readonly VRSpace vrSpace = vrSpace;
-    private readonly EventHandler eventHandler = eventHandler;
-    private readonly VRShaders vrShaders = vrShaders;
-    private readonly Resources resources = resources;
-    private readonly VRSwapchains swapchains = swapchains;
-    private readonly GameState gameState = gameState;
-    private readonly VRCamera vrCamera = vrCamera;
-    private readonly RenderPipelineInjector renderPipelineInjector = renderPipelineInjector;
-    private readonly Configuration configuration = configuration;
-    private readonly ResolutionManager resolutionManager = resolutionManager;
-    private readonly WaitFrameService waitFrameService = waitFrameService;
-    private readonly FramePrediction framePrediction = framePrediction;
-    private readonly InputManager inputManager = inputManager;
-    private readonly VRUI vrUI = vrUI;
-    private readonly GameClock gameClock = gameClock;
-    private readonly VRInput vrInput = vrInput;
-
     public void Initialize()
     {
         vrSystem.Initialize();
@@ -74,7 +54,6 @@ public unsafe class VRSession(
     private CameraPhase? cameraPhase;
 
     private RenderPhase? renderPhase;
-
 
     public bool PrePresent(ID3D11DeviceContext* context)
     {
@@ -310,7 +289,7 @@ public unsafe class VRSession(
         {
             return null;
         }
-        return vrSystem.HandTrackerExtension?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
+        return vrSystem.HandTracker?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
     }
 
     internal Point? ComputeMousePosition(Point point)

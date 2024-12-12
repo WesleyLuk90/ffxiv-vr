@@ -42,7 +42,7 @@ unsafe public class VRSpace(
             var stage = new Space();
             xr.CreateReferenceSpace(system.Session, ref stageCreateInfo, ref stage).CheckResult("CreateReferenceSpace");
             StageReferenceSpace = stage;
-            logger.Debug($"Stage reference space available {stage.Handle}");
+            logger.Debug($"Stage reference space available");
         }
     }
 
@@ -84,7 +84,7 @@ unsafe public class VRSpace(
 
     internal void RecenterCamera(long xrTime)
     {
-        logger.Info("Recentering camera");
+        logger.Info($"Recentering camera");
         var spaceLocation = new SpaceLocation(next: null);
         xr.LocateSpace(ViewSpace, LocalSpace, xrTime, ref spaceLocation).CheckResult("LocateSpace");
         var oldSpace = LocalSpace;

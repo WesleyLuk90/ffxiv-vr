@@ -11,6 +11,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static IPluginLog EarlyLogger { get; private set; } = null!;
+    [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
 
     private IHost AppHost;
     public Plugin()
@@ -26,6 +27,7 @@ public unsafe sealed class Plugin : IDalamudPlugin
         AppHost.Services.GetRequiredService<PluginUI>().Initialize();
 
         EarlyLogger.Debug("Loaded VR Plugin");
+        ChatGui.Print("Loaded VR Plugin");
     }
     public void Dispose()
     {
