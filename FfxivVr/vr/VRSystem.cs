@@ -7,29 +7,21 @@ using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
-public unsafe class VRSystem : IDisposable
+public unsafe class VRSystem(
+    XR xr,
+    DxDevice device,
+    Logger logger,
+    HookStatus hookStatus,
+    Configuration configuration) : IDisposable
 {
     public Session Session = new Session();
     internal ViewConfigurationType ViewConfigurationType = ViewConfigurationType.PrimaryStereo;
-    private readonly XR xr;
-    private readonly DxDevice device;
-    private readonly Logger logger;
-    private readonly HookStatus hookStatus;
-    private readonly Configuration configuration;
+
     public Instance Instance = new Instance();
     public ulong SystemId;
 
     public RuntimeAdjustments RuntimeAdjustments = new RuntimeAdjustments();
 
-    public VRSystem(XR xr,
-        DxDevice device, Logger logger, HookStatus hookStatus, Configuration configuration)
-    {
-        this.xr = xr;
-        this.device = device;
-        this.logger = logger;
-        this.hookStatus = hookStatus;
-        this.configuration = configuration;
-    }
 
     public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
 

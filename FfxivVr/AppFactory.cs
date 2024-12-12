@@ -73,9 +73,12 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<GamepadManager>();
         builder.Services.AddSingleton<GameState>();
         builder.Services.AddSingleton<HookStatus>();
+        builder.Services.AddSingleton<NameplateModifier>();
         builder.Services.AddSingleton<HudLayoutManager>();
         builder.Services.AddSingleton<Logger>();
         builder.Services.AddSingleton<PluginUI>();
+        builder.Services.AddSingleton<SkeletonModifier>();
+        builder.Services.AddSingleton<GameVisibililty>();
         builder.Services.AddSingleton<RenderPipelineInjector>();
         builder.Services.AddSingleton<Transitions>();
         builder.Services.AddSingleton<VRLifecycle>();

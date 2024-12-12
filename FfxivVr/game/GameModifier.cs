@@ -9,29 +9,14 @@ using Silk.NET.Maths;
 using System.Collections.Generic;
 
 namespace FfxivVR;
-unsafe public class GameModifier
+unsafe public class GameModifier(
+    GameState gameState,
+    ITargetManager targetManager,
+    IClientState clientState,
+    NameplateModifier nameplateModifier,
+    SkeletonModifier skeletonModifier,
+    GameVisibililty gameVisibililty)
 {
-    private readonly Logger logger;
-    private readonly GameState gameState;
-    private readonly IGameGui gameGui;
-    private readonly ITargetManager targetManager;
-    private readonly IClientState clientState;
-    private readonly NameplateModifier nameplateModifier;
-    private readonly SkeletonModifier skeletonModifier;
-
-    private readonly GameVisibililty gameVisibililty = new GameVisibililty();
-
-    public GameModifier(Logger logger, GameState gameState, IGameGui gameGui, ITargetManager targetManager, IClientState clientState)
-    {
-        this.logger = logger;
-        this.gameState = gameState;
-        this.gameGui = gameGui;
-        this.targetManager = targetManager;
-        this.clientState = clientState;
-        this.nameplateModifier = new NameplateModifier(logger, gameGui, targetManager);
-        this.skeletonModifier = new SkeletonModifier(logger);
-    }
-
     public void UpdateCharacterVisibility(bool showInFirstPerson)
     {
         if (gameState.IsInCutscene() || gameState.IsBetweenAreas())

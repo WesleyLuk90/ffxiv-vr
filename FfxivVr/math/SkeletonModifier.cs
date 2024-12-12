@@ -9,9 +9,8 @@ using System.Collections.Generic;
 
 namespace FfxivVR;
 
-unsafe internal class SkeletonModifier(Logger logger)
+unsafe public class SkeletonModifier(Logger logger)
 {
-    private readonly Logger logger = logger;
 
     // This returns the position relative to the model that is where the VR local origin is
     public Vector3D<float>? GetHeadPosition(Skeleton* skeleton)

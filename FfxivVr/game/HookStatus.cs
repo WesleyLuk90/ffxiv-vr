@@ -19,5 +19,4 @@ public class HookStatus(IDalamudPluginInterface pluginInterface)
     {
         return pluginInterface.GetOrCreateData("ffxivvr.session-state", () => new HashSet<string>());
     }
-    private readonly IDalamudPluginInterface pluginInterface = pluginInterface;
 }

@@ -7,11 +7,10 @@ using System.Collections.Generic;
 using static FFXIVClientStructs.FFXIV.Client.UI.AddonNamePlate;
 
 namespace FfxivVR;
-unsafe internal class NameplateModifier(Logger logger, IGameGui gameGui, ITargetManager targetManager)
+unsafe public class NameplateModifier(
+    IGameGui gameGui,
+    ITargetManager targetManager)
 {
-    private ITargetManager targetManager = targetManager;
-    private Logger logger = logger;
-
     public void UpdateVRNameplates(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
         HideTargetArrow();

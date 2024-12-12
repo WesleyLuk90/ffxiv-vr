@@ -31,7 +31,6 @@ public unsafe class AppFactoryTests
         AppFactory.Framework = new Mock<IFramework>().Object;
         AppFactory.NamePlateGui = new Mock<INamePlateGui>().Object;
 
-
         var factory = new AppFactory(device: null);
 
         var host = factory.CreateSession();

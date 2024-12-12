@@ -7,7 +7,6 @@ public class VRUI(
     Configuration configuration
 )
 {
-    private readonly Configuration configuration = configuration;
     private float target = 0;
     private bool transition = false;
     private float currentAngle = 0;

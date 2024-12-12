@@ -1,12 +1,9 @@
 ﻿namespace FfxivVR;
-public class FramePrediction
+public class FramePrediction(
+    VRSystem vrSystem
+)
 {
-    private VRSystem vrSystem;
 
-    public FramePrediction(VRSystem vrSystem)
-    {
-        this.vrSystem = vrSystem;
-    }
 
     private long? lastStart = null;
     private long? lastPrediction = null;

@@ -3,10 +3,10 @@ using System;
 using System.Threading;
 
 namespace FfxivVR;
-public unsafe class WaitFrameService(VRSystem system, XR xr)
+public unsafe class WaitFrameService(
+    VRSystem system,
+    XR xr)
 {
-    private readonly VRSystem system = system;
-    private readonly XR xr = xr;
     // Use a mutex to ensure we don't race between starting and stopping the session and calling WaitFrame
     private Mutex mutex = new Mutex();
     private bool sessionStatus = false;

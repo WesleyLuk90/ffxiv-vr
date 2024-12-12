@@ -1,5 +1,4 @@
 using Dalamud.Game.Gui.NamePlate;
-using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Silk.NET.Maths;
@@ -14,32 +13,14 @@ public class GameEvents(
     Transitions transitions,
     IFramework framework,
     ExceptionHandler exceptionHandler,
-    Configuration configuration,
     VRLifecycle vrLifecycle,
     GameState gameState,
     HudLayoutManager hudLayoutManager,
-    IDalamudPluginInterface pluginInterface,
     GamepadManager gamepadManager,
     FreeCamera freeCamera,
-    VRStartStop vrStartStop,
-    Logger logger,
     IGamepadState gamepadState
 ) : IDisposable
 {
-    private readonly INamePlateGui namePlateGui = namePlateGui;
-    private readonly IClientState clientState = clientState;
-    private readonly IFramework framework = framework;
-    private readonly ExceptionHandler exceptionHandler = exceptionHandler;
-    private readonly Configuration configuration = configuration;
-    private readonly VRLifecycle vrLifecycle = vrLifecycle;
-    private readonly GameState gameState = gameState;
-    private readonly HudLayoutManager hudLayoutManager = hudLayoutManager;
-    private readonly IDalamudPluginInterface pluginInterface = pluginInterface;
-    private readonly GamepadManager gamepadManager = gamepadManager;
-    private readonly FreeCamera freeCamera = freeCamera;
-    private readonly VRStartStop vrStartStop = vrStartStop;
-    private readonly Logger logger = logger;
-    private readonly IGamepadState gamepadState = gamepadState;
 
     public void Initialize()
     {

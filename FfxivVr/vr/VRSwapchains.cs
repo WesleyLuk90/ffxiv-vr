@@ -6,7 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 namespace FfxivVR;
-unsafe public class VRSwapchains : IDisposable
+unsafe public class VRSwapchains(
+    XR xr,
+    VRSystem system,
+    Logger logger,
+    DxDevice device) : IDisposable
 {
     private static List<Format> ColorFormats = new List<Format>() {
         Format.FormatR8G8B8A8UnormSrgb,
@@ -16,19 +20,8 @@ unsafe public class VRSwapchains : IDisposable
         Format.FormatD32Float,
         Format.FormatD16Unorm,
     };
-    private readonly XR xr;
-    private readonly VRSystem system;
-    private readonly Logger logger;
-    private readonly DxDevice device;
     public const ViewConfigurationType ViewConfigType = ViewConfigurationType.PrimaryStereo;
     public List<SwapchainView> Views = null!;
-    public VRSwapchains(XR xr, VRSystem system, Logger logger, DxDevice device)
-    {
-        this.xr = xr;
-        this.system = system;
-        this.logger = logger;
-        this.device = device;
-    }
     public Vector2D<uint> Initialize()
     {
         var viewConfigurationViews = xr.GetViewConfigurationViews(system.Instance, system.SystemId, ViewConfigType);

@@ -2,12 +2,13 @@
 using Silk.NET.OpenXR;
 
 namespace FfxivVR;
-unsafe public class VRSpace(XR xr, Logger logger, VRSystem system, VRUI vrUI)
+unsafe public class VRSpace(
+    XR xr,
+    Logger logger,
+    VRSystem system,
+    VRUI vrUI)
 {
-    private readonly XR xr = xr;
-    private readonly Logger logger = logger;
-    private readonly VRSystem system = system;
-    private readonly VRUI vrUI = vrUI;
+
     public Space LocalSpace = new Space();
     private Space ViewSpace = new Space();
     private Space? StageReferenceSpace = null;

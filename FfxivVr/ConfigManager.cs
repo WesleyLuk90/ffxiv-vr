@@ -4,9 +4,6 @@ namespace FfxivVR;
 
 public class ConfigManager(Configuration configuration, Logger logger)
 {
-    private readonly Configuration configuration = configuration;
-    private readonly Logger logger = logger;
-
     public void SetConfig(string name, string value)
     {
         if (configuration.GetType().GetField(name) is not FieldInfo field)

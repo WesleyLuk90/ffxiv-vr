@@ -11,7 +11,6 @@ namespace FfxivVR;
 unsafe public class Renderer(
     XR xr,
     VRSystem system,
-    VRState vrState,
     Logger logger,
     VRSwapchains swapchains,
     Resources resources,
@@ -23,19 +22,6 @@ unsafe public class Renderer(
     ResolutionManager resolutionManager,
     GameState gameState)
 {
-    private readonly XR xr = xr;
-    private readonly VRSystem system = system;
-    private readonly VRState vrState = vrState;
-    private readonly Logger logger = logger;
-    private readonly VRSwapchains swapchains = swapchains;
-    private readonly Resources resources = resources;
-    private readonly VRShaders shaders = shaders;
-    private readonly VRSpace vrSpace = vrSpace;
-    private readonly Configuration configuration = configuration;
-    private readonly DalamudRenderer dalamudRenderer = dalamudRenderer;
-    private readonly VRCamera vrCamera = vrCamera;
-    private readonly ResolutionManager resolutionManager = resolutionManager;
-    private readonly GameState gameState = gameState;
     private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(

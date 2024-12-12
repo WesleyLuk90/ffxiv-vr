@@ -5,9 +5,6 @@ public class VRStartStop(
     Transitions transitions
 )
 {
-    private readonly VRLifecycle vrLifecycle = vrLifecycle;
-    private readonly Transitions transitions = transitions;
-
     public void ToggleVR()
     {
         if (vrLifecycle.IsEnabled())

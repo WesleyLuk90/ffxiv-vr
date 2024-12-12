@@ -13,7 +13,9 @@ public enum ShaderMode
     InvertedAlpha = 2,
 }
 
-unsafe public class Resources : IDisposable
+unsafe public class Resources(
+    DxDevice device
+) : IDisposable
 {
     public struct CameraConstants
     {
@@ -42,8 +44,6 @@ unsafe public class Resources : IDisposable
     private D3DBuffer? pixelShaderConstantsBuffer;
     private Vertex[]? vertices;
     private D3DBuffer? vertexBuffer;
-    private readonly DxDevice device;
-    private readonly Logger logger;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
     private ID3D11DepthStencilState* depthStencilStateOff = null;
     private ID3D11BlendState* uiBlendState = null;
@@ -57,12 +57,6 @@ unsafe public class Resources : IDisposable
     public RenderTarget CursorRenderTarget = null!;
     public RenderTarget[] SceneRenderTargets = [];
     public DepthTarget[] SceneDepthTargets = [];
-
-    public Resources(DxDevice device, Logger logger)
-    {
-        this.device = device;
-        this.logger = logger;
-    }
 
     public struct Vertex
     {

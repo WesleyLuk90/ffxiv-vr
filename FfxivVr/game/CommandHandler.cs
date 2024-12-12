@@ -18,8 +18,6 @@ public class CommandHander(
 ) : IDisposable
 {
     private const string CommandName = "/vr";
-    private readonly ICommandManager commandManager = commandManager;
-
     public void Initialize()
     {
         commandManager.AddHandler(CommandName, new CommandInfo(OnCommand)

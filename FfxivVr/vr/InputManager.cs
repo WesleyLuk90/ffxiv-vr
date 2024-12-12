@@ -16,8 +16,6 @@ public class InputManager(
     IVRInput vrInput
 )
 {
-    private readonly Configuration configuration = configuration;
-    private readonly IVRInput vrInput = vrInput;
 
     public unsafe void UpdateGamepad(GamepadInput* gamepadInput)
     {

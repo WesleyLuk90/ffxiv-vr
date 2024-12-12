@@ -4,13 +4,13 @@ using System;
 
 namespace FfxivVR;
 
-public unsafe class VRInput(XR xr, VRSystem system, Logger logger, VRSpace vrSpace, VRState vrState) : IDisposable, IVRInput
+public unsafe class VRInput(
+    XR xr,
+    VRSystem system,
+    Logger logger,
+    VRSpace vrSpace
+) : IDisposable, IVRInput
 {
-    private readonly XR xr = xr;
-    private readonly VRSystem system = system;
-    private readonly Logger logger = logger;
-    private readonly VRSpace vrSpace = vrSpace;
-    private readonly VRState vrState = vrState;
     private ActionSet actionSet = new ActionSet();
     private ulong leftHandPath;
     private ulong rightHandPath;

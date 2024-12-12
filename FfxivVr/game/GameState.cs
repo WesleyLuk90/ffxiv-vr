@@ -5,16 +5,10 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
 namespace FfxivVR;
-unsafe public class GameState
+unsafe public class GameState(
+    IClientState clientState,
+    IGameGui gameGui)
 {
-    private IClientState clientState;
-    private readonly IGameGui gameGui;
-
-    public GameState(IClientState clientState, IGameGui gameGui)
-    {
-        this.clientState = clientState;
-        this.gameGui = gameGui;
-    }
 
     public bool IsFirstPerson()
     {

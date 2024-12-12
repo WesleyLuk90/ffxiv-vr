@@ -144,11 +144,9 @@ public class GameOption
 public class GameConfigManager(
     IGameConfig gameConfig,
     Logger logger,
-    Configuration configuration)
+    Configuration configuration
+)
 {
-    private readonly IGameConfig gameConfig = gameConfig;
-    private readonly Logger logger = logger;
-    private readonly Configuration configuration = configuration;
     private readonly List<GameOption> Options = new();
 
     public List<GameOption> GetOptions()

@@ -7,7 +7,6 @@ using System;
 namespace FfxivVR;
 public class VRCamera(Configuration configuration, GameModifier gameModifier, GameState gameState, FreeCamera freeCamera)
 {
-    private readonly Configuration configuration = configuration;
     private float near = 0.1f;
 
     internal Matrix4x4 ComputeGameProjectionMatrix(View view)
