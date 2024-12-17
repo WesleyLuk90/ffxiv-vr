@@ -26,6 +26,8 @@ Based on the original [xivr-Ex Plugin](https://github.com/ProjectMimer/xivr-Ex)
 
 -   For performance, decreases the display limits in FFXIV
     -   `System Configuration > ... > Display Limits > Character and Object Quantity > Minimum`
+-   To remove the ghost outline around characters
+    -   `System Configuration > Graphics Settings -> Edge Smoothing (Anti-aliasing) > Off (or FXAA)`
 
 ## Help
 
@@ -45,7 +47,12 @@ Sometimes SteamVR will get stuck waiting for the game or just take a minute. Try
 
 GShade and ReShade must be completely deleted, check that they did not leave DLL files in your FFXIV folder, they're known to cause crashes/freezes with this plugin.
 
-If there is a large black box in front of you there is likely an incompatible plugin enabled. Try disabling other plugins to determine if that is the cause. Splatoon and vnavmesh have been reported to cause this issue.
+If there is a large black box in front of you there is likely an incompatible plugin enabled. Try disabling other plugins to determine if that is the cause.
+
+Reported Incompatible Plugins
+- Splatoon
+- vnavmesh
+- Browsingway
 
 ## Known Issues
 
