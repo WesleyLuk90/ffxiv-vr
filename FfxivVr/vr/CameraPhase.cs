@@ -21,9 +21,19 @@ public class CameraPhase(
     private GameCamera? GameCamera = null;
 
     public TrackingData TrackingData = trackingData;
-    public View CurrentView()
+    public View CurrentView(bool includeHeadMovement)
     {
-        return Views[Eye.ToIndex()];
+        if (includeHeadMovement)
+        {
+            return Views[Eye.ToIndex()];
+        }
+        else
+        {
+            var view = Views[Eye.ToIndex()];
+            var center = (Views[0].Pose.Position.ToVector3D() + Views[0].Pose.Position.ToVector3D()) / 2;
+            view.Pose.Position = (view.Pose.Position.ToVector3D() - center).ToVector3f();
+            return view;
+        }
     }
     public void SwitchToRightEye()
     {

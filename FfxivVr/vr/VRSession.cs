@@ -156,7 +156,7 @@ public unsafe class VRSession(
         if (State.SessionRunning && cameraPhase is CameraPhase phase)
         {
             logger.Trace($"Set {phase.Eye} camera matrix");
-            View view = phase.CurrentView();
+            View view = phase.CurrentView(phase.CameraMode.UseHeadMovement);
             vrCamera.UpdateCamera(camera, phase.GetGameCamera(vrCamera.CreateGameCamera), phase.CameraMode, view);
         }
     }
@@ -243,17 +243,17 @@ public unsafe class VRSession(
 
             if (Conditions.IsInFlight || Conditions.IsDiving)
             {
-                if (gameState.IsFirstPerson() && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation()))
+                if (gameState.IsFirstPerson() && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation))
                 {
                     gameModifier.ResetVerticalCameraRotation(0);
                 }
-                else if (configuration.DisableCameraDirectionFlyingThirdPerson || cameraType.ShouldLockCameraVerticalRotation())
+                else if (configuration.DisableCameraDirectionFlyingThirdPerson || cameraType.ShouldLockCameraVerticalRotation)
                 {
                     // Vertical rotation is offset by about 15 degress for some reason
                     gameModifier.ResetVerticalCameraRotation(float.DegreesToRadians(15));
                 }
             }
-            else if (cameraType.ShouldLockCameraVerticalRotation())
+            else if (cameraType.ShouldLockCameraVerticalRotation)
             {
                 gameModifier.ResetVerticalCameraRotation(0);
             }

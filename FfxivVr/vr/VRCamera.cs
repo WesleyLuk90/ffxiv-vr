@@ -117,19 +117,14 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
             savedHeadPosition = head;
         }
         Vector3D<float>? globalHead = null;
-        Vector3D<float>? globalSaved = null;
         if (transform is { } t)
         {
             if (head is { } h)
             {
                 globalHead = Vector3D.Transform(h, t);
             }
-            if (savedHeadPosition is { } sh)
-            {
-                globalSaved = Vector3D.Transform(sh, t);
-            }
         }
-        return new GameCamera(position, lookAt, globalHead, globalSaved);
+        return new GameCamera(position, lookAt, globalHead);
     }
 
     internal void ResetSavedHeadPosition()

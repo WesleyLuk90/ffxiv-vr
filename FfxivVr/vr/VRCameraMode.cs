@@ -4,15 +4,13 @@ using System;
 namespace FfxivVR;
 
 // Need to be careful here as the game camera values change slightly between the left and right frame rendering
-public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition, Vector3D<float>? savedHeadPosition)
+public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition)
 {
     public readonly Vector3D<float> GameCameraForwardVector = lookAt - position;
 
     public Vector3D<float> Position { get; } = position;
     public Vector3D<float> LookAt { get; } = lookAt;
     public Vector3D<float>? HeadPosition { get; } = headPosition;
-    public Vector3D<float>? SavedHeadPosition { get; } = savedHeadPosition;
-
     public virtual float GetYRotation()
     {
         return -MathF.PI / 2 - MathF.Atan2(GameCameraForwardVector.Z, GameCameraForwardVector.X);
@@ -36,10 +34,8 @@ public abstract class VRCameraMode
     {
         return Matrix4X4.CreateRotationY(GetYRotation(gameCamera));
     }
-    public virtual bool ShouldLockCameraVerticalRotation()
-    {
-        return false;
-    }
+    public virtual bool ShouldLockCameraVerticalRotation { get; } = false;
+    public virtual bool UseHeadMovement { get; } = true;
 }
 
 class OrbitCamera() : VRCameraMode
@@ -81,20 +77,9 @@ class FollowingFirstPersonCamera : VRCameraMode
         }
     }
 }
-class BodyTrackingCamera : VRCameraMode
+class BodyTrackingCamera : FollowingFirstPersonCamera
 {
-
-    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
-    {
-        if (gameCamera.SavedHeadPosition is Vector3D<float> resetCameraPosition)
-        {
-            return resetCameraPosition;
-        }
-        else
-        {
-            return gameCamera.Position;
-        }
-    }
+    public override bool UseHeadMovement { get; } = false;
 }
 
 class LockedFloorCamera : VRCameraMode
@@ -118,10 +103,7 @@ class LockedFloorCamera : VRCameraMode
         return pos;
     }
 
-    override public bool ShouldLockCameraVerticalRotation()
-    {
-        return true;
-    }
+    override public bool ShouldLockCameraVerticalRotation { get; } = true;
 }
 
 public class FreeCamera : VRCameraMode
