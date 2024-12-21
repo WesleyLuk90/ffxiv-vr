@@ -87,7 +87,7 @@ public class ConfigWindow : Window
                     Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
                     Checkbox("Enable hand tracking", ref config.HandTracking, "Uses your headsets hand tracking to control your characters hands and fingers, not all headsets are supported.");
                     Checkbox("Enable controller tracking", ref config.ControllerTracking, "Uses the VR controllers to control your characters hands.");
-                    Checkbox("Enable body tracking", ref config.BodyTracking);
+                    Checkbox("Enable body tracking", ref config.BodyTracking, "Use upper body tracking data to control your character's upper body, not all headsets are supported.");
                 }
             }
             using (var tab = ImRaii.TabItem("Third Person"))
