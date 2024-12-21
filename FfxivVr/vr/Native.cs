@@ -16,20 +16,20 @@ namespace FfxivVR
             return array;
         }
 
-        public unsafe static string ReadCString(byte* pointer)
+        public static unsafe string ReadCString(byte* pointer)
         {
             return Marshal.PtrToStringUTF8((IntPtr)pointer)!;
         }
-        public unsafe static string ReadCString(byte[] bytes)
+        public static unsafe string ReadCString(byte[] bytes)
         {
             return Encoding.UTF8.GetString(bytes).Trim('\0');
         }
-        public unsafe static void WriteCString(byte* pointer, string value, int maxLength)
+        public static unsafe void WriteCString(byte* pointer, string value, int maxLength)
         {
             var span = new Span<byte>(pointer, maxLength);
             Encoding.UTF8.GetBytes(value + "\0", span);
         }
-        public unsafe static void WithAnsiStringPointer(string value, Action<IntPtr> block)
+        public static unsafe void WithAnsiStringPointer(string value, Action<IntPtr> block)
         {
             var bytes = Encoding.ASCII.GetBytes(value + "\0");
             fixed (byte* ptr = new Span<byte>(bytes))
@@ -38,7 +38,7 @@ namespace FfxivVR
             }
         }
 
-        public unsafe static void WithStringPointer(string value, Action<IntPtr> block)
+        public static unsafe void WithStringPointer(string value, Action<IntPtr> block)
         {
             var bytes = Encoding.UTF8.GetBytes(value + "\0");
             fixed (byte* ptr = new Span<byte>(bytes))

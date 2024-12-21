@@ -7,7 +7,7 @@ using System;
 
 namespace FfxivVR;
 
-public unsafe sealed class Plugin : IDalamudPlugin
+public sealed unsafe class Plugin : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static IPluginLog EarlyLogger { get; private set; } = null!;

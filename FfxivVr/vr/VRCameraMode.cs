@@ -103,7 +103,7 @@ class LockedFloorCamera : VRCameraMode
         return pos;
     }
 
-    override public bool ShouldLockCameraVerticalRotation { get; } = true;
+    public override bool ShouldLockCameraVerticalRotation { get; } = true;
 }
 
 public class FreeCamera : VRCameraMode

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using static FFXIVClientStructs.FFXIV.Client.UI.AddonNamePlate;
 
 namespace FfxivVR;
-unsafe public class NameplateModifier(
+public unsafe class NameplateModifier(
     IGameGui gameGui,
     ITargetManager targetManager)
 {

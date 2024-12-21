@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace FfxivVR;
 
-internal unsafe static class XRExtensions
+internal static unsafe class XRExtensions
 {
     internal static List<long> GetSwapchainFormats(this XR xr, Session session)
     {

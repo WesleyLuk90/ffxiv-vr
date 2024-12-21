@@ -12,7 +12,7 @@ using System.Drawing;
 using static FfxivVR.RenderPipelineInjector;
 
 namespace FfxivVR;
-unsafe public class GameHooks(
+public unsafe class GameHooks(
     VRLifecycle vrLifecycle,
     ExceptionHandler exceptionHandler,
     Logger logger,

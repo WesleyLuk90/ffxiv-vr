@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace FfxivVR;
 
-unsafe public class SkeletonModifier(Logger logger
+public unsafe class SkeletonModifier(Logger logger
 )
 {
 

@@ -5,7 +5,7 @@ using Silk.NET.Maths;
 
 namespace FfxivVR;
 
-unsafe public class Cursor(
+public unsafe class Cursor(
     bool visible,
     Vector2D<float> uvScale,
     Vector2D<float> uvOffset,
@@ -20,7 +20,7 @@ unsafe public class Cursor(
     public float Width = 64;
     public float Height = 64;
 }
-unsafe public static class GameTextures
+public static unsafe class GameTextures
 {
     public static Texture* GetGameRenderTexture()
     {

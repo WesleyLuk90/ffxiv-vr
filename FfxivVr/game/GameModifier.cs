@@ -9,7 +9,7 @@ using Silk.NET.Maths;
 using System.Collections.Generic;
 
 namespace FfxivVR;
-unsafe public class GameModifier(
+public unsafe class GameModifier(
     GameState gameState,
     ITargetManager targetManager,
     IClientState clientState,

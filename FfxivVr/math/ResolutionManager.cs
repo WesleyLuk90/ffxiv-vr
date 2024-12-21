@@ -25,7 +25,7 @@ class ResizeState
         RenderResolution = renderResolution;
     }
 }
-unsafe public class ResolutionManager : IDisposable
+public unsafe class ResolutionManager : IDisposable
 {
     private const SET_WINDOW_POS_FLAGS SetWindowPositionFlags = SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_FRAMECHANGED;
     private const uint ExitSizeMove = 0x0232;

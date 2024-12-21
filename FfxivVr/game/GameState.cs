@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
 namespace FfxivVR;
-unsafe public class GameState(
+public unsafe class GameState(
     IClientState clientState,
     IGameGui gameGui)
 {

@@ -5,7 +5,7 @@ using System.IO;
 
 namespace FfxivVR;
 
-unsafe public class VRShaders
+public unsafe class VRShaders
 {
     private readonly DxDevice device;
     private readonly Logger logger;

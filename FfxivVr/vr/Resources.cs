@@ -13,7 +13,7 @@ public enum ShaderMode
     InvertedAlpha = 2,
 }
 
-unsafe public class Resources(
+public unsafe class Resources(
     DxDevice device
 ) : IDisposable
 {

@@ -9,7 +9,7 @@ using static FfxivVR.Resources;
 
 namespace FfxivVR;
 
-unsafe public class Renderer(
+public unsafe class Renderer(
     XR xr,
     VRSystem system,
     Logger logger,
