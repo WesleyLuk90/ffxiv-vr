@@ -14,6 +14,8 @@ public class ConfigWindow : Window
     private readonly VRStartStop vrStartStop;
     private readonly GameConfigManager gameConfigManager;
 
+    public List<Tuple<string, Action>> Tabs;
+
     public ConfigWindow(
         Configuration configuration,
         VRLifecycle vrLifecycle,
@@ -29,86 +31,82 @@ public class ConfigWindow : Window
         this.vrLifecycle = vrLifecycle;
         this.vrStartStop = vrStartStop;
         this.gameConfigManager = gameConfigManager;
+        Tabs = [
+            Tuple.Create("General", GeneralTab),
+            Tuple.Create("View", ViewTab),
+            Tuple.Create("UI", UITab),
+            Tuple.Create("Controls", RenderControlsTab),
+            Tuple.Create("First Person", FirstPersonTab),
+            Tuple.Create("Third Person", ThirdPersonTab),
+            Tuple.Create("Game Config", RenderGameConfig),
+        ];
     }
 
     public override void Draw()
     {
         using (ImRaii.TabBar("tabs"))
         {
-            using (var tab = ImRaii.TabItem("General"))
+            Tabs.ForEach((tab) =>
             {
-                if (tab)
+                var (title, render) = tab;
+                using (var shouldRender = ImRaii.TabItem(title))
                 {
-                    if (ImGui.Button(vrLifecycle.IsEnabled() ? "Stop VR" : "Start VR"))
+                    if (shouldRender)
                     {
-                        vrStartStop.ToggleVR();
+                        render();
                     }
-                    Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
-                    Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);
                 }
-            }
-            using (var tab = ImRaii.TabItem("View"))
-            {
-                if (tab)
-                {
-                    Checkbox("Recenter Camera on View Change", ref config.RecenterOnViewChange, "Recenters the camera when switching between first and third person.");
-                    Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
-                    Slider("World Scale", ref config.WorldScale);
-                    Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
-                }
-            }
-            using (var tab = ImRaii.TabItem("UI"))
-            {
-                if (tab)
-                {
-                    Slider("UI Distance", ref config.UIDistance);
-                    Slider("UI Size", ref config.UISize);
-                    Checkbox("Keep UI In Front", ref config.KeepUIInFront);
-                    Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
-                    ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
-                    ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
-                    SliderInt("UI Snap Angle", ref config.UITransitionAngle, min: 0, max: 180, "How far away you need to turn before the UI snaps in front of you. Set to 180 to disable.");
-                }
-            }
-            using (var tab = ImRaii.TabItem("Controls"))
-            {
-                if (tab)
-                {
-                    RenderControlsTab();
-                }
-            }
-            using (var tab = ImRaii.TabItem("First Person"))
-            {
-                if (tab)
-                {
-                    Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
-                    Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
-                    Checkbox("Follow Head", ref config.FollowCharacter, "Moves the camera to match your characters head.");
-                    Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
-                    Checkbox("Enable hand tracking", ref config.HandTracking, "Uses your headsets hand tracking to control your characters hands and fingers, not all headsets are supported.");
-                    Checkbox("Enable controller tracking", ref config.ControllerTracking, "Uses the VR controllers to control your characters hands.");
-                    Checkbox("Enable body tracking", ref config.BodyTracking, "Use upper body tracking data to control your character's upper body, not all headsets are supported.");
-                }
-            }
-            using (var tab = ImRaii.TabItem("Third Person"))
-            {
-                if (tab)
-                {
-                    Checkbox("Fixed camera height", ref config.MatchFloorPosition);
-                    Slider("Height offset", ref config.FloorHeightOffset, defaultValue: 0, min: -3, max: 3);
-                    Checkbox("Keep the camera level", ref config.KeepCameraHorizontal);
-                    Checkbox("Keep the cutscene camera level", ref config.KeepCutsceneCameraHorizontal, "Disable to ensure camera looks at the original cutscene direction.");
-                    Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);
-                }
-            }
-            using (var tab = ImRaii.TabItem("Game Config"))
-            {
-                if (tab)
-                {
-                    RenderGameConfig();
-                }
-            }
+            });
         }
+    }
+
+    private void ThirdPersonTab()
+    {
+        Checkbox("Fixed camera height", ref config.MatchFloorPosition);
+        Slider("Height offset", ref config.FloorHeightOffset, defaultValue: 0, min: -3, max: 3);
+        Checkbox("Keep the camera level", ref config.KeepCameraHorizontal);
+        Checkbox("Keep the cutscene camera level", ref config.KeepCutsceneCameraHorizontal, "Disable to ensure camera looks at the original cutscene direction.");
+        Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);
+    }
+
+    private void FirstPersonTab()
+    {
+        Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
+        Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
+        Checkbox("Follow Head", ref config.FollowCharacter, "Moves the camera to match your characters head.");
+        Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
+        Checkbox("Enable hand tracking", ref config.HandTracking, "Uses your headsets hand tracking to control your characters hands and fingers, not all headsets are supported.");
+        Checkbox("Enable controller tracking", ref config.ControllerTracking, "Uses the VR controllers to control your characters hands.");
+        Checkbox("Enable body tracking", ref config.BodyTracking, "Use upper body tracking data to control your character's upper body, not all headsets are supported.");
+    }
+
+    private void UITab()
+    {
+        Slider("UI Distance", ref config.UIDistance);
+        Slider("UI Size", ref config.UISize);
+        Checkbox("Keep UI In Front", ref config.KeepUIInFront);
+        Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
+        ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
+        ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
+        SliderInt("UI Snap Angle", ref config.UITransitionAngle, min: 0, max: 180, "How far away you need to turn before the UI snaps in front of you. Set to 180 to disable.");
+    }
+
+    private void ViewTab()
+    {
+        Checkbox("Recenter Camera on View Change", ref config.RecenterOnViewChange, "Recenters the camera when switching between first and third person.");
+        Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
+        Slider("World Scale", ref config.WorldScale);
+        Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
+    }
+
+    private void GeneralTab()
+    {
+        if (ImGui.Button(vrLifecycle.IsEnabled() ? "Stop VR" : "Start VR"))
+        {
+            vrStartStop.ToggleVR();
+        }
+        Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
+        Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);
     }
 
     private void RenderGameConfig()
@@ -208,6 +206,14 @@ public class ConfigWindow : Window
                 if (tab)
                 {
                     RenderLayerEditor(3);
+                }
+            }
+            using (var tab = ImRaii.TabItem("Other"))
+            {
+                if (tab)
+                {
+                    Slider("Left Stick Deadzone", ref config.LeftStickDeadzone, defaultValue: 0, min: 0, max: 1);
+                    Slider("Right Stick Deadzone", ref config.RightStickDeadzone, defaultValue: 0, min: 0, max: 1);
                 }
             }
         }

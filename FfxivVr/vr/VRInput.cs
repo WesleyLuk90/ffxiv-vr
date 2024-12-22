@@ -8,7 +8,8 @@ public unsafe class VRInput(
     XR xr,
     VRSystem system,
     Logger logger,
-    VRSpace vrSpace
+    VRSpace vrSpace,
+    Configuration config
 ) : IDisposable, IVRInput
 {
     private ActionSet actionSet = new ActionSet();
@@ -138,8 +139,15 @@ public unsafe class VRInput(
 
         var left = GetActionVector2f(leftAnalog);
         var right = GetActionVector2f(rightAnalog);
-        input.LeftStick = left;
-        input.RightStick = right;
+        if (left.Length > config.LeftStickDeadzone)
+        {
+            input.LeftStick = left;
+        }
+
+        if (right.Length > config.RightStickDeadzone)
+        {
+            input.RightStick = right;
+        }
         return input;
     }
 

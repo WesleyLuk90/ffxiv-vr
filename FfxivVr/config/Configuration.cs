@@ -49,6 +49,9 @@ public class Configuration : IPluginConfiguration
         new ControlLayer(),
     ];
 
+    public float LeftStickDeadzone = 0;
+    public float RightStickDeadzone = 0;
+
     public Dictionary<string, uint> VRGameSettings = new();
 
     public uint? GetVRGameSetting(string id)
