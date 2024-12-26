@@ -58,6 +58,10 @@ public unsafe class VRLifecycle : IDisposable
             {
                 logger.Error("Failed to start VR, headset not found");
             }
+            if (e is MissingDXHook)
+            {
+                logger.Error("SteamVR requires Dalamud Settings > Wait for plugins before game loads to be enabled. Please enable the setting and restart the game.");
+            }
             else
             {
                 logger.Error($"Failed to start VR {e}");

@@ -27,6 +27,7 @@ public unsafe class VRSystem(
 
 
     public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
+    public class MissingDXHook() : Exception("DX Hook was not configured");
 
     private List<string> wantedExtensions = [
         KhrD3D11Enable.ExtensionName,
@@ -88,7 +89,7 @@ public unsafe class VRSystem(
         }
         if (runtimeName.Contains("SteamVR") && !hookStatus.IsHookAdded())
         {
-            logger.Error("SteamVR requires Dalamud Settings > Wait for plugins before game loads to be enabled. Please enable the setting and restart the game.");
+            throw new MissingDXHook();
         }
 
         var getInfo = new SystemGetInfo(next: null, formFactor: FormFactor.HeadMountedDisplay);
