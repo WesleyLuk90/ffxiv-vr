@@ -16,6 +16,7 @@ public unsafe class VRInput(
     private ulong leftHandPath;
     private ulong rightHandPath;
     private Silk.NET.OpenXR.Action palmPose;
+    private Silk.NET.OpenXR.Action aimPose;
     private Silk.NET.OpenXR.Action aButton;
     private Silk.NET.OpenXR.Action bButton;
     private Silk.NET.OpenXR.Action xButton;
@@ -45,6 +46,7 @@ public unsafe class VRInput(
         leftHandPath = CreatePath("/user/hand/left");
         rightHandPath = CreatePath("/user/hand/right");
         palmPose = CreateAction(actionType: ActionType.PoseInput, "palm-pose", [leftHandPath, rightHandPath]);
+        aimPose = CreateAction(actionType: ActionType.PoseInput, "aim-pose", [leftHandPath, rightHandPath]);
 
         aButton = CreateAction(actionType: ActionType.BooleanInput, "a-button");
         bButton = CreateAction(actionType: ActionType.BooleanInput, "b-button");
@@ -65,6 +67,9 @@ public unsafe class VRInput(
         SuggestBindings([
             CreateSuggestedBinding(palmPose, "/user/hand/left/input/palm_ext/pose"),
             CreateSuggestedBinding(palmPose, "/user/hand/right/input/palm_ext/pose"),
+
+            CreateSuggestedBinding(aimPose, "/user/hand/left/input/aim/pose"),
+            CreateSuggestedBinding(aimPose, "/user/hand/right/input/aim/pose"),
 
             CreateSuggestedBinding(leftAnalog, "/user/hand/left/input/thumbstick"),
             CreateSuggestedBinding(rightAnalog, "/user/hand/right/input/thumbstick"),
@@ -89,12 +94,16 @@ public unsafe class VRInput(
     }
 
     public class ControllerPose(
-        Posef? LeftController,
-        Posef? RightController
+        Posef? leftPalm,
+        Posef? rightPalm,
+        Posef? leftAim,
+        Posef? rightAim
     )
     {
-        public Posef? LeftController { get; } = LeftController;
-        public Posef? RightController { get; } = RightController;
+        public Posef? LeftPalm { get; } = leftPalm;
+        public Posef? RightPalm { get; } = rightPalm;
+        public Posef? LeftAim { get; } = leftAim;
+        public Posef? RightAim { get; } = rightAim;
     }
 
     public ControllerPose? GetControllerPose()
@@ -121,8 +130,10 @@ public unsafe class VRInput(
         }
         result.CheckResult("SyncAction");
         lastControllerPose = new ControllerPose(
-            LeftController: GetActionPose(leftSpace, predictedTime, palmPose, leftHandPath),
-            RightController: GetActionPose(rightSpace, predictedTime, palmPose, rightHandPath)
+            leftPalm: GetActionPose(leftSpace, predictedTime, palmPose, leftHandPath),
+            rightPalm: GetActionPose(rightSpace, predictedTime, palmPose, rightHandPath),
+            leftAim: GetActionPose(leftSpace, predictedTime, aimPose, leftHandPath),
+            rightAim: GetActionPose(rightSpace, predictedTime, aimPose, rightHandPath)
         );
         GetActionBool(aButton, input, VRButton.A);
         GetActionBool(bButton, input, VRButton.B);

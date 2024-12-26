@@ -41,6 +41,11 @@ float4 main(VertexShaderOutput vertexShaderOutput) : SV_TARGET
         color = tex.Sample(tex_sampler, texCoord);
         color.a = 1 - color.a;
     }
+    else if (mode == 3) // Fill mode
+    {
+        color = constantColor;
+    }
+    
     else
     {
         color = float4(1, 0, 0, 1);

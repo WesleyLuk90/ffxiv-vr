@@ -81,7 +81,7 @@ public unsafe class VRSession(
             if (frameState.ShouldRender == 1)
             {
                 logger.Trace("Render left eye");
-                var leftLayer = renderer.RenderEye(context, leftRenderPhase.CreateEyeRender());
+                var leftLayer = renderer.RenderEye(context, leftRenderPhase.CreateEyeRender(), leftRenderPhase.TrackingData.GetAimRay());
                 renderPhase = leftRenderPhase.Next(frameState, leftLayer);
             }
             else
@@ -94,7 +94,7 @@ public unsafe class VRSession(
         else if (renderPhase is RightRenderPhase rightRenderPhase)
         {
             logger.Trace("Render right eye");
-            var rightLayer = renderer.RenderEye(context, rightRenderPhase.CreateEyeRender());
+            var rightLayer = renderer.RenderEye(context, rightRenderPhase.CreateEyeRender(), rightRenderPhase.TrackingData.GetAimRay());
             renderer.EndFrame(context, rightRenderPhase.FrameState, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
             logger.Trace("End frame");
             renderPhase = null;

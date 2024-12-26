@@ -169,7 +169,7 @@ public unsafe class SkeletonModifier(Logger logger
                 UpdateHandBone(leftHand, joint.Joint, joint.LeftBone, pose, structure, runtimeAdjustments, skeletonRotation);
             }
         }
-        else if (trackingData.GetLeftController() is Posef leftController)
+        else if (trackingData.GetLeftPalm() is Posef leftController)
         {
             var wrist = ControllerToWrist(leftController, MathFactory.ZRotation(float.DegreesToRadians(90)));
             UpdateArmIK(wrist, pose, structure, head, HumanBones.ArmLeft, HumanBones.ForearmLeft, HumanBones.HandLeft, skeletonRotation);
@@ -186,7 +186,7 @@ public unsafe class SkeletonModifier(Logger logger
                 UpdateHandBone(rightHand, joint.Joint, joint.RightBone, pose, structure, runtimeAdjustments, skeletonRotation);
             }
         }
-        else if (trackingData.GetRightController() is Posef rightController)
+        else if (trackingData.GetRightPalm() is Posef rightController)
         {
             var wrist = ControllerToWrist(rightController, MathFactory.ZRotation(float.DegreesToRadians(-90)));
             UpdateArmIK(wrist, pose, structure, head, HumanBones.ArmRight, HumanBones.ForearmRight, HumanBones.HandRight, skeletonRotation);

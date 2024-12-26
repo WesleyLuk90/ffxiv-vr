@@ -4,7 +4,6 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
-using System.Collections.Generic;
 using static FfxivVR.Resources;
 
 namespace FfxivVR;
@@ -21,7 +20,8 @@ public unsafe class Renderer(
     DalamudRenderer dalamudRenderer,
     VRCamera vrCamera,
     ResolutionManager resolutionManager,
-    GameState gameState)
+    GameState gameState,
+    Debugging debugging)
 {
     private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
     {
@@ -66,7 +66,7 @@ public unsafe class Renderer(
         return views;
     }
 
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView, List<Vector3D<float>>? extra = null)
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView, Tuple<Vector3D<float>, Vector3D<float>> aim)
     {
         var swapchainView = swapchains.Views[vrView.Eye.ToIndex()];
         CheckResolution(swapchainView);
@@ -139,6 +139,7 @@ public unsafe class Renderer(
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
 
         RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
+        RenderRay(context, 0.01f, aim.Item1, aim.Item2, vrViewProjectionMatrix);
 
         resources.SetCompositingBlendState(context);
         if (ShouldUseDepthTexture())
@@ -147,8 +148,6 @@ public unsafe class Renderer(
         }
 
         RenderUI(context, vrViewProjectionMatrix, vrView.UIRotation);
-
-        extra?.ForEach(p => RenderPoint(context, 0.01f, p, vrViewProjectionMatrix));
 
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
         xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
@@ -252,6 +251,31 @@ public unsafe class Renderer(
             color: new Vector4D<float>(0, 1, 0, 1f)));
         resources.Draw(context);
     }
+    private void RenderRay(ID3D11DeviceContext* context, float size, Vector3D<float> start, Vector3D<float> end, Matrix4X4<float> viewProjectionMatrix)
+    {
+        var a = Vector3D.Normalize(end - start);
+        var b = new Vector3D<float>(0, 0, -1);
+        var axis = Vector3D.Cross(a, b);
+        var angle = MathF.Acos(Vector3D.Dot(a, b));
+        debugging.DebugShow("Start", start);
+        debugging.DebugShow("End", end);
+        var rotation = Quaternion<float>.CreateFromAxisAngle(axis, -angle);
+        var scale = Matrix4X4.CreateTranslation(1f, 0, 0)
+        * Matrix4X4.CreateScale((end - start).Length / 2, size, 1)
+        * Matrix4X4.CreateFromAxisAngle(Vector3D<float>.UnitY, float.DegreesToRadians(90))
+        * Matrix4X4.CreateFromQuaternion(rotation)
+        * Matrix4X4.CreateTranslation(start)
+        * viewProjectionMatrix;
+        resources.UpdateCamera(context, new CameraConstants(
+            modelViewProjection: scale
+        ));
+        resources.SetPixelShaderConstants(context, new PixelShaderConstants(
+            mode: ShaderMode.Fill,
+            gamma: 1f,
+            color: new Vector4D<float>(1, 0, 0, 1f)));
+        resources.Draw(context);
+    }
+
 
     internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, View[] views, CompositionLayerProjectionView[] compositionLayerProjectionViews)
     {
@@ -310,5 +334,10 @@ public unsafe class Renderer(
     private bool ShouldUseDepthTexture()
     {
         return !configuration.KeepUIInFront && !Conditions.IsOccupiedInCutSceneEvent;
+    }
+
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender eyeRender, object value)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -43,7 +43,7 @@ public class CameraPhase(
 
     internal RenderPhase StartRender()
     {
-        return new LeftRenderPhase(Views, WaitFrameTask, uiRotation);
+        return new LeftRenderPhase(Views, WaitFrameTask, uiRotation, TrackingData);
     }
 
     // Create it once per eye so we have consistent data    

@@ -1,4 +1,6 @@
+using Silk.NET.Maths;
 using Silk.NET.OpenXR;
+using System;
 using System.Linq;
 
 namespace FfxivVR;
@@ -17,52 +19,30 @@ public class TrackingData(
     public BodyJointLocationFB[]? BodyData { get; } = bodyData;
     public HandJointLocationEXT[]? GetLeftHand()
     {
-        if (HandPose?.LeftHand != null)
-        {
-            return HandPose?.LeftHand;
-        }
-        if (ControllerPose?.LeftController == null)
-        {
-            return LastValidHandPose?.LeftHand;
-        }
-        return null;
+        return HandPose?.LeftHand ?? LastValidHandPose?.LeftHand;
     }
     public HandJointLocationEXT[]? GetRightHand()
     {
-        if (HandPose?.RightHand != null)
-        {
-            return HandPose?.RightHand;
-        }
-        if (ControllerPose?.RightController == null)
-        {
-            return LastValidHandPose?.RightHand;
-        }
-        return null;
+        return HandPose?.RightHand ?? LastValidHandPose?.RightHand;
     }
 
-    public Posef? GetLeftController()
+    public Posef? GetLeftPalm()
     {
-        if (ControllerPose?.LeftController != null)
-        {
-            return ControllerPose.LeftController;
-        }
-        if (HandPose?.LeftHand == null)
-        {
-            return LastValidControllerPose?.LeftController;
-        }
-        return null;
+        return ControllerPose?.LeftPalm ?? LastValidControllerPose?.LeftPalm;
     }
-    public Posef? GetRightController()
+
+    public Posef? GetRightPalm()
     {
-        if (ControllerPose?.RightController != null)
-        {
-            return ControllerPose.RightController;
-        }
-        if (HandPose?.RightHand == null)
-        {
-            return LastValidControllerPose?.RightController;
-        }
-        return null;
+        return ControllerPose?.RightPalm ?? LastValidControllerPose?.RightPalm;
+    }
+    private Posef? GetLeftAim()
+    {
+        return ControllerPose?.LeftAim ?? LastValidControllerPose?.LeftAim;
+    }
+
+    private Posef? GetRightAim()
+    {
+        return ControllerPose?.RightAim ?? LastValidControllerPose?.RightAim;
     }
 
     internal static TrackingData CreateNew(HandTracking.HandPose? hands, VRInput.ControllerPose? controllers, BodyJointLocationFB[]? bodyData)
@@ -76,7 +56,7 @@ public class TrackingData(
             handTracking ? hands : null,
             handTracking ? new HandTracking.HandPose(GetLeftHand(), GetRightHand()) : null,
             controllerTracking ? controllers : null,
-            controllerTracking ? new VRInput.ControllerPose(GetLeftController(), GetRightController()) : null,
+            controllerTracking ? new VRInput.ControllerPose(GetLeftPalm(), GetRightPalm(), GetLeftAim(), GetRightAim()) : null,
             bodyData: MergeBodyData(bodyData)
         );
     }
@@ -114,8 +94,8 @@ public class TrackingData(
 
     internal bool HasData()
     {
-        return (GetLeftHand() != null || GetLeftController() != null)
-            && (GetRightHand() != null || GetRightController() != null)
+        return (GetLeftHand() != null || GetLeftPalm() != null)
+            && (GetRightHand() != null || GetRightPalm() != null)
             || BodyData != null;
     }
 
@@ -126,5 +106,17 @@ public class TrackingData(
             return false;
         }
         return data.Any(d => d.LocationFlags.IsValidOrientation());
+    }
+
+    public Tuple<Vector3D<float>, Vector3D<float>> GetAimRay()
+    {
+        if ((GetLeftAim() ?? GetRightAim()) is not { } aim)
+        {
+            return Tuple.Create(Vector3D<float>.Zero, new Vector3D<float>(1, 1, 1));
+        }
+        var start = aim.Position.ToVector3D();
+        var rotation = aim.Orientation.ToQuaternion();
+        var target = Vector3D.Transform(new Vector3D<float>(0, 0, -3), rotation);
+        return Tuple.Create(start, start + target);
     }
 }

@@ -3,12 +3,13 @@ using System.Threading.Tasks;
 
 namespace FfxivVR;
 abstract class RenderPhase;
-class LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask, float uiRotation) : RenderPhase
+class LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask, float uiRotation, TrackingData trackingData) : RenderPhase
 {
     public View[] Views = views;
     private readonly float uiRotation = uiRotation;
 
     public Task<FrameState> WaitFrameTask { get; } = waitFrameTask;
+    public TrackingData TrackingData { get; } = trackingData;
 
     public FrameState WaitFrame()
     {
@@ -22,16 +23,17 @@ class LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask, float uiRota
 
     public RightRenderPhase Next(FrameState frameState, CompositionLayerProjectionView leftLayer)
     {
-        return new RightRenderPhase(frameState, leftLayer, Views, uiRotation);
+        return new RightRenderPhase(frameState, leftLayer, Views, uiRotation, TrackingData);
     }
 }
-class RightRenderPhase(FrameState frameState, CompositionLayerProjectionView leftLayer, View[] views, float uiRotation) : RenderPhase
+class RightRenderPhase(FrameState frameState, CompositionLayerProjectionView leftLayer, View[] views, float uiRotation, TrackingData trackingData) : RenderPhase
 {
     public FrameState FrameState = frameState;
     public CompositionLayerProjectionView LeftLayer = leftLayer;
 
     public View[] Views = views;
     private readonly float uiRotation = uiRotation;
+    public TrackingData TrackingData = trackingData;
 
     public EyeRender CreateEyeRender()
     {
