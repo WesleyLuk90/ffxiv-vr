@@ -1,1 +1,3 @@
-[Fix] Additional fixes for making graphics settings get applied
+[Feature] Fail to start VR if DX hook is missing and running SteamVR
+[Feature] Add deadzone config
+[Feature] Add body tracking
