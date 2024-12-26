@@ -64,4 +64,4 @@ If you're still running into issues not working, try disabling all other plugins
 ## Advanced
 
 - Configuration can be changed using commands using `/vr config <name> <value>`, e.g. `/vr config UISize 1.5`
-  - For a list of available configuration see the options in the [code](https://github.com/WesleyLuk90/ffxiv-vr/blob/master/FfxivVr/ConfigWindow.cs#L34)
+  - For a list of available configuration see the options in the [code](https://github.com/WesleyLuk90/ffxiv-vr/blob/master/FfxivVr/config/ConfigWindow.cs#L86)
