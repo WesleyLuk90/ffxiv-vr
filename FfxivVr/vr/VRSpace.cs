@@ -118,4 +118,21 @@ public unsafe class VRSpace(
         }
         return null;
     }
+    internal View[] LocateView(long predictedDisplayTime)
+    {
+        var views = Native.CreateArray(new View(next: null), 2);
+        var viewState = new ViewState(next: null);
+        var viewLocateInfo = new ViewLocateInfo(
+            viewConfigurationType: ViewConfigurationType.PrimaryStereo,
+            displayTime: predictedDisplayTime,
+            space: LocalSpace
+        );
+        uint viewCount = 0;
+        xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
+        if (viewCount != 2)
+        {
+            throw new System.Exception($"LocateView returned an unexpected number of views, got {viewCount}");
+        }
+        return views;
+    }
 }

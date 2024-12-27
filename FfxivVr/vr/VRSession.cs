@@ -2,7 +2,6 @@ using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
-using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System.Collections.Generic;
@@ -25,7 +24,7 @@ public unsafe class VRSession(
     VRSpace vrSpace,
     VRCamera vrCamera,
     ResolutionManager resolutionManager,
-    Renderer renderer,
+    RenderManager renderManager,
     WaitFrameService waitFrameService,
     VRInput vrInput,
     EventHandler eventHandler,
@@ -52,53 +51,22 @@ public unsafe class VRSession(
     // Stores the hands data from the last frame so we keep the hands in the same spot of we lose tracking
     private TrackingData? lastTrackingData;
     private CameraPhase? cameraPhase;
-
-    private RenderPhase? renderPhase;
-    public bool PrePresent(ID3D11DeviceContext* context)
+    public bool PrePresent()
     {
-        var shouldPresent = true;
         eventHandler.PollEvents(() =>
         {
-            OnSessionEnd();
+            renderManager.OnSessionEnd();
         });
         if (!State.SessionRunning)
         {
-            if (renderPhase != null || cameraPhase != null)
+            if (cameraPhase != null)
             {
                 logger.Debug("Session not running, discarding phases");
-                renderPhase = null;
                 cameraPhase = null;
             }
+            renderManager.OnSessionEnd();
         }
-        if (renderPhase is LeftRenderPhase leftRenderPhase)
-        {
-            logger.Trace("Wait for VR frame sync");
-            var frameState = leftRenderPhase.WaitFrame();
-            framePrediction.MarkPredictedFrameTime(frameState.PredictedDisplayTime);
-            renderer.StartFrame();
-            // Skip presenting the left view to avoid flicker when displaying the right view
-            shouldPresent = false;
-            if (frameState.ShouldRender == 1)
-            {
-                logger.Trace("Render left eye");
-                var leftLayer = renderer.RenderEye(context, leftRenderPhase.CreateEyeRender(), leftRenderPhase.TrackingData.GetAimRay());
-                renderPhase = leftRenderPhase.Next(frameState, leftLayer);
-            }
-            else
-            {
-                logger.Trace("Frame skipped");
-                renderer.SkipFrame(frameState);
-                renderPhase = null;
-            }
-        }
-        else if (renderPhase is RightRenderPhase rightRenderPhase)
-        {
-            logger.Trace("Render right eye");
-            var rightLayer = renderer.RenderEye(context, rightRenderPhase.CreateEyeRender(), rightRenderPhase.TrackingData.GetAimRay());
-            renderer.EndFrame(context, rightRenderPhase.FrameState, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
-            logger.Trace("End frame");
-            renderPhase = null;
-        }
+        var shouldPresent = renderManager.RunRenderPhase();
         if (cameraPhase is CameraPhase phase)
         {
             switch (phase.Eye)
@@ -107,7 +75,7 @@ public unsafe class VRSession(
                     {
                         logger.Trace("Switching camera phase to right eye");
                         phase.SwitchToRightEye();
-                        renderPhase = phase.StartRender();
+                        renderManager.StartRender(phase);
                         break;
                     }
                 case Eye.Right:
@@ -124,22 +92,6 @@ public unsafe class VRSession(
             lastTrackingData = null;
         }
         return shouldPresent;
-    }
-
-    private void OnSessionEnd()
-    {
-        // Ensure we end the frame if we need to end the session
-        if (renderPhase is LeftRenderPhase left)
-        {
-            renderer.StartFrame();
-            renderer.SkipFrame(left.WaitFrame());
-        }
-        if (renderPhase is RightRenderPhase right)
-        {
-            renderer.SkipFrame(right.FrameState);
-        }
-        renderPhase = null;
-        framePrediction.Reset();
     }
 
     internal bool ShouldSecondRender()
@@ -213,11 +165,11 @@ public unsafe class VRSession(
         }
     }
 
-    internal void DoCopyRenderTexture(ID3D11DeviceContext* context, Eye eye)
+    internal void DoCopyRenderTexture(Eye eye)
     {
         if (State.SessionRunning)
         {
-            renderer.CopyTexture(context, eye);
+            renderManager.CopyGameRenderTexture(eye);
         }
     }
 
@@ -230,7 +182,7 @@ public unsafe class VRSession(
             logger.Trace("Starting cycle");
             var predictedTime = framePrediction.GetPredictedFrameTime();
 
-            var views = renderer.LocateView(predictedTime);
+            var views = vrSpace.LocateView(predictedTime);
             var localSpaceHeight = configuration.MatchFloorPosition ? vrSpace.GetLocalSpaceHeight(predictedTime) : null;
             Task<FrameState> waitFrameTask = Task.Run(() =>
             {

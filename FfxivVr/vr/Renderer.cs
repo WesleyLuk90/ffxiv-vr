@@ -48,24 +48,6 @@ public unsafe class Renderer(
         xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
     }
 
-    internal View[] LocateView(long predictedDisplayTime)
-    {
-        var views = Native.CreateArray(new View(next: null), (uint)swapchains.Views.Count);
-        var viewState = new ViewState(next: null);
-        var viewLocateInfo = new ViewLocateInfo(
-            viewConfigurationType: ViewConfigurationType.PrimaryStereo,
-            displayTime: predictedDisplayTime,
-            space: vrSpace.LocalSpace
-        );
-        uint viewCount = 0;
-        xr.LocateView(system.Session, ref viewLocateInfo, ref viewState, ref viewCount, views).CheckResult("LocateView");
-        if (viewCount != 2)
-        {
-            throw new Exception($"LocateView returned an unexpected number of views, got {viewCount}");
-        }
-        return views;
-    }
-
     internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView, Tuple<Vector3D<float>, Vector3D<float>> aim)
     {
         var swapchainView = swapchains.Views[vrView.Eye.ToIndex()];
@@ -126,7 +108,6 @@ public unsafe class Renderer(
         shaders.SetShaders(context);
         resources.DisableDepthStencil(context);
 
-        var currentEyeRenderTarget = resources.SceneRenderTargets[vrView.Eye.ToIndex()];
         if (vrView.Eye == Eye.Left)
         {
             logger.Trace("Rendering UI");
@@ -138,6 +119,7 @@ public unsafe class Renderer(
         var depthTarget = resources.SceneDepthTargets[vrView.Eye.ToIndex()];
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
 
+        var currentEyeRenderTarget = resources.SceneRenderTargets[vrView.Eye.ToIndex()];
         RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
         RenderRay(context, 0.01f, aim.Item1, aim.Item2, vrViewProjectionMatrix);
 
