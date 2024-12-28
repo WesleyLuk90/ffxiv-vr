@@ -1,11 +1,11 @@
 ﻿using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
-using FFXIVClientStructs.FFXIV.Client.Graphics;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using static FfxivVR.VRSystem;
+using CSRay = FFXIVClientStructs.FFXIV.Client.Graphics.Ray;
 
 namespace FfxivVR;
 public unsafe class VRLifecycle : IDisposable
@@ -207,7 +207,7 @@ public unsafe class VRLifecycle : IDisposable
         }
     }
 
-    internal Ray? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
+    internal CSRay? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
         lock (this)
         {

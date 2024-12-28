@@ -1,12 +1,12 @@
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Graphics;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
+using CSRay = FFXIVClientStructs.FFXIV.Client.Graphics.Ray;
 
 namespace FfxivVR;
 
@@ -191,7 +191,8 @@ public unsafe class VRSession(
             });
             var trackingData = GetTrackingData(predictedTime);
             VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight, trackingData.HasBodyData());
-            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, trackingData, cameraType, vrUI.GetRotation(views[0], ticks));
+            vrUI.Update(views[0], ticks);
+            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, trackingData, cameraType);
 
             if (Conditions.IsInFlight || Conditions.IsDiving)
             {
@@ -219,7 +220,7 @@ public unsafe class VRSession(
             return TrackingData.Disabled();
         }
         var hands = configuration.HandTracking ? GetHandTrackingData(predictedTime) : null;
-        var controllers = configuration.ControllerTracking ? vrInput.GetControllerPose() : null;
+        var controllers = configuration.ControllerTracking ? vrInput.GetPalmPose() : null;
 
         var bodyData = configuration.BodyTracking ? vrSystem.BodyTracker?.GetData(vrSpace.LocalSpace, predictedTime) : null;
 
@@ -261,7 +262,7 @@ public unsafe class VRSession(
         inputManager.UpdateGamepad(gamepadInput);
     }
 
-    internal Ray? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* sceneCamera)
+    internal CSRay? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* sceneCamera)
     {
         logger.Trace("GetTargetRay");
         if (cameraPhase is CameraPhase phase)
@@ -279,7 +280,7 @@ public unsafe class VRSession(
 
             var rotationMatrix = phase.CameraMode.GetRotationMatrix(gameCamera);
             var direction = Vector3D.Transform(new Vector3D<float>(0, 0, -1), Matrix4X4.CreateFromQuaternion(phase.Views[0].Pose.Orientation.ToQuaternion()) * rotationMatrix);
-            return new Ray(
+            return new CSRay(
                 camera->Position,
                 direction.ToVector3()
             );

@@ -137,9 +137,11 @@ public unsafe class Resources(
         public ID3D11ShaderResourceView* ShaderResourceView { get; }
         public Vector2D<uint> Size { get; }
 
-        public Matrix4X4<float> Scale()
+        public float AspectRatio => (float)Size.Y / Size.X;
+
+        public Matrix4X4<float> AspectRatioTransform()
         {
-            return Matrix4X4.CreateScale(1, (float)Size.Y / Size.X, 1);
+            return Matrix4X4.CreateScale(1, AspectRatio, 1);
         }
         public void Dispose()
         {

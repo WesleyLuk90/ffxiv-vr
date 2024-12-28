@@ -4,7 +4,7 @@ using System;
 
 namespace FfxivVR;
 
-public unsafe class VRInput(
+public unsafe partial class VRInput(
     XR xr,
     VRSystem system,
     Logger logger,
@@ -93,22 +93,9 @@ public unsafe class VRInput(
         AttachActionSet();
     }
 
-    public class ControllerPose(
-        Posef? leftPalm,
-        Posef? rightPalm,
-        Posef? leftAim,
-        Posef? rightAim
-    )
+    public PalmPose? GetPalmPose()
     {
-        public Posef? LeftPalm { get; } = leftPalm;
-        public Posef? RightPalm { get; } = rightPalm;
-        public Posef? LeftAim { get; } = leftAim;
-        public Posef? RightAim { get; } = rightAim;
-    }
-
-    public ControllerPose? GetControllerPose()
-    {
-        return lastControllerPose;
+        return lastPalmPose;
     }
 
     // Need to be careful to only call this in one place because SyncAction is stateful
@@ -129,9 +116,11 @@ public unsafe class VRInput(
             return new VrInputState();
         }
         result.CheckResult("SyncAction");
-        lastControllerPose = new ControllerPose(
+        lastPalmPose = new PalmPose(
             leftPalm: GetActionPose(leftSpace, predictedTime, palmPose, leftHandPath),
-            rightPalm: GetActionPose(rightSpace, predictedTime, palmPose, rightHandPath),
+            rightPalm: GetActionPose(rightSpace, predictedTime, palmPose, rightHandPath)
+        );
+        lastAimPose = new AimPose(
             leftAim: GetActionPose(leftSpace, predictedTime, aimPose, leftHandPath),
             rightAim: GetActionPose(rightSpace, predictedTime, aimPose, rightHandPath)
         );
@@ -327,7 +316,8 @@ public unsafe class VRInput(
         public bool IsPhysicalController = false;
     }
     private CurrentController? currentController = null;
-    private ControllerPose? lastControllerPose = null;
+    private PalmPose? lastPalmPose = null;
+    private AimPose? lastAimPose = null;
 
     internal void InteractionProfileChanged()
     {
@@ -356,5 +346,10 @@ public unsafe class VRInput(
             }
         }
         return null;
+    }
+
+    internal AimPose? GetAimPose()
+    {
+        return lastAimPose;
     }
 }

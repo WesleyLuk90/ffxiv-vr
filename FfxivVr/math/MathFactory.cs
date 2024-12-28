@@ -46,4 +46,31 @@ public static class MathFactory
         }
         return zeroTo360;
     }
+
+    // Create a quaternion that rotates from onto to using the shorted arc
+    public static Quaternion<float> RotateOnto(Vector3D<float> from, Vector3D<float> to)
+    {
+        var a = Vector3D.Normalize(from);
+        var b = Vector3D.Normalize(to);
+        var dot = Vector3D.Dot(a, b);
+        if (dot < -0.999999f)
+        {
+            var axis = Vector3D.Cross(Vector3D<float>.UnitX, a);
+            if (axis.Length < 0.000001f)
+            {
+                axis = Vector3D.Cross(Vector3D<float>.UnitY, a);
+            }
+            axis = Vector3D.Normalize(axis);
+            return Quaternion<float>.CreateFromAxisAngle(axis, MathF.PI);
+        }
+        else if (dot > 0.999999f)
+        {
+            return Quaternion<float>.Identity;
+        }
+        else
+        {
+            var axis = Vector3D.Cross(a, b);
+            return Quaternion<float>.Normalize(new Quaternion<float>(axis.X, axis.Y, axis.Z, 1 + dot));
+        }
+    }
 }

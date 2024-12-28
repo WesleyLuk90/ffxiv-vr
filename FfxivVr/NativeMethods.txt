@@ -8,6 +8,7 @@ MonitorFromWindow
 SetWindowPos
 SendMessage
 GetCursorPos
+SetCursorPos
 AdjustWindowRectEx
 GetWindowLong
 DwmGetWindowAttribute

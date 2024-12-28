@@ -21,7 +21,8 @@ public unsafe class Renderer(
     VRCamera vrCamera,
     ResolutionManager resolutionManager,
     GameState gameState,
-    Debugging debugging)
+    Debugging debugging,
+    VRUI vrUI)
 {
     private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
     {
@@ -48,7 +49,7 @@ public unsafe class Renderer(
         xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
     }
 
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView, Tuple<Vector3D<float>, Vector3D<float>> aim)
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView, Line? aim)
     {
         var swapchainView = swapchains.Views[vrView.Eye.ToIndex()];
         CheckResolution(swapchainView);
@@ -121,15 +122,17 @@ public unsafe class Renderer(
 
         var currentEyeRenderTarget = resources.SceneRenderTargets[vrView.Eye.ToIndex()];
         RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
-        RenderRay(context, 0.01f, aim.Item1, aim.Item2, vrViewProjectionMatrix);
-
         resources.SetCompositingBlendState(context);
         if (ShouldUseDepthTexture())
         {
             resources.EnableDepthStencil(context);
         }
 
-        RenderUI(context, vrViewProjectionMatrix, vrView.UIRotation);
+        RenderUI(context, vrViewProjectionMatrix);
+        if (aim != null)
+        {
+            RenderRay(context, 0.01f, aim.Start, aim.End, vrViewProjectionMatrix);
+        }
 
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
         xr.ReleaseSwapchainImage(swapchainView.DepthSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
@@ -154,15 +157,13 @@ public unsafe class Renderer(
             resolutionErrorChecked = true;
         }
     }
-    private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj, float rotation)
+    private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj)
     {
-        var translationMatrix = Matrix4X4.CreateTranslation(new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance)) * Matrix4X4.CreateFromQuaternion(MathFactory.YRotation(rotation));
-        var modelViewProjection = Matrix4X4.Multiply(translationMatrix, viewProj);
+        var matrix = vrUI.GetTransformationMatrix() * viewProj;
         resources.SetCompositingBlendState(context);
-        var uiScale = resources.UIRenderTarget.Scale() * Matrix4X4.CreateScale(configuration.UISize);
-        RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, uiScale * modelViewProjection, false);
-        RenderViewport(context, resources.DalamudRenderTarget.ShaderResourceView, resolutionManager.GetDalamudScale() * uiScale * modelViewProjection, true);
-        RenderViewport(context, resources.CursorRenderTarget.ShaderResourceView, uiScale * modelViewProjection, false);
+        RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, matrix, false);
+        RenderViewport(context, resources.DalamudRenderTarget.ShaderResourceView, resolutionManager.GetDalamudScale() * matrix, true);
+        RenderViewport(context, resources.CursorRenderTarget.ShaderResourceView, matrix, false);
     }
 
     private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)
@@ -235,16 +236,12 @@ public unsafe class Renderer(
     }
     private void RenderRay(ID3D11DeviceContext* context, float size, Vector3D<float> start, Vector3D<float> end, Matrix4X4<float> viewProjectionMatrix)
     {
-        var a = Vector3D.Normalize(end - start);
-        var b = new Vector3D<float>(0, 0, -1);
-        var axis = Vector3D.Cross(a, b);
-        var angle = MathF.Acos(Vector3D.Dot(a, b));
-        debugging.DebugShow("Start", start);
-        debugging.DebugShow("End", end);
-        var rotation = Quaternion<float>.CreateFromAxisAngle(axis, -angle);
+        var rotation = MathFactory.RotateOnto(
+            Vector3D<float>.UnitX,
+            end - start
+        );
         var scale = Matrix4X4.CreateTranslation(1f, 0, 0)
         * Matrix4X4.CreateScale((end - start).Length / 2, size, 1)
-        * Matrix4X4.CreateFromAxisAngle(Vector3D<float>.UnitY, float.DegreesToRadians(90))
         * Matrix4X4.CreateFromQuaternion(rotation)
         * Matrix4X4.CreateTranslation(start)
         * viewProjectionMatrix;
@@ -316,10 +313,5 @@ public unsafe class Renderer(
     private bool ShouldUseDepthTexture()
     {
         return !configuration.KeepUIInFront && !Conditions.IsOccupiedInCutSceneEvent;
-    }
-
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender eyeRender, object value)
-    {
-        throw new NotImplementedException();
     }
 }

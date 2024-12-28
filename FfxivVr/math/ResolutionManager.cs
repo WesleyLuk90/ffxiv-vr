@@ -85,6 +85,7 @@ public unsafe class ResolutionManager : IDisposable
 
             DisableSetCursor();
 
+
             this.resizeState = new ResizeState(
                 originalWindow: windowRect,
                 clientArea: clientArea,
@@ -242,5 +243,15 @@ public unsafe class ResolutionManager : IDisposable
     public void Dispose()
     {
         RevertResolution();
+    }
+
+    internal Vector2D<int>? WindowToScreen(Vector2D<float> pos)
+    {
+
+        if (resizeState is ResizeState state)
+        {
+            return state.ClientArea.Origin + (state.ClientArea.Size.As<float>() * pos).As<int>();
+        }
+        return null;
     }
 }

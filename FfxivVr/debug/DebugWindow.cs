@@ -89,6 +89,10 @@ public class Debugging(
         {
             value = $"<{vec.X:n3}, {vec.Y:n3}, {vec.Z:n3}>";
         }
+        else if (value is Vector2D<float> vec2)
+        {
+            value = $"<{vec2.X:n3}, {vec2.Y:n3}>";
+        }
         else if (value is Quaternion<float> quat)
         {
             value = $"<{quat.X:n3}, {quat.Y:n3}, {quat.Z:n3}, {quat.W:n3}>";
