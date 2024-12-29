@@ -9,8 +9,9 @@ public unsafe partial class VRInput(
     VRSystem system,
     Logger logger,
     VRSpace vrSpace,
-    Configuration config
-) : IDisposable, IVRInput
+    Configuration config,
+    VRUI vrUI
+) : IDisposable
 {
     private ActionSet actionSet = new ActionSet();
     private ulong leftHandPath;
@@ -334,7 +335,7 @@ public unsafe partial class VRInput(
         }
     }
 
-    public VrInputState? GetVrInputState()
+    public virtual VrInputState? GetVrInputState()
     {
         if (PollActions(system.Now()) is VrInputState input && currentController is CurrentController controller)
         {
@@ -348,8 +349,49 @@ public unsafe partial class VRInput(
         return null;
     }
 
-    internal AimPose? GetAimPose()
+    public Line? GetAimLine()
     {
-        return lastAimPose;
+        var ray = GetAimRay();
+        if (ray == null)
+        {
+            return null;
+        }
+        var line = vrUI.Intersect(ray);
+        if (vrUI.GetViewportPosition(line) == null)
+        {
+            return null;
+        }
+
+        return line;
+    }
+    public Vector2D<float>? GetViewportPosition()
+    {
+        var ray = GetAimRay();
+        if (ray == null)
+        {
+            return null;
+        }
+        var line = vrUI.Intersect(ray);
+        return vrUI.GetViewportPosition(line);
+    }
+
+    private Ray? GetAimRay()
+    {
+        if (!config.EnableMouse)
+        {
+            return null;
+        }
+        if (lastAimPose is not { } aimPose)
+        {
+            return null;
+        }
+        if ((aimPose?.LeftAim ?? aimPose?.RightAim) is not { } aim)
+        {
+            return null;
+        }
+        var start = aim.Position.ToVector3D();
+        var rotation = aim.Orientation.ToQuaternion();
+        var direction = Vector3D.Transform(new Vector3D<float>(0, 0, -1), rotation);
+        return new Ray(start, direction);
     }
 }

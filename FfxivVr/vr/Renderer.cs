@@ -34,7 +34,7 @@ public unsafe class Renderer(
             gamma: configuration.Gamma,
             color: new Vector4D<float>(1 - fade, 1 - fade, 1 - fade, 1)));
         resources.SetSampler(context, shaderResourceView);
-        resources.Draw(context);
+        resources.DrawSquare(context);
     }
 
 
@@ -131,7 +131,7 @@ public unsafe class Renderer(
         RenderUI(context, vrViewProjectionMatrix);
         if (aim != null)
         {
-            RenderRay(context, 0.01f, aim.Start, aim.End, vrViewProjectionMatrix);
+            RenderRay(context, 0.001f, aim.Start, aim.End, vrViewProjectionMatrix);
         }
 
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
@@ -217,7 +217,7 @@ public unsafe class Renderer(
                 color: new Vector4D<float>(1, 1, 1, 1f),
                 uvOffset: maybeCursor.UvOffset,
                 uvScale: maybeCursor.UvScale));
-            resources.Draw(context);
+            resources.DrawSquare(context);
         }
     }
 
@@ -232,16 +232,16 @@ public unsafe class Renderer(
             mode: ShaderMode.Circle,
             gamma: 1f,
             color: new Vector4D<float>(0, 1, 0, 1f)));
-        resources.Draw(context);
+        resources.DrawSquare(context);
     }
     private void RenderRay(ID3D11DeviceContext* context, float size, Vector3D<float> start, Vector3D<float> end, Matrix4X4<float> viewProjectionMatrix)
     {
         var rotation = MathFactory.RotateOnto(
-            Vector3D<float>.UnitX,
+            Vector3D<float>.UnitY,
             end - start
         );
-        var scale = Matrix4X4.CreateTranslation(1f, 0, 0)
-        * Matrix4X4.CreateScale((end - start).Length / 2, size, 1)
+        var scale = Matrix4X4.CreateTranslation(0, 1f, 0)
+        * Matrix4X4.CreateScale(size, (end - start).Length / 2, size)
         * Matrix4X4.CreateFromQuaternion(rotation)
         * Matrix4X4.CreateTranslation(start)
         * viewProjectionMatrix;
@@ -251,8 +251,8 @@ public unsafe class Renderer(
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: ShaderMode.Fill,
             gamma: 1f,
-            color: new Vector4D<float>(1, 0, 0, 1f)));
-        resources.Draw(context);
+            color: new Vector4D<float>(1, 1, 1, 0.7f)));
+        resources.DrawCylinder(context);
     }
 
 

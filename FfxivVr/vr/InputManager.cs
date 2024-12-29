@@ -3,17 +3,15 @@ using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Windows.Win32;
 using static FfxivVR.Configuration;
 
 namespace FfxivVR;
 
-public interface IVRInput
-{
-    public VrInputState? GetVrInputState();
-}
 public class InputManager(
     Configuration configuration,
-    IVRInput vrInput
+    VRInput vrInput,
+    ResolutionManager resolutionManager
 )
 {
 
@@ -24,6 +22,24 @@ public class InputManager(
             var pressedActions = ApplyBindings(state);
             ApplyStates(pressedActions, gamepadInput);
         }
+        UpdateMousePosition();
+    }
+
+    private void UpdateMousePosition()
+    {
+        if (!configuration.EnableMouse)
+        {
+            return;
+        }
+        if (vrInput.GetViewportPosition() is not { } position)
+        {
+            return;
+        }
+        if (resolutionManager.WindowToScreen(position) is not { } screenCoordinates)
+        {
+            return;
+        }
+        PInvoke.SetCursorPos(screenCoordinates.X, screenCoordinates.Y);
     }
 
     private VRActionsState ApplyBindings(VrInputState state)

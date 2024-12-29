@@ -90,7 +90,6 @@ public unsafe class AppFactory
         builder.Services.AddScoped<FramePrediction>();
         builder.Services.AddScoped<GameClock>();
         builder.Services.AddScoped<InputManager>();
-        builder.Services.AddScoped<IVRInput>(x => x.GetRequiredService<VRInput>());
         builder.Services.AddScoped<Renderer>();
         builder.Services.AddScoped<ResolutionManager>();
         builder.Services.AddScoped<Resources>();

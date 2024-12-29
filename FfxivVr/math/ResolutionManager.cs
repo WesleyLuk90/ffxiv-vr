@@ -47,7 +47,6 @@ public unsafe class ResolutionManager : IDisposable
         this.logger = logger;
         this.configuration = configuration;
         DisableSetCursorPosAddr = (ulong)sigScanner!.ScanText(g_DisableSetCursorPosAddr);
-        logger.Debug($"Found DisableSetCursorPosAddr address {DisableSetCursorPosAddr}");
     }
     public void ChangeResolution(Vector2D<uint> resolution)
     {

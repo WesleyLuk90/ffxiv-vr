@@ -55,12 +55,16 @@ public class VRUI(
         return ray.ToLine(d);
     }
 
-    internal Vector2D<float> GetPosition(Line line)
+    internal Vector2D<float>? GetViewportPosition(Line line)
     {
         var size = new Vector2D<float>(2 * configuration.UISize, 2 * configuration.UISize * resources.UIRenderTarget.AspectRatio);
         var bottomLeft = -size / 2;
         var v = new Vector2D<float>(line.End.X - bottomLeft.X, line.End.Y - bottomLeft.Y) / size;
         v.Y = 1 - v.Y;
+        if (v.X < 0 || v.X > 1 || v.Y < 0 || v.Y > 1)
+        {
+            return null;
+        }
         return v;
     }
 }
