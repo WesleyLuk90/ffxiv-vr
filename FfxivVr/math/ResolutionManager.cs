@@ -56,7 +56,7 @@ public unsafe class ResolutionManager : IDisposable
             var screenArea = GetScreenArea(handle);
             var margins = GetMargins(handle);
             var clientArea = ComputeClientRect(screenArea, resolution, margins);
-
+            logger.Debug($"Clienr area {clientArea.Origin} {clientArea.Size}");
             if (!PInvoke.GetWindowRect(handle, out RECT windowRect))
             {
                 throw new Exception("Failed to GetWindowRect");
@@ -191,6 +191,7 @@ public unsafe class ResolutionManager : IDisposable
         {
             throw new Exception("Failed to AdjustWindowRect");
         }
+        logger.Debug($"Margins {new Vector2D<int>(-desiredRect.left, -desiredRect.top)}, {new Vector2D<int>(desiredRect.right - 100, desiredRect.bottom - 100)}");
         return Tuple.Create(new Vector2D<int>(-desiredRect.left, -desiredRect.top), new Vector2D<int>(desiredRect.right - 100, desiredRect.bottom - 100));
     }
 

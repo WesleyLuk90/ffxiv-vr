@@ -3,7 +3,9 @@ using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Windows.Win32;
+using Windows.Win32.Foundation;
 using static FfxivVR.Configuration;
 
 namespace FfxivVR;
@@ -21,17 +23,22 @@ public class InputManager(
         {
             var pressedActions = ApplyBindings(state);
             ApplyStates(pressedActions, gamepadInput);
+            UpdateMousePosition(pressedActions);
         }
-        UpdateMousePosition();
     }
 
-    private void UpdateMousePosition()
+    private void UpdateMousePosition(VRActionsState pressedActions)
     {
-        if (!configuration.EnableMouse)
+        Vector2D<float>? maybePosition = null;
+        if (pressedActions.VRActions.Contains(VRAction.EnableLeftMouseHold))
         {
-            return;
+            maybePosition = vrInput.GetViewportPosition(Hand.Left);
         }
-        if (vrInput.GetViewportPosition() is not { } position)
+        if (pressedActions.VRActions.Contains(VRAction.EnableRightMouseHold))
+        {
+            maybePosition = vrInput.GetViewportPosition(Hand.Right);
+        }
+        if (maybePosition is not { } position)
         {
             return;
         }
@@ -160,11 +167,11 @@ public class InputManager(
         public HashSet<VRAction> VRActions = new();
     }
 
-    class RepeatState
+    class ActionState
     {
         Stopwatch stopwatch = new();
         int nextRepeat = 1;
-        bool wasPressed = false;
+        public bool WasPressed = false;
 
         private int NextRepeatMillis()
         {
@@ -175,7 +182,7 @@ public class InputManager(
         {
             if (isPressed)
             {
-                if (!wasPressed)
+                if (!WasPressed)
                 {
                     gamepadInput->ButtonsPressed |= (ushort)bit;
                     stopwatch.Restart();
@@ -190,12 +197,12 @@ public class InputManager(
             }
             else
             {
-                if (wasPressed)
+                if (WasPressed)
                 {
                     gamepadInput->ButtonsReleased = (ushort)bit;
                 }
             }
-            wasPressed = isPressed;
+            WasPressed = isPressed;
         }
         private bool DoRepeat()
         {
@@ -208,7 +215,7 @@ public class InputManager(
         }
     }
 
-    private Dictionary<VRAction, RepeatState> repeatStates = new();
+    private Dictionary<VRAction, ActionState> actionStates = new();
     private unsafe void ApplyStates(VRActionsState vrActions, GamepadInput* gamepadInput)
     {
         gamepadInput->LeftStickX = (int)(vrActions.LeftStick.X * 99);
@@ -222,11 +229,11 @@ public class InputManager(
         gamepadInput->ButtonsRepeat = 0;
         foreach (var action in Enum.GetValues<VRAction>())
         {
-            if (!repeatStates.ContainsKey(action))
+            if (!actionStates.ContainsKey(action))
             {
-                repeatStates[action] = new();
+                actionStates[action] = new();
             }
-            repeatStates[action].Update(gamepadInput, vrActions.VRActions.Contains(action), GetButton(action));
+            actionStates[action].Update(gamepadInput, vrActions.VRActions.Contains(action), GetButton(action));
         }
     }
 
@@ -252,5 +259,54 @@ public class InputManager(
             case VRAction.Select: return GamepadButtons.Select;
             default: return 0;
         }
+    }
+
+    class LineAndPosition(
+        Vector2D<int> screenPosition,
+        Line line
+    )
+    {
+        public Vector2D<int> ScreenPosition { get; } = screenPosition;
+        public Line Line { get; } = line;
+    }
+    internal List<Hand> GetMouseHands()
+    {
+        var hands = new List<Hand>();
+        if (actionStates.GetValueOrDefault(VRAction.EnableLeftMouseHold)?.WasPressed ?? false)
+        {
+            hands.Add(Hand.Left);
+        }
+        if (actionStates.GetValueOrDefault(VRAction.EnableRightMouseHold)?.WasPressed ?? false)
+        {
+            hands.Add(Hand.Right);
+        }
+        return hands;
+    }
+
+
+    private LineAndPosition? GetLineAndPosition(Hand hand)
+    {
+        if (vrInput.GetViewportPosition(hand) is not { } position)
+        {
+            return null;
+        }
+        if (resolutionManager.WindowToScreen(position) is not { } screenCoordinates)
+        {
+            return null;
+        }
+        if (vrInput.GetAimLine(hand) is not { } aimLine)
+        {
+            return null;
+        }
+        return new LineAndPosition(screenCoordinates, aimLine);
+    }
+
+    internal Line? GetAimLine()
+    {
+        return GetMouseHands()
+            .Select(h => GetLineAndPosition(h))
+            .OfType<LineAndPosition>()
+            .Select(l => l.Line)
+            .FirstOrDefault();
     }
 }

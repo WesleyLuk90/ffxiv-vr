@@ -25,4 +25,13 @@ public enum VRAction
     Layer4,
     LeftStickDPad,
     RightStickDPad,
+    EnableLeftMouseHold,
+    EnableLeftMouseToggle,
+    EnableRightMouseHold,
+    EnableRightMouseToggle,
+    MouseButton1,
+    MouseButton2,
+    MouseButton3,
+    MouseButton4,
+    MouseButton5,
 }

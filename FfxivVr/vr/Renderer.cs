@@ -21,7 +21,6 @@ public unsafe class Renderer(
     VRCamera vrCamera,
     ResolutionManager resolutionManager,
     GameState gameState,
-    Debugging debugging,
     VRUI vrUI)
 {
     private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)

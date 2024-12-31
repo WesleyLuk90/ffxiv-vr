@@ -51,9 +51,6 @@ public class Configuration : IPluginConfiguration
 
     public float LeftStickDeadzone = 0;
     public float RightStickDeadzone = 0;
-
-    public bool EnableMouse = false;
-
     public Dictionary<string, uint> VRGameSettings = new();
 
     public uint? GetVRGameSetting(string id)

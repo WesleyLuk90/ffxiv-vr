@@ -208,13 +208,6 @@ public class ConfigWindow : Window
                     RenderLayerEditor(3);
                 }
             }
-            using (var tab = ImRaii.TabItem("Mouse"))
-            {
-                if (tab)
-                {
-                    Checkbox("Enable Mouse", ref config.EnableMouse);
-                }
-            }
             using (var tab = ImRaii.TabItem("Other"))
             {
                 if (tab)

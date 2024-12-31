@@ -1,5 +1,6 @@
 using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
 using System.Linq;
 
@@ -72,6 +73,11 @@ public class CommandHander(
                     break;
                 case "debug":
                     debugWindow.Toggle();
+                    break;
+                case "resolution":
+                    var framework = Framework.Instance();
+                    var handle = (HWND)framework->GameWindow->WindowHandle;
+                    HMONITOR monitor = PInvoke.MonitorFromWindow(handle, MONITOR_FROM_FLAGS.MONITOR_DEFAULTTOPRIMARY);
                     break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");

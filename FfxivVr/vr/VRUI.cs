@@ -33,13 +33,14 @@ public class VRUI(
     }
     public Matrix4X4<float> GetTransformationMatrix()
     {
-        var translationMatrix = Matrix4X4.CreateTranslation(PlaneCenter) * Matrix4X4.CreateFromQuaternion(MathFactory.YRotation(currentAngle));
+        var translationMatrix = Matrix4X4.CreateTranslation(PlaneCenter) * Matrix4X4.CreateFromQuaternion(CurrentAngleRotation);
         var uiScale = resources.UIRenderTarget.AspectRatioTransform() * Matrix4X4.CreateScale(configuration.UISize);
         return uiScale * translationMatrix;
     }
 
+    private Quaternion<float> CurrentAngleRotation => MathFactory.YRotation(currentAngle);
     private Vector3D<float> PlaneCenter => new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance);
-    private Vector3D<float> Normal => Vector3D.Transform(new Vector3D<float>(0, 0, -1), MathFactory.YRotation(currentAngle));
+    private Vector3D<float> Normal => Vector3D.Transform(new Vector3D<float>(0, 0, -1), CurrentAngleRotation);
 
     internal void ResetAngle()
     {
@@ -51,15 +52,19 @@ public class VRUI(
     internal Line Intersect(Ray ray)
     {
         var normal = Normal;
-        var d = Vector3D.Dot(PlaneCenter - ray.Origin, normal) / Vector3D.Dot(normal, ray.Direction);
+        var center = Vector3D.Transform(PlaneCenter, CurrentAngleRotation);
+        var d = Vector3D.Dot(center - ray.Origin, normal) / Vector3D.Dot(normal, ray.Direction);
         return ray.ToLine(d);
     }
 
     internal Vector2D<float>? GetViewportPosition(Line line)
     {
+        var center = Vector3D.Transform(PlaneCenter, CurrentAngleRotation);
+        var lookAt = Matrix4X4.CreateLookAt(Vector3D<float>.Zero, center, Vector3D<float>.UnitY);
         var size = new Vector2D<float>(2 * configuration.UISize, 2 * configuration.UISize * resources.UIRenderTarget.AspectRatio);
-        var bottomLeft = -size / 2;
-        var v = new Vector2D<float>(line.End.X - bottomLeft.X, line.End.Y - bottomLeft.Y) / size;
+        var projected = Vector3D.Transform(line.End, lookAt);
+        var viewport = new Vector2D<float>(projected.X, projected.Y);
+        var v = (viewport + size / 2) / size;
         v.Y = 1 - v.Y;
         if (v.X < 0 || v.X > 1 || v.Y < 0 || v.Y > 1)
         {

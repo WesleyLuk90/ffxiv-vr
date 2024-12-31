@@ -349,24 +349,18 @@ public unsafe partial class VRInput(
         return null;
     }
 
-    public Line? GetAimLine()
+    public Line? GetAimLine(Hand hand)
     {
-        var ray = GetAimRay();
+        var ray = GetAimRay(hand);
         if (ray == null)
         {
             return null;
         }
-        var line = vrUI.Intersect(ray);
-        if (vrUI.GetViewportPosition(line) == null)
-        {
-            return null;
-        }
-
-        return line;
+        return vrUI.Intersect(ray);
     }
-    public Vector2D<float>? GetViewportPosition()
+    public Vector2D<float>? GetViewportPosition(Hand hand)
     {
-        var ray = GetAimRay();
+        var ray = GetAimRay(hand);
         if (ray == null)
         {
             return null;
@@ -375,17 +369,23 @@ public unsafe partial class VRInput(
         return vrUI.GetViewportPosition(line);
     }
 
-    private Ray? GetAimRay()
+    private Ray? GetAimRay(Hand hand)
     {
-        if (!config.EnableMouse)
+        Posef? maybeAim = null;
+        switch (hand)
         {
-            return null;
+            case Hand.Left:
+                {
+                    maybeAim = lastAimPose?.LeftAim;
+                    break;
+                }
+            case Hand.Right:
+                {
+                    maybeAim = lastAimPose?.RightAim;
+                    break;
+                }
         }
-        if (lastAimPose is not { } aimPose)
-        {
-            return null;
-        }
-        if ((aimPose?.LeftAim ?? aimPose?.RightAim) is not { } aim)
+        if (maybeAim is not { } aim)
         {
             return null;
         }
