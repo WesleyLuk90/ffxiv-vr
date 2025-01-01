@@ -12,3 +12,6 @@ SetCursorPos
 AdjustWindowRectEx
 GetWindowLong
 DwmGetWindowAttribute
+SetWindowLongPtr
+GetWindowLongPtr
+SystemParametersInfo

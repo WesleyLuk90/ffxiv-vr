@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Windows.Win32;
-using Windows.Win32.Foundation;
 using static FfxivVR.Configuration;
 
 namespace FfxivVR;

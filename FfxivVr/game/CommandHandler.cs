@@ -3,6 +3,10 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
 using System.Linq;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
+using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace FfxivVR;
 
@@ -15,7 +19,8 @@ public class CommandHander(
     ConfigManager configManager,
     FreeCamera freeCamera,
     GameState gameState,
-    DebugWindow debugWindow
+    DebugWindow debugWindow,
+    Configuration configuration
 ) : IDisposable
 {
     private const string CommandName = "/vr";
@@ -78,6 +83,33 @@ public class CommandHander(
                     var framework = Framework.Instance();
                     var handle = (HWND)framework->GameWindow->WindowHandle;
                     HMONITOR monitor = PInvoke.MonitorFromWindow(handle, MONITOR_FROM_FLAGS.MONITOR_DEFAULTTOPRIMARY);
+                    MONITORINFO monitorInfo = new MONITORINFO();
+                    monitorInfo.cbSize = (uint)sizeof(MONITORINFO);
+                    if (!PInvoke.GetMonitorInfo(monitor, ref monitorInfo))
+                    {
+                        throw new Exception("Failed to GetMonitorInfo");
+                    }
+                    logger.Info($"Monitor size {monitorInfo.rcMonitor.Display()} work:{monitorInfo.rcWork.Display()}");
+                    PInvoke.GetClientRect(handle, out RECT clientRect);
+                    logger.Info($"Client rect {clientRect.Display()}");
+                    PInvoke.GetWindowRect(handle, out RECT winRect);
+                    logger.Info($"winRect rect {winRect.Display()}");
+
+                    var style = PInvoke.GetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+                    var exstyle = PInvoke.GetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
+                    var desiredRect = new RECT();
+                    desiredRect.top = 0;
+                    desiredRect.left = 0;
+                    desiredRect.right = 0;
+                    desiredRect.bottom = 0;
+                    PInvoke.AdjustWindowRectEx(ref desiredRect, (WINDOW_STYLE)style, false, (WINDOW_EX_STYLE)exstyle);
+                    logger.Info($"AdjustWindowRectEx {desiredRect.Display()}");
+                    RECT frame = new();
+                    PInvoke.DwmGetWindowAttribute(handle, Windows.Win32.Graphics.Dwm.DWMWINDOWATTRIBUTE.DWMWA_EXTENDED_FRAME_BOUNDS, &frame, (uint)sizeof(RECT));
+                    logger.Info($"frame {frame.Display()}");
+                    RECT spi = new();
+                    PInvoke.SystemParametersInfo(SYSTEM_PARAMETERS_INFO_ACTION.SPI_GETWORKAREA, 0, &spi, 0);
+                    logger.Info($"SPI_GETWORKAREA {spi.Display()}");
                     break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");
@@ -90,4 +122,12 @@ public class CommandHander(
     {
         commandManager.RemoveHandler(CommandName);
     }
+}
+internal static class Ext
+{
+    internal static string Display(this RECT rect)
+    {
+        return $"l:{rect.left}  r:{rect.right} t:{rect.top} b:{rect.bottom}";
+    }
+
 }
