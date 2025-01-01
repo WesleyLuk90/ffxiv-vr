@@ -212,6 +212,7 @@ public class ConfigWindow : Window
             {
                 if (tab)
                 {
+                    Checkbox("Enable Head Mouse Control", ref config.HeadMouseControl, "Use your head to control the mouse cursor.");
                     Slider("Left Stick Deadzone", ref config.LeftStickDeadzone, defaultValue: 0, min: 0, max: 1);
                     Slider("Right Stick Deadzone", ref config.RightStickDeadzone, defaultValue: 0, min: 0, max: 1);
                 }

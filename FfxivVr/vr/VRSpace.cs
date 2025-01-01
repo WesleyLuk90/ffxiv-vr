@@ -10,7 +10,7 @@ public unsafe class VRSpace(
 {
 
     public Space LocalSpace = new Space();
-    private Space ViewSpace = new Space();
+    public Space ViewSpace = new Space();
     private Space? StageReferenceSpace = null;
 
     internal void Initialize()

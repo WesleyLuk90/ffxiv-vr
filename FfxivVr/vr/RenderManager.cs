@@ -26,7 +26,7 @@ public unsafe class RenderManager(
             if (frameState.ShouldRender == 1)
             {
                 logger.Trace("Render left eye");
-                var leftLayer = renderer.RenderEye(context, leftRenderPhase.CreateEyeRender(), inputManager.GetAimLine());
+                var leftLayer = renderer.RenderEye(context, leftRenderPhase.CreateEyeRender(), inputManager.GetAimLine(AimType.Head));
                 renderPhase = leftRenderPhase.Next(frameState, leftLayer);
             }
             else
@@ -39,7 +39,7 @@ public unsafe class RenderManager(
         else if (renderPhase is RightRenderPhase rightRenderPhase)
         {
             logger.Trace("Render right eye");
-            var rightLayer = renderer.RenderEye(context, rightRenderPhase.CreateEyeRender(), inputManager.GetAimLine());
+            var rightLayer = renderer.RenderEye(context, rightRenderPhase.CreateEyeRender(), inputManager.GetAimLine(AimType.Head));
             renderer.EndFrame(context, rightRenderPhase.FrameState, rightRenderPhase.Views, [rightRenderPhase.LeftLayer, rightLayer]);
             logger.Trace("End frame");
             renderPhase = null;

@@ -123,7 +123,8 @@ public unsafe partial class VRInput(
         );
         lastAimPose = new AimPose(
             leftAim: GetActionPose(leftSpace, predictedTime, aimPose, leftHandPath),
-            rightAim: GetActionPose(rightSpace, predictedTime, aimPose, rightHandPath)
+            rightAim: GetActionPose(rightSpace, predictedTime, aimPose, rightHandPath),
+            headAim: GetHeadAim(predictedTime)
         );
         GetActionBool(aButton, input, VRButton.A);
         GetActionBool(bButton, input, VRButton.B);
@@ -150,6 +151,13 @@ public unsafe partial class VRInput(
             input.RightStick = right;
         }
         return input;
+    }
+
+    private Posef? GetHeadAim(long predictedTime)
+    {
+        var headPose = new SpaceLocation(next: null);
+        xr.LocateSpace(vrSpace.ViewSpace, vrSpace.LocalSpace, predictedTime, ref headPose).CheckResult("LocateSpace");
+        return headPose.Pose;
     }
 
     private void GetActionBool(Silk.NET.OpenXR.Action action, VrInputState inputState, VRButton vrButton)
@@ -349,18 +357,18 @@ public unsafe partial class VRInput(
         return null;
     }
 
-    public Line? GetAimLine(Hand hand)
+    public Line? GetAimLine(AimType aimType)
     {
-        var ray = GetAimRay(hand);
+        var ray = GetAimRay(aimType);
         if (ray == null)
         {
             return null;
         }
         return vrUI.Intersect(ray);
     }
-    public Vector2D<float>? GetViewportPosition(Hand hand)
+    public Vector2D<float>? GetViewportPosition(AimType aimType)
     {
-        var ray = GetAimRay(hand);
+        var ray = GetAimRay(aimType);
         if (ray == null)
         {
             return null;
@@ -369,19 +377,24 @@ public unsafe partial class VRInput(
         return vrUI.GetViewportPosition(line);
     }
 
-    private Ray? GetAimRay(Hand hand)
+    private Ray? GetAimRay(AimType aimType)
     {
         Posef? maybeAim = null;
-        switch (hand)
+        switch (aimType)
         {
-            case Hand.Left:
+            case AimType.LeftHand:
                 {
                     maybeAim = lastAimPose?.LeftAim;
                     break;
                 }
-            case Hand.Right:
+            case AimType.RightHand:
                 {
                     maybeAim = lastAimPose?.RightAim;
+                    break;
+                }
+            case AimType.Head:
+                {
+                    maybeAim = lastAimPose?.HeadAim;
                     break;
                 }
         }

@@ -1,7 +1,8 @@
 namespace FfxivVR;
 
-public enum Hand
+public enum AimType
 {
-    Left,
-    Right
+    LeftHand,
+    RightHand,
+    Head
 }

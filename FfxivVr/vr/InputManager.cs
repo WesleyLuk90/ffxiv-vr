@@ -13,7 +13,8 @@ namespace FfxivVR;
 public class InputManager(
     Configuration configuration,
     VRInput vrInput,
-    ResolutionManager resolutionManager
+    ResolutionManager resolutionManager,
+    Debugging debugging
 )
 {
 
@@ -43,13 +44,17 @@ public class InputManager(
             }
         }
         Vector2D<float>? maybePosition = null;
-        if (pressedActions.VRActions.Contains(VRAction.EnableLeftMouseHold))
-        {
-            maybePosition = vrInput.GetViewportPosition(Hand.Left);
-        }
         if (pressedActions.VRActions.Contains(VRAction.EnableRightMouseHold))
         {
-            maybePosition = vrInput.GetViewportPosition(Hand.Right);
+            maybePosition = vrInput.GetViewportPosition(AimType.RightHand);
+        }
+        if (pressedActions.VRActions.Contains(VRAction.EnableLeftMouseHold) && maybePosition == null)
+        {
+            maybePosition = vrInput.GetViewportPosition(AimType.LeftHand);
+        }
+        if (configuration.HeadMouseControl && maybePosition == null)
+        {
+            maybePosition = vrInput.GetViewportPosition(AimType.Head);
         }
         if (maybePosition is not { } position)
         {
@@ -315,22 +320,22 @@ public class InputManager(
         public Vector2D<int> ScreenPosition { get; } = screenPosition;
         public Line Line { get; } = line;
     }
-    internal List<Hand> GetMouseHands()
+    internal List<AimType> GetActiveAimTypes()
     {
-        var hands = new List<Hand>();
+        var aimTypes = new List<AimType>();
         if (actionStates.GetValueOrDefault(VRAction.EnableLeftMouseHold)?.IsActive ?? false)
         {
-            hands.Add(Hand.Left);
+            aimTypes.Add(AimType.LeftHand);
         }
         if (actionStates.GetValueOrDefault(VRAction.EnableRightMouseHold)?.IsActive ?? false)
         {
-            hands.Add(Hand.Right);
+            aimTypes.Add(AimType.RightHand);
         }
-        return hands;
+        return aimTypes;
     }
 
 
-    private LineAndPosition? GetLineAndPosition(Hand hand)
+    private LineAndPosition? GetLineAndPosition(AimType hand)
     {
         if (vrInput.GetViewportPosition(hand) is not { } position)
         {
@@ -347,9 +352,10 @@ public class InputManager(
         return new LineAndPosition(screenCoordinates, aimLine);
     }
 
-    internal Line? GetAimLine()
+    internal Line? GetAimLine(AimType exclude)
     {
-        return GetMouseHands()
+        return GetActiveAimTypes()
+            .Where(h => h != exclude)
             .Select(h => GetLineAndPosition(h))
             .OfType<LineAndPosition>()
             .Select(l => l.Line)

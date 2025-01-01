@@ -40,6 +40,7 @@ public class Configuration : IPluginConfiguration
     public bool KeepCameraHorizontal = true;
     public bool KeepCutsceneCameraHorizontal = true;
     public bool WindowAlwaysOnTop = false;
+
     public int UITransitionAngle = 180;
 
     public ControlLayer[] Controls = [
@@ -52,6 +53,8 @@ public class Configuration : IPluginConfiguration
     public float LeftStickDeadzone = 0;
     public float RightStickDeadzone = 0;
     public Dictionary<string, uint> VRGameSettings = new();
+
+    public bool HeadMouseControl = false;
 
     public uint? GetVRGameSetting(string id)
     {
