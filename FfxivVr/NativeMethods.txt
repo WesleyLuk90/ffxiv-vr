@@ -7,11 +7,9 @@ GetMonitorInfo
 MonitorFromWindow
 SetWindowPos
 SendMessage
-GetCursorPos
 SetCursorPos
 AdjustWindowRectEx
-GetWindowLong
 DwmGetWindowAttribute
 SetWindowLongPtr
 GetWindowLongPtr
-SystemParametersInfo
+SendInput

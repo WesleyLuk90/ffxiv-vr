@@ -164,8 +164,8 @@ public unsafe class ResolutionManager : IDisposable
     }
     private Rectangle<int> AdjustRect(HWND handle, Rectangle<int> rectangle)
     {
-        var style = PInvoke.GetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-        var exstyle = PInvoke.GetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
+        var style = PInvoke.GetWindowLongPtr(handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        var exstyle = PInvoke.GetWindowLongPtr(handle, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
         var desiredRect = new RECT();
         desiredRect.top = rectangle.Origin.Y;
         desiredRect.left = rectangle.Origin.X;

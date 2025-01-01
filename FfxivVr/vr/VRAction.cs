@@ -26,12 +26,8 @@ public enum VRAction
     LeftStickDPad,
     RightStickDPad,
     EnableLeftMouseHold,
-    EnableLeftMouseToggle,
     EnableRightMouseHold,
-    EnableRightMouseToggle,
     MouseButton1,
     MouseButton2,
     MouseButton3,
-    MouseButton4,
-    MouseButton5,
 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Windows.Win32;
+using Windows.Win32.UI.Input.KeyboardAndMouse;
 using static FfxivVR.Configuration;
 
 namespace FfxivVR;
@@ -26,8 +27,21 @@ public class InputManager(
         }
     }
 
-    private void UpdateMousePosition(VRActionsState pressedActions)
+    private List<Tuple<VRAction, MOUSE_EVENT_FLAGS, MOUSE_EVENT_FLAGS>> ButtonMappings = new() {
+        Tuple.Create(VRAction.MouseButton1, MOUSE_EVENT_FLAGS.MOUSEEVENTF_LEFTDOWN, MOUSE_EVENT_FLAGS.MOUSEEVENTF_LEFTUP),
+        Tuple.Create(VRAction.MouseButton2, MOUSE_EVENT_FLAGS.MOUSEEVENTF_RIGHTDOWN, MOUSE_EVENT_FLAGS.MOUSEEVENTF_RIGHTUP),
+        Tuple.Create(VRAction.MouseButton3, MOUSE_EVENT_FLAGS.MOUSEEVENTF_MIDDLEDOWN, MOUSE_EVENT_FLAGS.MOUSEEVENTF_MIDDLEUP),
+    };
+    private unsafe void UpdateMousePosition(VRActionsState pressedActions)
     {
+        // Release buttons regardless of mouse position
+        foreach (var (action, _, up) in ButtonMappings)
+        {
+            if (actionStates.GetValueOrDefault(action)?.WasReleased == true)
+            {
+                SendMouseEvent(up);
+            }
+        }
         Vector2D<float>? maybePosition = null;
         if (pressedActions.VRActions.Contains(VRAction.EnableLeftMouseHold))
         {
@@ -46,6 +60,33 @@ public class InputManager(
             return;
         }
         PInvoke.SetCursorPos(screenCoordinates.X, screenCoordinates.Y);
+        // Only trigger mouse buttons after we've checked that the mouse is on screen
+        foreach (var (action, down, _) in ButtonMappings)
+        {
+            if (actionStates.GetValueOrDefault(action)?.WasPressed == true)
+            {
+                SendMouseEvent(down);
+            }
+        }
+    }
+
+    private unsafe void SendMouseEvent(MOUSE_EVENT_FLAGS flags)
+    {
+        var input = new INPUT
+        {
+            type = INPUT_TYPE.INPUT_MOUSE,
+            Anonymous = new INPUT._Anonymous_e__Union
+            {
+                mi = new MOUSEINPUT
+                {
+                    dwFlags = flags
+                }
+            }
+        };
+        if (PInvoke.SendInput([input], sizeof(INPUT)) != 1)
+        {
+            throw new Exception("Failed to send input");
+        }
     }
 
     private VRActionsState ApplyBindings(VrInputState state)
@@ -170,7 +211,9 @@ public class InputManager(
     {
         Stopwatch stopwatch = new();
         int nextRepeat = 1;
+        public bool IsActive = false;
         public bool WasPressed = false;
+        public bool WasReleased = false;
 
         private int NextRepeatMillis()
         {
@@ -179,13 +222,16 @@ public class InputManager(
 
         public unsafe void Update(GamepadInput* gamepadInput, bool isPressed, GamepadButtons bit)
         {
+            WasPressed = false;
+            WasReleased = false;
             if (isPressed)
             {
-                if (!WasPressed)
+                if (!IsActive)
                 {
                     gamepadInput->ButtonsPressed |= (ushort)bit;
                     stopwatch.Restart();
                     nextRepeat = 1;
+                    WasPressed = true;
                 }
 
                 gamepadInput->ButtonsRaw |= (ushort)bit;
@@ -196,12 +242,13 @@ public class InputManager(
             }
             else
             {
-                if (WasPressed)
+                if (IsActive)
                 {
                     gamepadInput->ButtonsReleased = (ushort)bit;
+                    WasReleased = true;
                 }
             }
-            WasPressed = isPressed;
+            IsActive = isPressed;
         }
         private bool DoRepeat()
         {
@@ -271,11 +318,11 @@ public class InputManager(
     internal List<Hand> GetMouseHands()
     {
         var hands = new List<Hand>();
-        if (actionStates.GetValueOrDefault(VRAction.EnableLeftMouseHold)?.WasPressed ?? false)
+        if (actionStates.GetValueOrDefault(VRAction.EnableLeftMouseHold)?.IsActive ?? false)
         {
             hands.Add(Hand.Left);
         }
-        if (actionStates.GetValueOrDefault(VRAction.EnableRightMouseHold)?.WasPressed ?? false)
+        if (actionStates.GetValueOrDefault(VRAction.EnableRightMouseHold)?.IsActive ?? false)
         {
             hands.Add(Hand.Right);
         }

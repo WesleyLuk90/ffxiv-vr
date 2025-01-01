@@ -6,8 +6,7 @@ namespace FfxivVR;
 
 public class VRUI(
     Configuration configuration,
-    Resources resources,
-    Debugging debugging
+    Resources resources
 )
 {
     private float target = 0;
