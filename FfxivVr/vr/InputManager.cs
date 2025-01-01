@@ -13,8 +13,7 @@ namespace FfxivVR;
 public class InputManager(
     Configuration configuration,
     VRInput vrInput,
-    ResolutionManager resolutionManager,
-    Debugging debugging
+    ResolutionManager resolutionManager
 )
 {
 

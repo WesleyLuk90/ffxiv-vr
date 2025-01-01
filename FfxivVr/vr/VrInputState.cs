@@ -9,6 +9,7 @@ public class VrInputState
     public Vector2D<float> RightStick = new Vector2D<float>();
 
     public HashSet<VRButton> Pressed = new();
+
     public bool IsPhysicalController()
     {
         // B and Y are sometimes triggered with virtual desktop hand tracking so ignore them

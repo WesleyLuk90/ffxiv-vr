@@ -348,7 +348,14 @@ public unsafe partial class VRInput(
         if (PollActions(system.Now()) is VrInputState input && currentController is CurrentController controller)
         {
             // Virtual Desktop tries to emulate a controller with hand tracking but we want to ignore those inputs so detect that by waiting for a non emulated input
-            controller.IsPhysicalController |= input.IsPhysicalController();
+            if (!controller.IsPhysicalController && input.IsPhysicalController())
+            {
+                if (input.LeftStick.LengthSquared == 0 && input.RightStick.LengthSquared == 0)
+                {
+                    logger.Debug($"Physical controller detected {string.Join(", ", input.Pressed)}");
+                }
+                controller.IsPhysicalController = true;
+            }
             if (controller.IsPhysicalController)
             {
                 return input;
