@@ -12,19 +12,15 @@ namespace FfxivVR;
 
 public class InputManager(
     Configuration configuration,
-    VRInput vrInput,
-    ResolutionManager resolutionManager
+    ResolutionManager resolutionManager,
+    VRUI vrUI
 )
 {
-
-    public unsafe void UpdateGamepad(GamepadInput* gamepadInput)
+    public unsafe void UpdateGamepad(GamepadInput* gamepadInput, VRInputData vrInput)
     {
-        if (vrInput.GetVrInputState() is VrInputState state)
-        {
-            var pressedActions = ApplyBindings(state);
-            ApplyStates(pressedActions, gamepadInput);
-            UpdateMousePosition(pressedActions);
-        }
+        var pressedActions = ApplyBindings(vrInput.GetPhysicalActionsState());
+        var actionsState = ApplyStates(pressedActions, gamepadInput);
+        UpdateMousePosition(actionsState, vrInput.AimPose);
     }
 
     private List<Tuple<VRAction, MOUSE_EVENT_FLAGS, MOUSE_EVENT_FLAGS>> ButtonMappings = new() {
@@ -32,7 +28,7 @@ public class InputManager(
         Tuple.Create(VRAction.MouseButton2, MOUSE_EVENT_FLAGS.MOUSEEVENTF_RIGHTDOWN, MOUSE_EVENT_FLAGS.MOUSEEVENTF_RIGHTUP),
         Tuple.Create(VRAction.MouseButton3, MOUSE_EVENT_FLAGS.MOUSEEVENTF_MIDDLEDOWN, MOUSE_EVENT_FLAGS.MOUSEEVENTF_MIDDLEUP),
     };
-    private unsafe void UpdateMousePosition(VRActionsState pressedActions)
+    private void UpdateMousePosition(Dictionary<VRAction, ActionState> actionsState, AimPose aimPose)
     {
         // Release buttons regardless of mouse position
         foreach (var (action, _, up) in ButtonMappings)
@@ -43,17 +39,17 @@ public class InputManager(
             }
         }
         Vector2D<float>? maybePosition = null;
-        if (pressedActions.VRActions.Contains(VRAction.EnableRightMouseHold))
+        if (actionsState.ContainsKey(VRAction.EnableRightMouseHold))
         {
-            maybePosition = vrInput.GetViewportPosition(AimType.RightHand);
+            maybePosition = vrUI.GetViewportPosition(AimType.RightHand, aimPose);
         }
-        if (pressedActions.VRActions.Contains(VRAction.EnableLeftMouseHold) && maybePosition == null)
+        if (actionsState.ContainsKey(VRAction.EnableLeftMouseHold) && maybePosition == null)
         {
-            maybePosition = vrInput.GetViewportPosition(AimType.LeftHand);
+            maybePosition = vrUI.GetViewportPosition(AimType.LeftHand, aimPose);
         }
         if (configuration.HeadMouseControl && maybePosition == null)
         {
-            maybePosition = vrInput.GetViewportPosition(AimType.Head);
+            maybePosition = vrUI.GetViewportPosition(AimType.Head, aimPose);
         }
         if (maybePosition is not { } position)
         {
@@ -93,7 +89,7 @@ public class InputManager(
         }
     }
 
-    private VRActionsState ApplyBindings(VrInputState state)
+    private VRActionsState ApplyBindings(FfxivVR.VRActionsState state)
     {
         var layer = GetLayer(state);
         var actions = new VRActionsState();
@@ -149,7 +145,7 @@ public class InputManager(
     }
 
     private List<VRButton> LayerStack = new();
-    private ControlLayer GetLayer(VrInputState state)
+    private ControlLayer GetLayer(FfxivVR.VRActionsState state)
     {
         int layer = 0;
         for (int i = 0; i < LayerStack.Count; i++)
@@ -266,7 +262,7 @@ public class InputManager(
     }
 
     private Dictionary<VRAction, ActionState> actionStates = new();
-    private unsafe void ApplyStates(VRActionsState vrActions, GamepadInput* gamepadInput)
+    private unsafe Dictionary<VRAction, ActionState> ApplyStates(VRActionsState vrActions, GamepadInput* gamepadInput)
     {
         gamepadInput->LeftStickX = (int)(vrActions.LeftStick.X * 99);
         gamepadInput->LeftStickY = (int)(vrActions.LeftStick.Y * 99);
@@ -285,6 +281,7 @@ public class InputManager(
             }
             actionStates[action].Update(gamepadInput, vrActions.VRActions.Contains(action), GetButton(action));
         }
+        return actionStates;
     }
 
     private GamepadButtons GetButton(VRAction action)
@@ -334,9 +331,9 @@ public class InputManager(
     }
 
 
-    private LineAndPosition? GetLineAndPosition(AimType hand)
+    private LineAndPosition? GetLineAndPosition(AimType hand, VRInputData vrInputData)
     {
-        if (vrInput.GetViewportPosition(hand) is not { } position)
+        if (vrUI.GetViewportPosition(hand, vrInputData.AimPose) is not { } position)
         {
             return null;
         }
@@ -344,18 +341,18 @@ public class InputManager(
         {
             return null;
         }
-        if (vrInput.GetAimLine(hand) is not { } aimLine)
+        if (vrUI.GetAimLine(hand, vrInputData.AimPose) is not { } aimLine)
         {
             return null;
         }
         return new LineAndPosition(screenCoordinates, aimLine);
     }
 
-    internal Line? GetAimLine(AimType exclude)
+    internal Line? GetAimLine(AimType exclude, VRInputData vrInputData)
     {
         return GetActiveAimTypes()
             .Where(h => h != exclude)
-            .Select(h => GetLineAndPosition(h))
+            .Select(h => GetLineAndPosition(h, vrInputData))
             .OfType<LineAndPosition>()
             .Select(l => l.Line)
             .FirstOrDefault();

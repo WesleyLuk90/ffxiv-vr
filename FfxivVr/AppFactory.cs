@@ -94,7 +94,7 @@ public unsafe class AppFactory
         builder.Services.AddScoped<ResolutionManager>();
         builder.Services.AddScoped<Resources>();
         builder.Services.AddScoped<VRCamera>();
-        builder.Services.AddScoped<VRInput>();
+        builder.Services.AddScoped<VRActionService>();
         builder.Services.AddScoped<VRSession>();
         builder.Services.AddScoped<VRShaders>();
         builder.Services.AddScoped<VRSpace>();

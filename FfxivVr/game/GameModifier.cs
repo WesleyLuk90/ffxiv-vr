@@ -175,7 +175,7 @@ public unsafe class GameModifier(
         return skeletonModifier.GetHeadPosition(skeleton);
     }
 
-    internal void UpdateMotionControls(TrackingData trackingData, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
+    internal void UpdateMotionControls(VRInputData vrInputData, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
     {
         Character* character = getCharacterOrGpose();
         if (character == null)
@@ -189,7 +189,7 @@ public unsafe class GameModifier(
         }
         var actorModel = InternalCharacterBase.FromCharacterBase(characterBase);
         var skeleton = characterBase->Skeleton;
-        skeletonModifier.UpdateHands(skeleton, trackingData, runtimeAdjustments, cameraYRotation);
+        skeletonModifier.UpdateHands(skeleton, vrInputData, runtimeAdjustments, cameraYRotation);
     }
 
     internal void ResetVerticalCameraRotation(float rotation)

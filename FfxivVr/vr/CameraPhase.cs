@@ -8,7 +8,7 @@ public class CameraPhase(
     Eye eye,
     View[] views,
     Task<FrameState> waitFrameTask,
-    TrackingData trackingData,
+    VRInputData vrInputData,
     VRCameraMode caneraMode
 )
 {
@@ -18,7 +18,7 @@ public class CameraPhase(
     private Task<FrameState> WaitFrameTask { get; } = waitFrameTask;
     private GameCamera? GameCamera = null;
 
-    public TrackingData TrackingData = trackingData;
+    public VRInputData VRInputData { get; } = vrInputData;
     public View CurrentView(bool includeHeadMovement)
     {
         if (includeHeadMovement)
@@ -41,7 +41,7 @@ public class CameraPhase(
 
     internal RenderPhase StartRender()
     {
-        return new LeftRenderPhase(Views, WaitFrameTask, TrackingData);
+        return new LeftRenderPhase(Views, WaitFrameTask, VRInputData);
     }
 
     // Create it once per eye so we have consistent data    

@@ -1,7 +1,6 @@
 
 namespace FfxivVR.Tests;
 
-using Dalamud.Game;
 using Dalamud.Game.ClientState.GamePad;
 using FfxivVR;
 using Moq;
@@ -14,47 +13,43 @@ public class InputManagerTests
     public unsafe void NoButtons()
     {
         var config = new Configuration();
-        var input = MockVRInput();
-        var state = new VrInputState();
-        input.Setup(m => m.GetVrInputState()).Returns(state);
-        var inputManager = MockInputManager(config, input);
+        var inputManager = MockInputManager(config);
         var gamepadInput = new GamepadInput();
-        inputManager.UpdateGamepad(&gamepadInput);
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(new VRActionsState()));
         AssertGamepad(gamepadInput, 0, 0, 0, 0);
     }
 
-    private static unsafe InputManager MockInputManager(Configuration config, Mock<VRInput> input)
-    {
-        return new InputManager(config, input.Object, new Mock<ResolutionManager>(null!, null!, new Mock<ISigScanner>().Object).Object);
-    }
 
-    private static unsafe Mock<VRInput> MockVRInput()
+    private static VRInputData CreateVrInputData(VRActionsState vrActionsState)
     {
-        return new Mock<VRInput>(null!, null!, null!, null!, null!, null!);
+        return new VRInputData(new HandTracking.HandPose(null, null), new PalmPose(null, null), null, new AimPose(null, null, null), vrActionsState);
+    }
+    private static InputManager MockInputManager(Configuration config)
+    {
+        var vrUI = new Mock<VRUI>(config, null!).Object;
+        return new Mock<InputManager>(config, null!, vrUI).Object;
     }
 
     [Test]
     public unsafe void SimpleButtons()
     {
         var config = new Configuration();
-        var input = MockVRInput();
-        var state = new VrInputState();
-        input.Setup(m => m.GetVrInputState()).Returns(state);
+        var state = new VRActionsState();
         state.Pressed.Add(VRButton.A);
-        var inputManager = MockInputManager(config, input);
+        var inputManager = MockInputManager(config);
         var gamepadInput = new GamepadInput();
-        inputManager.UpdateGamepad(&gamepadInput);
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.South, GamepadButtons.South, 0, 0);
 
-        inputManager.UpdateGamepad(&gamepadInput);
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.South, 0, 0, 0);
 
         state.Pressed.Clear();
 
-        inputManager.UpdateGamepad(&gamepadInput);
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, 0, 0, GamepadButtons.South, 0);
 
-        inputManager.UpdateGamepad(&gamepadInput);
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, 0, 0, 0, 0);
     }
 
@@ -63,17 +58,15 @@ public class InputManagerTests
     {
         var config = new Configuration();
         config.Controls[0].AButton = VRAction.LeftStickDPad;
-        var input = MockVRInput();
-        var state = new VrInputState();
-        input.Setup(m => m.GetVrInputState()).Returns(state);
+        var state = new VRActionsState();
         state.Pressed.Add(VRButton.A);
         state.LeftStick = new Vector2D<float>(1, 0);
-        var inputManager = MockInputManager(config, input);
+        var inputManager = MockInputManager(config);
         var gamepadInput = new GamepadInput();
-        inputManager.UpdateGamepad(&gamepadInput);
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.DpadRight, GamepadButtons.DpadRight, 0, 0);
         state.LeftStick = new Vector2D<float>(0, 1);
-        inputManager.UpdateGamepad(&gamepadInput);
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.DpadUp, GamepadButtons.DpadUp, GamepadButtons.DpadRight, 0);
     }
 
@@ -84,16 +77,14 @@ public class InputManagerTests
         config.Controls[0].AButton = VRAction.Layer2;
         config.Controls[1].AButton = VRAction.None;
         config.Controls[1].BButton = VRAction.Start;
-        var input = MockVRInput();
-        var state = new VrInputState();
-        input.Setup(m => m.GetVrInputState()).Returns(state);
+        var inputManager = MockInputManager(config);
+        var state = new VRActionsState();
         state.Pressed.Add(VRButton.A);
-        var inputManager = MockInputManager(config, input);
         var gamepadInput = new GamepadInput();
-        inputManager.UpdateGamepad(&gamepadInput);
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, 0, 0, 0, 0);
         state.Pressed.Add(VRButton.B);
-        inputManager.UpdateGamepad(&gamepadInput);
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.Start, GamepadButtons.Start, 0, 0);
     }
     private void AssertGamepad(GamepadInput gamepadInput, GamepadButtons raw, GamepadButtons pressed, GamepadButtons released, GamepadButtons repeat)

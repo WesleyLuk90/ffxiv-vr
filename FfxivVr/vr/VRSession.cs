@@ -26,13 +26,13 @@ public unsafe class VRSession(
     ResolutionManager resolutionManager,
     RenderManager renderManager,
     WaitFrameService waitFrameService,
-    VRInput vrInput,
+    VRActionService vrInput,
     EventHandler eventHandler,
     FramePrediction framePrediction,
     InputManager inputManager,
     VRUI vrUI,
     GameClock gameClock,
-    Debugging debugging
+    VRInputService vrInputService
 )
 {
     public readonly VRState State = State;
@@ -48,8 +48,6 @@ public unsafe class VRSession(
     }
 
 
-    // Stores the hands data from the last frame so we keep the hands in the same spot of we lose tracking
-    private TrackingData? lastTrackingData;
     private CameraPhase? cameraPhase;
     public bool PrePresent()
     {
@@ -80,16 +78,11 @@ public unsafe class VRSession(
                     }
                 case Eye.Right:
                     {
-                        lastTrackingData = cameraPhase?.TrackingData;
                         cameraPhase = null;
                         break;
                     }
                 default: break;
             }
-        }
-        else
-        {
-            lastTrackingData = null;
         }
         return shouldPresent;
     }
@@ -142,7 +135,7 @@ public unsafe class VRSession(
                     return;
                 }
                 gameModifier.UpdateMotionControls(
-                    phase.TrackingData,
+                    phase.VRInputData,
                     vrSystem.RuntimeAdjustments,
                     gameCamera.GetYRotation());
             }
@@ -189,10 +182,10 @@ public unsafe class VRSession(
                 var frameState = waitFrameService.WaitFrame();
                 return frameState;
             });
-            var trackingData = GetTrackingData(predictedTime);
-            VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight, trackingData.HasBodyData());
+            var inputData = vrInputService.PollInput(predictedTime);
+            VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight, configuration.BodyTracking && inputData.HasBodyData());
             vrUI.Update(views[0], ticks);
-            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, trackingData, cameraType);
+            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, inputData, cameraType);
 
             if (Conditions.IsInFlight || Conditions.IsDiving)
             {
@@ -213,26 +206,26 @@ public unsafe class VRSession(
         }
     }
 
-    private TrackingData GetTrackingData(long predictedTime)
-    {
-        if (!gameState.IsFirstPerson() && !debugging.ForceTracking)
-        {
-            return TrackingData.Disabled();
-        }
-        var hands = configuration.HandTracking ? GetHandTrackingData(predictedTime) : null;
-        var controllers = configuration.ControllerTracking ? vrInput.GetPalmPose() : null;
+    // private TrackingData GetTrackingData(long predictedTime)
+    // {
+    //     if (!gameState.IsFirstPerson() && !debugging.ForceTracking)
+    //     {
+    //         return TrackingData.Disabled();
+    //     }
+    //     var hands = configuration.HandTracking ? GetHandTrackingData(predictedTime) : null;
+    //     var controllers = configuration.ControllerTracking ? vrInput.GetPalmPose() : null;
 
-        var bodyData = configuration.BodyTracking ? vrSystem.BodyTracker?.GetData(vrSpace.LocalSpace, predictedTime) : null;
+    //     var bodyData = configuration.BodyTracking ? vrSystem.BodyTracker?.GetData(vrSpace.LocalSpace, predictedTime) : null;
 
-        if (lastTrackingData is TrackingData last)
-        {
-            return last.Update(configuration.HandTracking, hands, configuration.ControllerTracking, controllers, bodyData);
-        }
-        else
-        {
-            return TrackingData.CreateNew(hands, controllers, bodyData);
-        }
-    }
+    //     if (lastTrackingData is TrackingData last)
+    //     {
+    //         return last.Update(configuration.HandTracking, hands, configuration.ControllerTracking, controllers, bodyData);
+    //     }
+    //     else
+    //     {
+    //         return TrackingData.CreateNew(hands, controllers, bodyData);
+    //     }
+    // }
 
     private HandTracking.HandPose? GetHandTrackingData(long predictedTime)
     {
@@ -259,7 +252,10 @@ public unsafe class VRSession(
 
     internal void UpdateGamepad(GamepadInput* gamepadInput)
     {
-        inputManager.UpdateGamepad(gamepadInput);
+        if (cameraPhase is CameraPhase phase)
+        {
+            inputManager.UpdateGamepad(gamepadInput, phase.VRInputData);
+        }
     }
 
     internal CSRay? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* sceneCamera)

@@ -10,7 +10,7 @@ public class EventHandler(
     VRState vrState,
     VRSpace vrSpace,
     WaitFrameService waitFrameService,
-    VRInput vrInput,
+    VRActionService vrInput,
     VRCamera vrCamera)
 {
     internal unsafe void PollEvents(System.Action onSessionEnd)

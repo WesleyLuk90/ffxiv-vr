@@ -71,4 +71,24 @@ public class VRUI(
         }
         return v;
     }
+
+    internal Vector2D<float>? GetViewportPosition(AimType aimType, AimPose aimPose)
+    {
+        if (aimPose.GetAimRay(aimType) is not { } ray)
+        {
+            return null;
+        }
+        var line = Intersect(ray);
+        return GetViewportPosition(line);
+    }
+
+    internal Line? GetAimLine(AimType aimType, AimPose aimPose)
+    {
+        var ray = aimPose.GetAimRay(aimType);
+        if (ray == null)
+        {
+            return null;
+        }
+        return Intersect(ray);
+    }
 }

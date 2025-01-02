@@ -131,9 +131,9 @@ public unsafe class SkeletonModifier(Logger logger
             neckLocal->Scale.Z = 0.001f;
         }
     }
-    internal void UpdateHands(Skeleton* skeleton, TrackingData trackingData, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
+    internal void UpdateHands(Skeleton* skeleton, VRInputData vrInputData, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
     {
-        if (!trackingData.HasData())
+        if (!vrInputData.HasTrackingData())
         {
             return;
         }
@@ -151,15 +151,15 @@ public unsafe class SkeletonModifier(Logger logger
         {
             return;
         }
-        if (trackingData.BodyData is { } data)
+        if (vrInputData.BodyJoints is { } bodyJoints)
         {
-            ApplyBodyTracking(pose, structure, skeletonRotation, data);
+            ApplyBodyTracking(pose, structure, skeletonRotation, bodyJoints);
             return;
         }
         ResetPoseTree(pose, structure, HumanBones.ArmLeft, b => !b.Contains(HumanBones.WeaponBoneSubstring));
         ResetPoseTree(pose, structure, HumanBones.ArmRight, b => !b.Contains(HumanBones.WeaponBoneSubstring));
 
-        if (trackingData.GetLeftHand() is HandJointLocationEXT[] leftHand)
+        if (vrInputData.HandPose.LeftHand is HandJointLocationEXT[] leftHand)
         {
             UpdateArmIK(leftHand[(int)HandJointEXT.WristExt].Pose, pose, structure, head, HumanBones.ArmLeft, HumanBones.ForearmLeft, HumanBones.HandLeft, skeletonRotation);
             RotateHand(leftHand[(int)HandJointEXT.PalmExt].Pose, HumanBones.HandLeft, HumanBones.WristLeft, HumanBones.ForearmLeft, structure, pose, skeletonRotation);
@@ -169,14 +169,14 @@ public unsafe class SkeletonModifier(Logger logger
                 UpdateHandBone(leftHand, joint.Joint, joint.LeftBone, pose, structure, runtimeAdjustments, skeletonRotation);
             }
         }
-        else if (trackingData.GetLeftPalm() is Posef leftController)
+        else if (vrInputData.PalmPose.LeftPalm is Posef leftController)
         {
             var wrist = ControllerToWrist(leftController, MathFactory.ZRotation(float.DegreesToRadians(90)));
             UpdateArmIK(wrist, pose, structure, head, HumanBones.ArmLeft, HumanBones.ForearmLeft, HumanBones.HandLeft, skeletonRotation);
             RotateHand(wrist, HumanBones.HandLeft, HumanBones.WristLeft, HumanBones.ForearmLeft, structure, pose, skeletonRotation);
         }
 
-        if (trackingData.GetRightHand() is HandJointLocationEXT[] rightHand)
+        if (vrInputData.HandPose.RightHand is HandJointLocationEXT[] rightHand)
         {
             UpdateArmIK(rightHand[(int)HandJointEXT.WristExt].Pose, pose, structure, head, HumanBones.ArmRight, HumanBones.ForearmRight, HumanBones.HandRight, skeletonRotation);
             RotateHand(rightHand[(int)HandJointEXT.PalmExt].Pose, HumanBones.HandRight, HumanBones.WristRight, HumanBones.ForearmRight, structure, pose, skeletonRotation);
@@ -186,7 +186,7 @@ public unsafe class SkeletonModifier(Logger logger
                 UpdateHandBone(rightHand, joint.Joint, joint.RightBone, pose, structure, runtimeAdjustments, skeletonRotation);
             }
         }
-        else if (trackingData.GetRightPalm() is Posef rightController)
+        else if (vrInputData.PalmPose.RightPalm is Posef rightController)
         {
             var wrist = ControllerToWrist(rightController, MathFactory.ZRotation(float.DegreesToRadians(-90)));
             UpdateArmIK(wrist, pose, structure, head, HumanBones.ArmRight, HumanBones.ForearmRight, HumanBones.HandRight, skeletonRotation);
