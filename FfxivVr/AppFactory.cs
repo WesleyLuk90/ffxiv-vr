@@ -104,6 +104,7 @@ public unsafe class AppFactory
         builder.Services.AddScoped<VRUI>();
         builder.Services.AddScoped<WaitFrameService>();
         builder.Services.AddScoped<RenderManager>();
+        builder.Services.AddScoped<VRInputService>();
         return builder.Build();
     }
 

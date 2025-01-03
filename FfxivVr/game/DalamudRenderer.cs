@@ -8,16 +8,12 @@ using System.Reflection;
 namespace FfxivVR;
 public unsafe class DalamudRenderer
 {
-    private readonly Logger logger;
-
-    private RawDX11Scene scene;
-    private FieldInfo renderTargetViewProperty;
+    private RawDX11Scene? scene;
+    private FieldInfo? renderTargetViewProperty;
 
     // Use reflection to get access to RawDX11Scene, swap out the render target view and render
-    public DalamudRenderer(Logger logger)
+    internal void Initialize()
     {
-        this.logger = logger;
-
         var assembly = Assembly.GetAssembly(typeof(IServiceType)) ?? throw new Exception("Failed to find assembly");
         var interfaceManagerType = assembly.GetType("Dalamud.Interface.Internal.InterfaceManager")
              ?? throw new Exception("Failed to find InterfaceManager type");
@@ -44,15 +40,15 @@ public unsafe class DalamudRenderer
     {
         var temp = new RenderTargetView((IntPtr)renderTargetView);
         var original = SwapRenderTargetView(temp);
-        scene.Render();
+        scene?.Render();
         SwapRenderTargetView(original);
     }
 
     private RenderTargetView? SwapRenderTargetView(RenderTargetView? renderTargetView)
     {
-        var original = (RenderTargetView?)renderTargetViewProperty.GetValue(scene);
+        var original = (RenderTargetView?)renderTargetViewProperty?.GetValue(scene);
 
-        renderTargetViewProperty.SetValue(scene, renderTargetView);
+        renderTargetViewProperty?.SetValue(scene, renderTargetView);
         return original;
     }
 }

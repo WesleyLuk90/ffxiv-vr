@@ -2,19 +2,19 @@ namespace FfxivVR;
 
 public class VRInputService(
     VRActionService vrActionService,
-    BodyTracking bodyTracking,
-    VRSpace vrSpace,
-    HandTracking handTracking
+    VRSystem vrSystem,
+    VRSpace vrSpace
 )
 {
+
     public VRInputData PollInput(long predictedTime)
     {
         var (actionState, palmPose, aimPose) = vrActionService.PollActions(predictedTime);
         return new VRInputData(
-            handPose: handTracking.GetHandTrackingData(vrSpace.LocalSpace, predictedTime),
+            handPose: vrSystem.HandTracker?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime) ?? new HandTracking.HandPose(null, null),
             palmPose: palmPose,
             aimPose: aimPose,
-            bodyJoints: bodyTracking?.GetData(vrSpace.LocalSpace, predictedTime),
+            bodyJoints: vrSystem.BodyTracker?.GetData(vrSpace.LocalSpace, predictedTime),
             vrActionsState: actionState
         );
     }

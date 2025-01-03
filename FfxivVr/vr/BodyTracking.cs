@@ -9,7 +9,6 @@ public unsafe class BodyTracking(
     Logger logger
 )
 {
-
     private BodyTrackerFB bodyTracker;
     public void Initialize(Session session)
     {

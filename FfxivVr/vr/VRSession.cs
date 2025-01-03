@@ -32,12 +32,14 @@ public unsafe class VRSession(
     InputManager inputManager,
     VRUI vrUI,
     GameClock gameClock,
-    VRInputService vrInputService
+    VRInputService vrInputService,
+    DalamudRenderer dalamudRenderer
 )
 {
-    public readonly VRState State = State;
+    public VRState State = State;
     public void Initialize()
     {
+        dalamudRenderer.Initialize();
         vrSystem.Initialize();
         vrShaders.Initialize();
         var size = swapchains.Initialize();
@@ -226,20 +228,6 @@ public unsafe class VRSession(
     //         return TrackingData.CreateNew(hands, controllers, bodyData);
     //     }
     // }
-
-    private HandTracking.HandPose? GetHandTrackingData(long predictedTime)
-    {
-        if (!configuration.HandTracking)
-        {
-            return null;
-        }
-        if (!gameState.IsFirstPerson())
-        {
-            return null;
-        }
-        return vrSystem.HandTracker?.GetHandTrackingData(vrSpace.LocalSpace, predictedTime);
-    }
-
     internal Point? ComputeMousePosition(Point point)
     {
         return resolutionManager.ComputeMousePosition(point);

@@ -42,7 +42,7 @@ public unsafe class AppFactoryTests
         host.Services.GetRequiredService<PluginUI>();
 
         var scope = host.Services.CreateScope();
-        scope.ServiceProvider.GetRequiredService<VRLifecycle>();
+        scope.ServiceProvider.GetRequiredService<VRSession>();
 
         scope.Dispose();
         host.Dispose();

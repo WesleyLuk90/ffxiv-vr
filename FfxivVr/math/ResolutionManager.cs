@@ -213,15 +213,15 @@ public unsafe class ResolutionManager : IDisposable
 
     public void RevertResolution()
     {
-        HWND handle = GetGameWindowHandle();
-        if (handle != IntPtr.Zero)
+        if (resizeState is ResizeState state)
         {
-            if (resizeState is ResizeState state)
+            HWND handle = GetGameWindowHandle();
+            if (handle != IntPtr.Zero)
             {
                 PInvoke.SetWindowPos(handle, NOTOPMOST, state.OriginalWindow.Origin.X, state.OriginalWindow.Origin.Y, state.OriginalWindow.Size.X, state.OriginalWindow.Size.Y, 0);
             }
+            EnableSetCursor();
         }
-        EnableSetCursor();
     }
 
     internal Point? ComputeMousePosition(Point point)
