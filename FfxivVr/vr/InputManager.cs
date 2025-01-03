@@ -18,8 +18,9 @@ public class InputManager(
 {
     public unsafe void UpdateGamepad(GamepadInput* gamepadInput, VRInputData vrInput)
     {
-        var pressedActions = ApplyBindings(vrInput.GetPhysicalActionsState());
-        var actionsState = ApplyStates(pressedActions, gamepadInput);
+        var state = vrInput.GetPhysicalActionsState();
+        var pressedActions = ApplyBindings(state);
+        var actionsState = ApplyStates(pressedActions, gamepadInput, state.Active);
         UpdateMousePosition(actionsState, vrInput.AimPose);
     }
 
@@ -39,11 +40,11 @@ public class InputManager(
             }
         }
         Vector2D<float>? maybePosition = null;
-        if (actionsState.ContainsKey(VRAction.EnableRightMouseHold))
+        if (actionsState.GetValueOrDefault(VRAction.EnableRightMouseHold)?.IsActive == true)
         {
             maybePosition = vrUI.GetViewportPosition(AimType.RightHand, aimPose);
         }
-        if (actionsState.ContainsKey(VRAction.EnableLeftMouseHold) && maybePosition == null)
+        if (actionsState.GetValueOrDefault(VRAction.EnableLeftMouseHold)?.IsActive == true && maybePosition == null)
         {
             maybePosition = vrUI.GetViewportPosition(AimType.LeftHand, aimPose);
         }
@@ -220,7 +221,7 @@ public class InputManager(
             return 210 + nextRepeat * 50;
         }
 
-        public unsafe void Update(GamepadInput* gamepadInput, bool isPressed, GamepadButtons bit)
+        public unsafe void Update(GamepadInput* gamepadInput, bool isPressed, GamepadButtons bit, bool active)
         {
             WasPressed = false;
             WasReleased = false;
@@ -262,8 +263,17 @@ public class InputManager(
     }
 
     private Dictionary<VRAction, ActionState> actionStates = new();
-    private unsafe Dictionary<VRAction, ActionState> ApplyStates(VRActionsState vrActions, GamepadInput* gamepadInput)
+    private bool wasActive = false;
+    private unsafe Dictionary<VRAction, ActionState> ApplyStates(VRActionsState vrActions, GamepadInput* gamepadInput, bool active)
     {
+        // Let the gamepad update run once more to release buttons and zero the sticks
+        var isDeactivating = wasActive && !active;
+        wasActive = active;
+        if (!active && !isDeactivating)
+        {
+            return actionStates;
+        }
+
         gamepadInput->LeftStickX = (int)(vrActions.LeftStick.X * 99);
         gamepadInput->LeftStickY = (int)(vrActions.LeftStick.Y * 99);
         gamepadInput->RightStickX = (int)(vrActions.RightStick.X * 99);
@@ -279,7 +289,7 @@ public class InputManager(
             {
                 actionStates[action] = new();
             }
-            actionStates[action].Update(gamepadInput, vrActions.VRActions.Contains(action), GetButton(action));
+            actionStates[action].Update(gamepadInput, vrActions.VRActions.Contains(action), GetButton(action), active);
         }
         return actionStates;
     }

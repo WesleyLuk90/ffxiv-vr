@@ -21,7 +21,7 @@ public class VRInputData(
     {
         if (HandPose.LeftHand != null || HandPose.RightHand != null)
         {
-            return new VRActionsState();
+            return VRActionsState.Inactive;
         }
         return VrActionsState;
     }

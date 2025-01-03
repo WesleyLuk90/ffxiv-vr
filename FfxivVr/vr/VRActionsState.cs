@@ -10,9 +10,7 @@ public class VRActionsState
 
     public HashSet<VRButton> Pressed = new();
 
-    public bool IsPhysicalController()
-    {
-        // B and Y are sometimes triggered with virtual desktop hand tracking so ignore them
-        return Pressed.Contains(VRButton.A) || Pressed.Contains(VRButton.X) || LeftStick.LengthSquared > 0 || RightStick.Length > 0;
-    }
+    public bool Active = true;
+
+    public static VRActionsState Inactive = new VRActionsState { Active = false };
 }
