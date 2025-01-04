@@ -35,6 +35,7 @@ public unsafe class VRSystem(
         ExtHandTracking.ExtensionName,
         "XR_EXT_palm_pose",
         FBBodyTracking.ExtensionName,
+        "XR_EXT_hand_tracking_data_source",
     ];
     public void Initialize()
     {

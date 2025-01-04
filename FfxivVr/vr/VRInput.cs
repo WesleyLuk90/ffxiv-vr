@@ -19,7 +19,7 @@ public class VRInputData(
 
     public VRActionsState GetPhysicalActionsState()
     {
-        if (HandPose.LeftHand != null || HandPose.RightHand != null)
+        if (HandPose.IsHandTracking())
         {
             return new VRActionsState();
         }
