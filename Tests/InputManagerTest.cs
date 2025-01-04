@@ -40,17 +40,46 @@ public class InputManagerTests
         var gamepadInput = new GamepadInput();
         inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.South, GamepadButtons.South, 0, 0);
-
+        gamepadInput = new GamepadInput();
         inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.South, 0, 0, 0);
 
         state.Pressed.Clear();
-
+        gamepadInput = new GamepadInput();
         inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, 0, 0, GamepadButtons.South, 0);
-
+        gamepadInput = new GamepadInput();
         inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, 0, 0, 0, 0);
+    }
+
+    [Test]
+    public unsafe void CombinesWithGamepad()
+    {
+        var config = new Configuration();
+        var state = new VRActionsState();
+        state.Pressed.Add(VRButton.A);
+        var inputManager = MockInputManager(config);
+        var gamepadInput = new GamepadInput();
+        gamepadInput.ButtonsRaw = (ushort)GamepadButtons.DpadDown;
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
+        AssertGamepad(gamepadInput, GamepadButtons.South | GamepadButtons.DpadDown, GamepadButtons.South | GamepadButtons.DpadDown, 0, 0);
+    }
+    [Test]
+    public unsafe void CombinesSticks()
+    {
+        var config = new Configuration();
+        var state = new VRActionsState();
+        state.LeftStick.X = 0.5f;
+        state.LeftStick.Y = 0.25f;
+        var inputManager = MockInputManager(config);
+        var gamepadInput = new GamepadInput();
+        gamepadInput.LeftStickX = 20;
+        gamepadInput.LeftStickY = -40;
+        gamepadInput.ButtonsRaw = (ushort)GamepadButtons.DpadDown;
+        inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
+        Assert.That(gamepadInput.LeftStickX, Is.EqualTo(49));
+        Assert.That(gamepadInput.LeftStickY, Is.EqualTo(-40));
     }
 
     [Test]
@@ -66,6 +95,7 @@ public class InputManagerTests
         inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.DpadRight, GamepadButtons.DpadRight, 0, 0);
         state.LeftStick = new Vector2D<float>(0, 1);
+        gamepadInput = new GamepadInput();
         inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.DpadUp, GamepadButtons.DpadUp, GamepadButtons.DpadRight, 0);
     }

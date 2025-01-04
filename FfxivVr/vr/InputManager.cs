@@ -20,7 +20,7 @@ public class InputManager(
     {
         var state = vrInput.GetPhysicalActionsState();
         var pressedActions = ApplyBindings(state);
-        var actionsState = ApplyStates(pressedActions, gamepadInput, state.Active);
+        var actionsState = ApplyStates(pressedActions, gamepadInput);
         UpdateMousePosition(actionsState, vrInput.AimPose);
     }
 
@@ -221,7 +221,7 @@ public class InputManager(
             return 210 + nextRepeat * 50;
         }
 
-        public unsafe void Update(GamepadInput* gamepadInput, bool isPressed, GamepadButtons bit, bool active)
+        public unsafe void Update(GamepadInput* gamepadInput, bool isPressed, GamepadButtons buttonBit)
         {
             WasPressed = false;
             WasReleased = false;
@@ -229,23 +229,23 @@ public class InputManager(
             {
                 if (!IsActive)
                 {
-                    gamepadInput->ButtonsPressed |= (ushort)bit;
+                    gamepadInput->ButtonsPressed |= (ushort)buttonBit;
                     stopwatch.Restart();
                     nextRepeat = 1;
                     WasPressed = true;
                 }
 
-                gamepadInput->ButtonsRaw |= (ushort)bit;
+                gamepadInput->ButtonsRaw |= (ushort)buttonBit;
                 if (DoRepeat())
                 {
-                    gamepadInput->ButtonsRepeat |= (ushort)bit;
+                    gamepadInput->ButtonsRepeat |= (ushort)buttonBit;
                 }
             }
             else
             {
                 if (IsActive)
                 {
-                    gamepadInput->ButtonsReleased = (ushort)bit;
+                    gamepadInput->ButtonsReleased = (ushort)buttonBit;
                     WasReleased = true;
                 }
             }
@@ -263,35 +263,34 @@ public class InputManager(
     }
 
     private Dictionary<VRAction, ActionState> actionStates = new();
-    private bool wasActive = false;
-    private unsafe Dictionary<VRAction, ActionState> ApplyStates(VRActionsState vrActions, GamepadInput* gamepadInput, bool active)
+    private unsafe Dictionary<VRAction, ActionState> ApplyStates(VRActionsState vrActions, GamepadInput* gamepadInput)
     {
-        // Let the gamepad update run once more to release buttons and zero the sticks
-        var isDeactivating = wasActive && !active;
-        wasActive = active;
-        if (!active && !isDeactivating)
-        {
-            return actionStates;
-        }
+        mergeStickInput(ref gamepadInput->LeftStickX, vrActions.LeftStick.X);
+        mergeStickInput(ref gamepadInput->LeftStickY, vrActions.LeftStick.Y);
+        mergeStickInput(ref gamepadInput->RightStickX, vrActions.RightStick.X);
+        mergeStickInput(ref gamepadInput->RightStickY, vrActions.RightStick.Y);
 
-        gamepadInput->LeftStickX = (int)(vrActions.LeftStick.X * 99);
-        gamepadInput->LeftStickY = (int)(vrActions.LeftStick.Y * 99);
-        gamepadInput->RightStickX = (int)(vrActions.RightStick.X * 99);
-        gamepadInput->RightStickY = (int)(vrActions.RightStick.Y * 99);
-
-        gamepadInput->ButtonsPressed = 0;
-        gamepadInput->ButtonsReleased = 0;
-        gamepadInput->ButtonsRaw = 0;
-        gamepadInput->ButtonsRepeat = 0;
+        var pressedGamepad = gamepadInput->ButtonsRaw;
         foreach (var action in Enum.GetValues<VRAction>())
         {
             if (!actionStates.ContainsKey(action))
             {
                 actionStates[action] = new();
             }
-            actionStates[action].Update(gamepadInput, vrActions.VRActions.Contains(action), GetButton(action), active);
+            var gamepadButtonBit = GetButton(action);
+            var isPressed = vrActions.VRActions.Contains(action) || (pressedGamepad & (int)gamepadButtonBit) != 0;
+            actionStates[action].Update(gamepadInput, isPressed, gamepadButtonBit);
         }
         return actionStates;
+    }
+
+    private void mergeStickInput(ref int gamepadStick, float vrActionStick)
+    {
+        var vrActionStickInt = (int)(vrActionStick * 99);
+        if (int.Abs(gamepadStick) < int.Abs(vrActionStickInt))
+        {
+            gamepadStick = vrActionStickInt;
+        }
     }
 
     private GamepadButtons GetButton(VRAction action)

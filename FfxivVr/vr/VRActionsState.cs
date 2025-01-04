@@ -10,7 +10,4 @@ public class VRActionsState
 
     public HashSet<VRButton> Pressed = new();
 
-    public bool Active = true;
-
-    public static VRActionsState Inactive = new VRActionsState { Active = false };
 }
