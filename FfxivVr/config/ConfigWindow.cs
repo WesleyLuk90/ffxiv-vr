@@ -73,7 +73,8 @@ public class ConfigWindow : Window
     {
         Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
         Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
-        Checkbox("Follow Head", ref config.FollowCharacter, "Moves the camera to match your characters head.");
+        Checkbox("Camera follows Head", ref config.FollowCharacter, "Centers the camera on your characters head.");
+        Checkbox("Camera is locked to Head", ref config.LockToHead, "Locks the camera to your characters head.");
         Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
         Checkbox("Enable hand tracking", ref config.HandTracking, "Uses your headsets hand tracking to control your characters hands and fingers, not all headsets are supported.");
         Checkbox("Enable controller tracking", ref config.ControllerTracking, "Uses the VR controllers to control your characters hands.");

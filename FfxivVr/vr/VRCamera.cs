@@ -68,7 +68,7 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         {
             return new OrbitCamera();
         }
-        else if (gameState.IsFirstPerson() && hasBodyData)
+        else if (gameState.IsFirstPerson() && (hasBodyData || configuration.LockToHead))
         {
             return new BodyTrackingCamera();
         }

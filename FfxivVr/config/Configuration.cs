@@ -13,6 +13,7 @@ public class Configuration : IPluginConfiguration
     public float UIDistance = 1.0f;
     public float Gamma = 2.2f;
     public bool FollowCharacter = false;
+    public bool LockToHead = true;
     public bool RecenterOnViewChange = true;
     public bool DisableAutoFaceTargetInFirstPerson = false;
     public bool StartVRAtBoot = false;
