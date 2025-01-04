@@ -69,5 +69,11 @@ public unsafe class HandTracking(
     {
         public HandJointLocationEXT[]? LeftHand { get; } = LeftHand;
         public HandJointLocationEXT[]? RightHand { get; } = RightHand;
+
+
+        public bool HasData()
+        {
+            return LeftHand != null || RightHand != null;
+        }
     }
 }

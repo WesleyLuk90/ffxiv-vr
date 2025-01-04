@@ -15,7 +15,12 @@ public unsafe class GameModifier(
     IClientState clientState,
     NameplateModifier nameplateModifier,
     SkeletonModifier skeletonModifier,
-    GameVisibililty gameVisibililty)
+    GameVisibililty gameVisibililty,
+    BodySkeletonModifier bodySkeletonModifier,
+    HandTrackingSkeletonModifier handTrackingSkeletonModifier,
+    ControllerTrackingSkeletonModifier controllerTrackingSkeletonModifier,
+    Configuration configuration
+)
 {
     public void UpdateCharacterVisibility(bool showInFirstPerson)
     {
@@ -189,7 +194,32 @@ public unsafe class GameModifier(
         }
         var actorModel = InternalCharacterBase.FromCharacterBase(characterBase);
         var skeleton = characterBase->Skeleton;
-        skeletonModifier.UpdateHands(skeleton, vrInputData, runtimeAdjustments, cameraYRotation);
+        var pose = SkeletonModifier.GetPose(skeleton);
+        if (pose == null)
+        {
+            return;
+        }
+        if (skeletonModifier.GetSkeletonStructure(skeleton) is not { } structure)
+        {
+            return;
+        }
+        var skeletonRotation = MathFactory.YRotation(cameraYRotation) / skeleton->Transform.Rotation.ToQuaternion();
+        if (skeletonModifier.GetHeadPosition(skeleton) is not { } head)
+        {
+            return;
+        }
+        if (configuration.BodyTracking && vrInputData.BodyJoints is { } bodyJoints)
+        {
+            bodySkeletonModifier.Apply(pose, structure, skeletonRotation, bodyJoints);
+        }
+        else if (configuration.HandTracking && vrInputData.HandPose.HasData())
+        {
+            handTrackingSkeletonModifier.Apply(pose, structure, skeletonRotation, head, vrInputData.HandPose, runtimeAdjustments);
+        }
+        else if (configuration.ControllerTracking && vrInputData.PalmPose.HasData())
+        {
+            controllerTrackingSkeletonModifier.Apply(pose, structure, skeletonRotation, head, vrInputData.PalmPose);
+        }
     }
 
     internal void ResetVerticalCameraRotation(float rotation)

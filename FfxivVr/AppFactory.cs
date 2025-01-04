@@ -105,6 +105,10 @@ public unsafe class AppFactory
         builder.Services.AddScoped<WaitFrameService>();
         builder.Services.AddScoped<RenderManager>();
         builder.Services.AddScoped<VRInputService>();
+        builder.Services.AddScoped<InverseKinematics>();
+        builder.Services.AddScoped<BodySkeletonModifier>();
+        builder.Services.AddScoped<HandTrackingSkeletonModifier>();
+        builder.Services.AddScoped<ControllerTrackingSkeletonModifier>();
         return builder.Build();
     }
 

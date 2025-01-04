@@ -30,9 +30,4 @@ public class VRInputData(
     {
         return BodyJoints != null;
     }
-
-    public bool HasTrackingData()
-    {
-        return HandPose.LeftHand != null || HandPose.RightHand != null || PalmPose.LeftPalm != null || PalmPose.RightPalm != null || BodyJoints != null;
-    }
 }

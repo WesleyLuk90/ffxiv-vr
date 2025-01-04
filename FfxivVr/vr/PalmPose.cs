@@ -9,4 +9,9 @@ public class PalmPose(
 {
     public Posef? LeftPalm { get; } = leftPalm;
     public Posef? RightPalm { get; } = rightPalm;
+
+    public bool HasData()
+    {
+        return LeftPalm != null || RightPalm != null;
+    }
 }
