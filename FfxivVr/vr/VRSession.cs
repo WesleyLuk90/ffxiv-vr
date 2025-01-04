@@ -125,7 +125,7 @@ public unsafe class VRSession(
                 gameModifier.HideHeadMesh();
             }
 
-            if (cameraPhase is CameraPhase phase)
+            if (cameraPhase is CameraPhase phase && gameState.IsFirstPerson())
             {
                 var camera = gameState.GetCurrentCamera();
                 var position = camera->Position.ToVector3D();
@@ -208,26 +208,7 @@ public unsafe class VRSession(
         }
     }
 
-    // private TrackingData GetTrackingData(long predictedTime)
-    // {
-    //     if (!gameState.IsFirstPerson() && !debugging.ForceTracking)
-    //     {
-    //         return TrackingData.Disabled();
-    //     }
-    //     var hands = configuration.HandTracking ? GetHandTrackingData(predictedTime) : null;
-    //     var controllers = configuration.ControllerTracking ? vrInput.GetPalmPose() : null;
 
-    //     var bodyData = configuration.BodyTracking ? vrSystem.BodyTracker?.GetData(vrSpace.LocalSpace, predictedTime) : null;
-
-    //     if (lastTrackingData is TrackingData last)
-    //     {
-    //         return last.Update(configuration.HandTracking, hands, configuration.ControllerTracking, controllers, bodyData);
-    //     }
-    //     else
-    //     {
-    //         return TrackingData.CreateNew(hands, controllers, bodyData);
-    //     }
-    // }
     internal Point? ComputeMousePosition(Point point)
     {
         return resolutionManager.ComputeMousePosition(point);
