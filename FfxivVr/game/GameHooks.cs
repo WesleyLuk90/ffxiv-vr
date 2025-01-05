@@ -78,7 +78,7 @@ public unsafe class GameHooks(
 
     private ulong FrameworkTickDetour(Framework* FrameworkInstance)
     {
-        //logger.Trace("FrameworkTickDetour start");
+        logger.Trace("FrameworkTickDetour start");
         exceptionHandler.FaultBarrier(() =>
         {
             vrLifecycle.PrepareVRRender();
@@ -94,7 +94,7 @@ public unsafe class GameHooks(
             // This can cause crashes if the plugin is unloaded during while running the second tick
             returnValue = FrameworkTickHook!.Original(FrameworkInstance);
         }
-        //logger.Trace("FrameworkTickDetour end");
+        logger.Trace("FrameworkTickDetour end");
         return returnValue;
     }
 
@@ -103,7 +103,7 @@ public unsafe class GameHooks(
     private Hook<DXGIPresentDelegate>? DXGIPresentHook = null;
     private void DXGIPresentDetour(long a, long b)
     {
-        //logger.Trace("DXGIPresentDetour start");
+        logger.Trace("DXGIPresentDetour");
         var shouldPresent = true;
         exceptionHandler.FaultBarrier(() =>
         {
@@ -113,7 +113,6 @@ public unsafe class GameHooks(
         {
             DXGIPresentHook!.Original(a, b);
         }
-        //logger.Trace("DXGIPresentDetour end");
     }
 
 
@@ -236,6 +235,7 @@ public unsafe class GameHooks(
     private Hook<GamepadPollDelegate>? GamepadPollHook = null;
     private int GamepadPollDetour(GamepadInput* gamepadInput)
     {
+        logger.Trace("GamepadPollDetour");
         var returnVaue = GamepadPollHook!.Original(gamepadInput);
         exceptionHandler.FaultBarrier(() =>
         {
@@ -250,8 +250,6 @@ public unsafe class GameHooks(
 
     private CSRay* MousePointToRayDetour(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* gameCamera, CSRay* ray, int mousePosX, int mousePosY)
     {
-        // Constantly called
-        // logger.Debug("MousePointToRayDetour");
         var value = MousePointToRayHook!.Original(gameCamera, ray, mousePosX, mousePosY);
         exceptionHandler.FaultBarrier(() =>
         {

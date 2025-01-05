@@ -265,6 +265,12 @@ public class InputManager(
     private Dictionary<VRAction, ActionState> actionStates = new();
     private unsafe Dictionary<VRAction, ActionState> ApplyStates(VRActionsState vrActions, GamepadInput* gamepadInput)
     {
+        var internalGamepadInput = InternalGamepadInput.FromGamepadInput(gamepadInput);
+        // If the gamepad is not active then the values are never reset from the previous frame so we need to clear them
+        if (!internalGamepadInput->IsActive)
+        {
+            Clear(gamepadInput);
+        }
         mergeStickInput(ref gamepadInput->LeftStickX, vrActions.LeftStick.X);
         mergeStickInput(ref gamepadInput->LeftStickY, vrActions.LeftStick.Y);
         mergeStickInput(ref gamepadInput->RightStickX, vrActions.RightStick.X);
@@ -282,6 +288,18 @@ public class InputManager(
             actionStates[action].Update(gamepadInput, isPressed, gamepadButtonBit);
         }
         return actionStates;
+    }
+
+    private static unsafe void Clear(GamepadInput* gamepadInput)
+    {
+        gamepadInput->ButtonsPressed = 0;
+        gamepadInput->ButtonsRaw = 0;
+        gamepadInput->ButtonsReleased = 0;
+        gamepadInput->ButtonsRepeat = 0;
+        gamepadInput->LeftStickX = 0;
+        gamepadInput->LeftStickY = 0;
+        gamepadInput->RightStickX = 0;
+        gamepadInput->RightStickY = 0;
     }
 
     private void mergeStickInput(ref int gamepadStick, float vrActionStick)
