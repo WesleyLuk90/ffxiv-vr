@@ -1,3 +1,2 @@
-[Feature] Fail to start VR if DX hook is missing and running SteamVR
-[Feature] Add deadzone config
-[Feature] Add body tracking
+[Fix] Combine VR controller with gamepad buttons
+[Feature] Add lock to head option
