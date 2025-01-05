@@ -60,7 +60,7 @@ public class InputManagerTests
         var state = new VRActionsState();
         state.Pressed.Add(VRButton.A);
         var inputManager = MockInputManager(config);
-        var gamepadInput = new GamepadInput();
+        GamepadInput gamepadInput = CreateEnabledGamepad();
         gamepadInput.ButtonsRaw = (ushort)GamepadButtons.DpadDown;
         inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         AssertGamepad(gamepadInput, GamepadButtons.South | GamepadButtons.DpadDown, GamepadButtons.South | GamepadButtons.DpadDown, 0, 0);
@@ -73,13 +73,21 @@ public class InputManagerTests
         state.LeftStick.X = 0.5f;
         state.LeftStick.Y = 0.25f;
         var inputManager = MockInputManager(config);
-        var gamepadInput = new GamepadInput();
+        GamepadInput gamepadInput = CreateEnabledGamepad();
         gamepadInput.LeftStickX = 20;
         gamepadInput.LeftStickY = -40;
         gamepadInput.ButtonsRaw = (ushort)GamepadButtons.DpadDown;
         inputManager.UpdateGamepad(&gamepadInput, CreateVrInputData(state));
         Assert.That(gamepadInput.LeftStickX, Is.EqualTo(49));
         Assert.That(gamepadInput.LeftStickY, Is.EqualTo(-40));
+    }
+
+    private static unsafe GamepadInput CreateEnabledGamepad()
+    {
+        GamepadInput gamepadInput = new GamepadInput();
+        var internalGamepad = InternalGamepadInput.FromGamepadInput(&gamepadInput);
+        internalGamepad->Value2 = 1;
+        return gamepadInput;
     }
 
     [Test]
