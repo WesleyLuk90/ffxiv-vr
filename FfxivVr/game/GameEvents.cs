@@ -1,6 +1,5 @@
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
@@ -14,11 +13,11 @@ public class GameEvents(
     IFramework framework,
     ExceptionHandler exceptionHandler,
     VRLifecycle vrLifecycle,
-    GameState gameState,
     HudLayoutManager hudLayoutManager,
     GamepadManager gamepadManager,
     FreeCamera freeCamera,
-    IGamepadState gamepadState
+    IGamepadState gamepadState,
+    Logger logger
 ) : IDisposable
 {
 
@@ -30,9 +29,9 @@ public class GameEvents(
         framework.Update += FrameworkUpdate;
     }
 
-    private bool? isFirstPerson = null;
     private void Logout(int type, int code)
     {
+        logger.Debug("Logout");
         transitions.OnLogout();
     }
 
@@ -46,24 +45,10 @@ public class GameEvents(
         vrLifecycle.OnNamePlateUpdate(context, handlers);
     }
 
-    private void FrameworkUpdate(IFramework framework)
+    private unsafe void FrameworkUpdate(IFramework framework)
     {
         exceptionHandler.FaultBarrier(() =>
         {
-            if (!Conditions.IsOccupiedInCutSceneEvent)
-            {
-                var nextFirstPerson = gameState.IsFirstPerson();
-                if (nextFirstPerson && isFirstPerson == false)
-                {
-                    transitions.ThirdToFirstPerson();
-                }
-                if (!nextFirstPerson && isFirstPerson == true)
-                {
-                    transitions.FirstToThirdPerson();
-                }
-                isFirstPerson = nextFirstPerson;
-            }
-
             UpdateFreeCam(framework);
 
             hudLayoutManager.Update();

@@ -10,12 +10,6 @@ public unsafe class GameState(
     IGameGui gameGui)
 {
 
-    public bool IsFirstPerson()
-    {
-        // Some cutscenes this flag is set, e.g. Logging in and out of the inn
-        return GetInternalGameCamera()->CameraMode == CameraView.FirstPerson && !Conditions.IsOccupiedInCutSceneEvent;
-    }
-
     public bool IsGPosing()
     {
         return clientState.IsGPosing;

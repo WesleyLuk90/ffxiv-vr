@@ -15,7 +15,6 @@ public unsafe class VRLifecycle : IDisposable
     public VRSession? vrSession;
     private readonly Logger logger;
     private readonly Configuration configuration;
-    private readonly GameModifier gameModifier;
 
     private readonly Debugging debugging;
 
@@ -23,13 +22,11 @@ public unsafe class VRLifecycle : IDisposable
         IServiceScopeFactory scopeFactory,
         Logger logger,
         Configuration configuration,
-        GameModifier gameModifier,
         Debugging debugging)
     {
         this.scopeFactory = scopeFactory;
         this.logger = logger;
         this.configuration = configuration;
-        this.gameModifier = gameModifier;
         this.debugging = debugging;
     }
 
@@ -143,7 +140,7 @@ public unsafe class VRLifecycle : IDisposable
     {
         if (debugging.HideHead)
         {
-            gameModifier.HideHeadMesh(force: true);
+            scope?.ServiceProvider.GetRequiredService<GameModifier>().HideHeadMesh(force: true);
         }
         lock (this)
         {
@@ -195,7 +192,7 @@ public unsafe class VRLifecycle : IDisposable
         // Always enable regardless of VR
         if (configuration.DisableCutsceneLetterbox)
         {
-            gameModifier.UpdateLetterboxing(internalLetterbox);
+            scope?.ServiceProvider.GetRequiredService<GameModifier>().UpdateLetterboxing(internalLetterbox);
         }
     }
 

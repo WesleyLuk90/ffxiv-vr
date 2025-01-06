@@ -74,6 +74,23 @@ public class CommandHander(
                 case "debug":
                     debugWindow.Toggle();
                     break;
+                case "firstperson":
+                    var mode = gameState.GetInternalGameCamera()->CameraMode;
+                    switch (mode)
+                    {
+                        case CameraView.FirstPerson:
+                            gameState.GetInternalGameCamera()->CameraMode = CameraView.ThirdPerson;
+                            logger.Info("Switched to third person");
+                            break;
+                        case CameraView.ThirdPerson:
+                            gameState.GetInternalGameCamera()->CameraMode = CameraView.FirstPerson;
+                            logger.Info("Switched to first person");
+                            break;
+                        default:
+                            logger.Error($"Unknown camera mode {mode}");
+                            break;
+                    }
+                    break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");
                     break;

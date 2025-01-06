@@ -33,7 +33,8 @@ public unsafe class VRSession(
     VRUI vrUI,
     GameClock gameClock,
     VRInputService vrInputService,
-    DalamudRenderer dalamudRenderer
+    DalamudRenderer dalamudRenderer,
+    FirstPersonManager firstPersonManager
 )
 {
     public VRState State = State;
@@ -110,8 +111,7 @@ public unsafe class VRSession(
 
     internal void RecenterCamera()
     {
-        vrSpace.RecenterCamera(vrSystem.Now());
-        vrCamera.ResetSavedHeadPosition();
+        vrSpace.RecenterCamera();
     }
 
     internal void UpdateVisibility()
@@ -125,7 +125,7 @@ public unsafe class VRSession(
                 gameModifier.HideHeadMesh();
             }
 
-            if (cameraPhase is CameraPhase phase && gameState.IsFirstPerson())
+            if (cameraPhase is CameraPhase phase && firstPersonManager.IsFirstPerson)
             {
                 var camera = gameState.GetCurrentCamera();
                 var position = camera->Position.ToVector3D();
@@ -172,6 +172,7 @@ public unsafe class VRSession(
     internal void PrepareVRRender()
     {
         var ticks = gameClock.GetTicks();
+        firstPersonManager.Update();
         if (State.SessionRunning)
         {
             logger.Trace("Starting cycle");
@@ -191,7 +192,7 @@ public unsafe class VRSession(
 
             if (Conditions.IsInFlight || Conditions.IsDiving)
             {
-                if (gameState.IsFirstPerson() && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation))
+                if (firstPersonManager.IsFirstPerson && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation))
                 {
                     gameModifier.ResetVerticalCameraRotation(0);
                 }
