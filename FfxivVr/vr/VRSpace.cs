@@ -82,11 +82,11 @@ public unsafe class VRSpace(
         return pose;
     }
 
-    internal void RecenterCamera(long xrTime)
+    internal void RecenterCamera()
     {
         logger.Info($"Recentering camera");
         var spaceLocation = new SpaceLocation(next: null);
-        xr.LocateSpace(ViewSpace, LocalSpace, xrTime, ref spaceLocation).CheckResult("LocateSpace");
+        xr.LocateSpace(ViewSpace, LocalSpace, system.Now(), ref spaceLocation).CheckResult("LocateSpace");
         var oldSpace = LocalSpace;
         var pose = spaceLocation.Pose;
         var positionMatrix = Matrix4X4.CreateTranslation(pose.Position.ToVector3D());

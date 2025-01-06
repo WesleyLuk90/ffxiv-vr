@@ -8,32 +8,16 @@ using static FfxivVR.VRSystem;
 using CSRay = FFXIVClientStructs.FFXIV.Client.Graphics.Ray;
 
 namespace FfxivVR;
-public unsafe class VRLifecycle : IDisposable
-{
-    private readonly IServiceScopeFactory scopeFactory;
-    private IServiceScope? scope;
-    public VRSession? vrSession;
-    private readonly Logger logger;
-    private readonly Configuration configuration;
-    private readonly GameModifier gameModifier;
-
-    private readonly Debugging debugging;
-
-    public VRLifecycle(
+public unsafe class VRLifecycle(
         IServiceScopeFactory scopeFactory,
         Logger logger,
         Configuration configuration,
-        GameModifier gameModifier,
-        Debugging debugging)
-    {
-        this.scopeFactory = scopeFactory;
-        this.logger = logger;
-        this.configuration = configuration;
-        this.gameModifier = gameModifier;
-        this.debugging = debugging;
-    }
-
-
+        Debugging debugging,
+        GameState gameState
+) : IDisposable
+{
+    private IServiceScope? scope;
+    public VRSession? vrSession;
     public void EnableVR()
     {
         if (vrSession != null)
@@ -125,6 +109,9 @@ public unsafe class VRLifecycle : IDisposable
 
     internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
+        var active = gameState.GetActiveCamera();
+        debugging.DebugShow("Camera Target", camera->LookAtVector.ToVector3D());
+        debugging.DebugShow("Distance", active->Distance);
         lock (this)
         {
             vrSession?.UpdateCamera(camera);
@@ -143,7 +130,7 @@ public unsafe class VRLifecycle : IDisposable
     {
         if (debugging.HideHead)
         {
-            gameModifier.HideHeadMesh(force: true);
+            scope?.ServiceProvider.GetRequiredService<GameModifier>().HideHeadMesh(force: true);
         }
         lock (this)
         {
@@ -195,7 +182,7 @@ public unsafe class VRLifecycle : IDisposable
         // Always enable regardless of VR
         if (configuration.DisableCutsceneLetterbox)
         {
-            gameModifier.UpdateLetterboxing(internalLetterbox);
+            scope?.ServiceProvider.GetRequiredService<GameModifier>().UpdateLetterboxing(internalLetterbox);
         }
     }
 

@@ -73,6 +73,7 @@ public class ConfigWindow : Window
     {
         Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
         Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
+        Checkbox("Use Standard Movement", ref config.EnableStandardMovementInFirstPerson);
         Checkbox("Camera follows Head", ref config.FollowCharacter, "Centers the camera on your characters head.");
         Checkbox("Camera is locked to Head", ref config.LockToHead, "Locks the camera to your characters head.");
         Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);

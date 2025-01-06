@@ -73,7 +73,8 @@ class FollowingFirstPersonCamera : VRCameraMode
         }
         else
         {
-            return gameCamera.Position;
+            // With emulated first person the look at point is where the head is
+            return gameCamera.LookAt;
         }
     }
 }

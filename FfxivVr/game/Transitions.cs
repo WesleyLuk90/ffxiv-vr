@@ -5,51 +5,12 @@ namespace FfxivVR;
 
 public class Transitions(
     VRLifecycle vrLifecycle,
-    Configuration configuration,
     Logger logger,
     HudLayoutManager hudLayoutManager,
     GameConfigManager gameConfigManager,
-    IGameConfig gameConfig,
-    GameState gameState
+    IGameConfig gameConfig
 )
 {
-    public void FirstToThirdPerson()
-    {
-        if (!vrLifecycle.IsEnabled())
-        {
-            return;
-        }
-        if (configuration.RecenterOnViewChange)
-        {
-            vrLifecycle.RecenterCamera();
-        }
-        UpdateAutoFaceTarget();
-    }
-
-    private void UpdateAutoFaceTarget()
-    {
-        if (configuration.DisableAutoFaceTargetInFirstPerson && vrLifecycle.IsEnabled() && gameState.IsFirstPerson())
-        {
-            gameConfigManager.SetSetting(UiControlOption.AutoFaceTargetOnAction.ToString(), 0);
-        }
-        else
-        {
-            gameConfigManager.Revert(UiControlOption.AutoFaceTargetOnAction.ToString());
-        }
-    }
-
-    public void ThirdToFirstPerson()
-    {
-        if (!vrLifecycle.IsEnabled())
-        {
-            return;
-        }
-        if (configuration.RecenterOnViewChange)
-        {
-            vrLifecycle.RecenterCamera();
-        }
-        UpdateAutoFaceTarget();
-    }
 
     public bool PreStartVR()
     {
@@ -82,7 +43,6 @@ public class Transitions(
     internal void PostStopVR()
     {
         hudLayoutManager.RequestHudLayoutUpdate();
-        UpdateAutoFaceTarget();
         gameConfigManager.Revert();
     }
 
@@ -92,7 +52,6 @@ public class Transitions(
         if (vrLifecycle.IsEnabled())
         {
             gameConfigManager.ApplyVRSettings();
-            UpdateAutoFaceTarget();
         }
     }
 

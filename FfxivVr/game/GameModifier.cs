@@ -19,7 +19,9 @@ public unsafe class GameModifier(
     BodySkeletonModifier bodySkeletonModifier,
     HandTrackingSkeletonModifier handTrackingSkeletonModifier,
     ControllerTrackingSkeletonModifier controllerTrackingSkeletonModifier,
-    Configuration configuration
+    Configuration configuration,
+    FirstPersonManager firstPersonManager,
+    Debugging debugging
 )
 {
     public void UpdateCharacterVisibility(bool showInFirstPerson)
@@ -28,7 +30,7 @@ public unsafe class GameModifier(
         {
             return;
         }
-        if (gameState.IsFirstPerson() && !showInFirstPerson)
+        if (firstPersonManager.IsFirstPerson && !showInFirstPerson)
         {
             return;
         }
@@ -111,7 +113,7 @@ public unsafe class GameModifier(
         {
             return;
         }
-        if (!gameState.IsFirstPerson() && !force)
+        if (!firstPersonManager.IsFirstPerson && !force)
         {
             return;
         }

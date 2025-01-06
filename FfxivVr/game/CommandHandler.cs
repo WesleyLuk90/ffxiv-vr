@@ -1,4 +1,5 @@
 using Dalamud.Game.Command;
+using Dalamud.Game.Config;
 using Dalamud.Plugin.Services;
 using System;
 using System.Linq;
@@ -15,7 +16,8 @@ public class CommandHander(
     ConfigManager configManager,
     FreeCamera freeCamera,
     GameState gameState,
-    DebugWindow debugWindow
+    DebugWindow debugWindow,
+    IGameConfig gameConfig
 ) : IDisposable
 {
     private const string CommandName = "/vr";
