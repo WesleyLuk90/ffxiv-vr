@@ -1,5 +1,4 @@
 using Dalamud.Game.Config;
-using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace FfxivVR;
@@ -9,11 +8,11 @@ public unsafe class FirstPersonManager(
     Logger logger,
     VRSpace vrSpace,
     Configuration configuration,
-    IGameConfig gameConfig
+    GameConfigManager gameConfigManager,
+    Debugging debugging
 )
 {
     public bool IsFirstPerson { get; private set; } = false;
-    private float? Distance = null;
     public void Update()
     {
         if (Conditions.IsOccupiedInCutSceneEvent)
@@ -22,52 +21,50 @@ public unsafe class FirstPersonManager(
         }
         var changed = false;
         var internalCamera = gameState.GetInternalGameCamera();
+        var activeCamera = gameState.GetActiveCamera();
         if (internalCamera->CameraMode == CameraView.FirstPerson)
         {
             internalCamera->CameraMode = CameraView.ThirdPerson;
             IsFirstPerson = !IsFirstPerson;
             changed = true;
         }
-        else if (IsFirstPerson && Distance is { } d && d < gameState.GetActiveCamera()->Distance)
+        else if (IsFirstPerson && activeCamera->Distance > 2)
         {
             IsFirstPerson = !IsFirstPerson;
             changed = true;
         }
-        Distance = gameState.GetActiveCamera()->Distance;
+        if (IsFirstPerson)
+        {
+            activeCamera->Distance = 2;
+        }
         if (changed)
         {
-            if (IsFirstPerson)
+            if (configuration.RecenterOnViewChange)
             {
-                ThirdToFirstPerson();
+                vrSpace.RecenterCamera();
             }
-            if (!IsFirstPerson)
-            {
-                FirstToThirdPerson();
-            }
-        }
-    }
-    public void FirstToThirdPerson()
-    {
-        if (configuration.RecenterOnViewChange)
-        {
-            vrSpace.RecenterCamera();
-        }
-        if (configuration.DisableAutoFaceTargetInFirstPerson)
-        {
-            gameConfig.Set(UiControlOption.AutoFaceTargetOnAction, true);
+            UpdateFirstPersonSettings();
         }
     }
 
-
-    public void ThirdToFirstPerson()
+    private uint StandardMoveMode = 0;
+    public void UpdateFirstPersonSettings(bool forceDisable = false)
     {
-        if (configuration.RecenterOnViewChange)
+        if (IsFirstPerson && !forceDisable)
         {
-            vrSpace.RecenterCamera();
+            if (configuration.DisableAutoFaceTargetInFirstPerson)
+            {
+                gameConfigManager.SetSetting(UiControlOption.AutoFaceTargetOnAction.ToString(), 0);
+            }
+            if (configuration.EnableStandardMovementInFirstPerson)
+            {
+                gameConfigManager.SetSetting(UiControlOption.MoveMode.ToString(), StandardMoveMode);
+            }
         }
-        if (configuration.DisableAutoFaceTargetInFirstPerson)
+        else
         {
-            gameConfig.Set(UiControlOption.AutoFaceTargetOnAction, false);
+            gameConfigManager.Revert(UiControlOption.AutoFaceTargetOnAction.ToString());
+            gameConfigManager.Revert(UiControlOption.MoveMode.ToString());
         }
     }
 

@@ -14,7 +14,7 @@ public class Transitions(
 
     public bool PreStartVR()
     {
-        gameConfigManager.Apply();
+        gameConfigManager.ApplyVRSettings();
         if (!gameConfig.TryGet(SystemConfigOption.ScreenMode, out uint screenMode))
         {
             logger.Error("Failed to lookup screen mode");
@@ -43,7 +43,6 @@ public class Transitions(
     internal void PostStopVR()
     {
         hudLayoutManager.RequestHudLayoutUpdate();
-        // MaybeEnableAutoFaceTarget();
         gameConfigManager.Revert();
     }
 
@@ -52,13 +51,12 @@ public class Transitions(
         hudLayoutManager.RequestHudLayoutUpdate();
         if (vrLifecycle.IsEnabled())
         {
-            gameConfigManager.Apply();
+            gameConfigManager.ApplyVRSettings();
         }
     }
 
     internal void OnLogout()
     {
-        // MaybeEnableAutoFaceTarget();
         gameConfigManager.Revert();
     }
 }

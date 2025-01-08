@@ -194,7 +194,7 @@ public unsafe class VRSession(
             {
                 if (firstPersonManager.IsFirstPerson && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation))
                 {
-                    gameModifier.ResetVerticalCameraRotation(0);
+                    gameModifier.ResetVerticalCameraRotation(float.DegreesToRadians(15));
                 }
                 else if (configuration.DisableCameraDirectionFlyingThirdPerson || cameraType.ShouldLockCameraVerticalRotation)
                 {

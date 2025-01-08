@@ -16,6 +16,7 @@ public class Configuration : IPluginConfiguration
     public bool LockToHead = true;
     public bool RecenterOnViewChange = true;
     public bool DisableAutoFaceTargetInFirstPerson = false;
+    public bool EnableStandardMovementInFirstPerson = true;
     public bool StartVRAtBoot = false;
     public bool FitWindowOnScreen = true;
 

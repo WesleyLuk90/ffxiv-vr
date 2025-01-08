@@ -1,4 +1,5 @@
 using Dalamud.Game.Command;
+using Dalamud.Game.Config;
 using Dalamud.Plugin.Services;
 using System;
 using System.Linq;
@@ -15,7 +16,8 @@ public class CommandHander(
     ConfigManager configManager,
     FreeCamera freeCamera,
     GameState gameState,
-    DebugWindow debugWindow
+    DebugWindow debugWindow,
+    IGameConfig gameConfig
 ) : IDisposable
 {
     private const string CommandName = "/vr";
@@ -74,21 +76,15 @@ public class CommandHander(
                 case "debug":
                     debugWindow.Toggle();
                     break;
-                case "firstperson":
-                    var mode = gameState.GetInternalGameCamera()->CameraMode;
-                    switch (mode)
+                case "movemode":
+                    if (gameConfig.TryGet(UiControlOption.MoveMode, out bool moveMode))
                     {
-                        case CameraView.FirstPerson:
-                            gameState.GetInternalGameCamera()->CameraMode = CameraView.ThirdPerson;
-                            logger.Info("Switched to third person");
-                            break;
-                        case CameraView.ThirdPerson:
-                            gameState.GetInternalGameCamera()->CameraMode = CameraView.FirstPerson;
-                            logger.Info("Switched to first person");
-                            break;
-                        default:
-                            logger.Error($"Unknown camera mode {mode}");
-                            break;
+                        gameConfig.Set(UiControlOption.MoveMode, !moveMode);
+                        logger.Info($"Move mode is {moveMode} -> {!moveMode}");
+                    }
+                    else
+                    {
+                        logger.Error("Failed to get move mode");
                     }
                     break;
                 default:

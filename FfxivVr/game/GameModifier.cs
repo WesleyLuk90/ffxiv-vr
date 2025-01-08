@@ -113,7 +113,6 @@ public unsafe class GameModifier(
         {
             return;
         }
-        debugging.DebugShow("First Person", firstPersonManager.IsFirstPerson);
         if (!firstPersonManager.IsFirstPerson && !force)
         {
             return;
