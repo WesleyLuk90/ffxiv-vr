@@ -34,7 +34,8 @@ public unsafe class VRSession(
     GameClock gameClock,
     VRInputService vrInputService,
     DalamudRenderer dalamudRenderer,
-    FirstPersonManager firstPersonManager
+    FirstPersonManager firstPersonManager,
+    Debugging debugging
 )
 {
     public VRState State = State;
@@ -116,6 +117,10 @@ public unsafe class VRSession(
 
     internal void UpdateVisibility()
     {
+        if (Conditions.IsOccupiedInCutSceneEvent)
+        {
+            return;
+        }
         if (State.SessionRunning)
         {
             gameModifier.UpdateCharacterVisibility(configuration.ShowBodyInFirstPerson);
@@ -125,7 +130,7 @@ public unsafe class VRSession(
                 gameModifier.HideHeadMesh();
             }
 
-            if (cameraPhase is CameraPhase phase && firstPersonManager.IsFirstPerson)
+            if (cameraPhase is CameraPhase phase && (firstPersonManager.IsFirstPerson || debugging.AlwaysMotionControls))
             {
                 var camera = gameState.GetCurrentCamera();
                 var position = camera->Position.ToVector3D();

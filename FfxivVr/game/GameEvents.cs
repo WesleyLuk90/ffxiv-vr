@@ -1,5 +1,7 @@
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Common.Math;
 using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
@@ -17,7 +19,9 @@ public class GameEvents(
     GamepadManager gamepadManager,
     FreeCamera freeCamera,
     IGamepadState gamepadState,
-    Logger logger
+    Logger logger,
+    GameState gameState,
+    Debugging debugging
 ) : IDisposable
 {
 
@@ -52,6 +56,21 @@ public class GameEvents(
             UpdateFreeCam(framework);
 
             hudLayoutManager.Update();
+
+            var current = gameState.GetCurrentCamera();
+            if (current != null)
+            {
+                debugging.DebugShow("Camera Address", ((ulong)current).ToString("X"));
+                debugging.DebugShow("Position", current->Position.ToVector3D());
+                debugging.DebugShow("Target", current->LookAtVector.ToVector3D());
+            }
+            var character = (Character*)(clientState.LocalPlayer?.Address ?? 0);
+            if (character != null)
+            {
+                var pos = new Vector3();
+                character->GetCenterPosition(&pos);
+                debugging.DebugShow("Player Position", pos.ToVector3D());
+            }
         });
     }
 
