@@ -29,7 +29,7 @@ public unsafe class HandTrackingSkeletonModifier(
         new HandJoint(HandJointEXT.IndexIntermediateExt,  HumanBones.IndexFingerLeftB, HumanBones.IndexFingerRightB),
         new HandJoint(HandJointEXT.ThumbDistalExt,  HumanBones.ThumbLeftB, HumanBones.ThumbRightB),
     };
-    public void Apply(hkaPose* pose, SkeletonStructure structure, Quaternion<float> skeletonRotation, Vector3D<float> head, HandTracking.HandPose handPose, RuntimeAdjustments runtimeAdjustments)
+    public void Apply(hkaPose* pose, SkeletonStructure structure, Quaternion<float> skeletonRotation, Vector3D<float> head, HandPose handPose, RuntimeAdjustments runtimeAdjustments)
     {
         skeletonModifier.ResetPoseTree(pose, structure, HumanBones.ArmLeft, b => !b.Contains(HumanBones.WeaponBoneSubstring));
         skeletonModifier.ResetPoseTree(pose, structure, HumanBones.ArmRight, b => !b.Contains(HumanBones.WeaponBoneSubstring));

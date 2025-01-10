@@ -22,7 +22,7 @@ public class InputManagerTests
 
     private static VRInputData CreateVrInputData(VRActionsState vrActionsState)
     {
-        return new VRInputData(new HandTracking.HandPose(null, null, false), new PalmPose(null, null), null, new AimPose(null, null, null), vrActionsState);
+        return new VRInputData(new HandPose(null, null, false), new PalmPose(null, null), null, new AimPose(null, null, null), vrActionsState);
     }
     private static InputManager MockInputManager(Configuration config)
     {

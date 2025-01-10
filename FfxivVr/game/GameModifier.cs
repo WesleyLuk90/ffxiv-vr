@@ -210,7 +210,7 @@ public unsafe class GameModifier(
         }
         if (configuration.BodyTracking && vrInputData.BodyJoints is { } bodyJoints)
         {
-            bodySkeletonModifier.Apply(pose, structure, skeletonRotation, bodyJoints);
+            bodySkeletonModifier.Apply(pose, structure, skeletonRotation, bodyJoints, vrInputData.HandPose);
         }
         else if (configuration.HandTracking && vrInputData.HandPose.HasData())
         {

@@ -1,5 +1,4 @@
 using Silk.NET.OpenXR;
-using static FfxivVR.HandTracking;
 
 namespace FfxivVR;
 
