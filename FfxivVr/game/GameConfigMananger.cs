@@ -212,41 +212,79 @@ public class GameConfigManager(
         Options.Add(new GameOption(UiConfigOption.NamePlateDispTypeOther, gameConfig).Initialize("Other PC Nameplates", ["Always", "During Battle", "When Targeted", "Never", "Out of Battle"]));
     }
 
-    private Dictionary<string, uint>? OriginalSettings;
-    public void Apply()
+    private Dictionary<string, uint> OriginalSettings = new();
+    public void ApplyVRSettings()
     {
         Initialize();
-        if (OriginalSettings != null)
-        {
-            return;
-        }
-
-        var original = new Dictionary<string, uint>();
         Options.ForEach(o =>
         {
             if (configuration.GetVRGameSetting(o.GetID()) is uint value)
             {
-                logger.Debug($"Setting {o.GetID()} to {value}");
-                original[o.GetID()] = o.GetCurrentValue();
-                o.SetValue(value);
+                SetSetting(o.GetID(), value);
             }
         });
-        OriginalSettings = original;
     }
+
+    public void SetSetting(string id, uint value)
+    {
+        var originalValue = RealSetSetting(id, value);
+        if (!OriginalSettings.ContainsKey(id))
+        {
+            OriginalSettings[id] = originalValue;
+        }
+    }
+    private uint RealSetSetting(string id, uint value)
+    {
+        logger.Debug($"Setting {id} to {value}");
+        if (Enum.TryParse(id, out SystemConfigOption systemConfigOption))
+        {
+            if (!gameConfig.TryGet(systemConfigOption, out uint currentValue))
+            {
+                throw new Exception($"Failed to get current value of {systemConfigOption}");
+            }
+            gameConfig.Set(systemConfigOption, value);
+            return currentValue;
+        }
+        else if (Enum.TryParse(id, out UiControlOption uiControlOption))
+        {
+            if (!gameConfig.TryGet(uiControlOption, out uint currentValue))
+            {
+                throw new Exception($"Failed to get current value of {uiControlOption}");
+            }
+            gameConfig.Set(uiControlOption, value);
+            return currentValue;
+        }
+        else if (Enum.TryParse(id, out UiConfigOption uiConfigOption))
+        {
+            if (!gameConfig.TryGet(uiConfigOption, out uint currentValue))
+            {
+                throw new Exception($"Failed to get current value of {uiConfigOption}");
+            }
+            gameConfig.Set(uiConfigOption, value);
+            return currentValue;
+        }
+        else
+        {
+            throw new Exception($"Unknown setting {id}");
+        }
+    }
+
+    public void Revert(string id)
+    {
+        if (OriginalSettings.TryGetValue(id, out uint value))
+        {
+            RealSetSetting(id, value);
+            OriginalSettings.Remove(id);
+        }
+    }
+
     public void Revert()
     {
-        if (OriginalSettings is Dictionary<string, uint> toRevert)
+        logger.Debug($"Reverting settings");
+        foreach (var kv in OriginalSettings)
         {
-            OriginalSettings = null;
-            Options.ForEach(o =>
-            {
-                if (toRevert.ContainsKey(o.GetID()))
-                {
-                    var value = toRevert[o.GetID()];
-                    logger.Debug($"Reverting {o.GetID()} to {value}");
-                    o.SetValue(value);
-                }
-            });
+            RealSetSetting(kv.Key, kv.Value);
         }
+        OriginalSettings.Clear();
     }
 }

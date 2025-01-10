@@ -6,10 +6,11 @@ namespace FfxivVR;
 public class Transitions(
     VRLifecycle vrLifecycle,
     Configuration configuration,
-    IGameConfig gameConfig,
     Logger logger,
     HudLayoutManager hudLayoutManager,
-    GameConfigManager gameConfigManager
+    GameConfigManager gameConfigManager,
+    IGameConfig gameConfig,
+    GameState gameState
 )
 {
     public void FirstToThirdPerson()
@@ -22,14 +23,18 @@ public class Transitions(
         {
             vrLifecycle.RecenterCamera();
         }
-        MaybeEnableAutoFaceTarget();
+        UpdateAutoFaceTarget();
     }
 
-    private void MaybeEnableAutoFaceTarget()
+    private void UpdateAutoFaceTarget()
     {
-        if (configuration.DisableAutoFaceTargetInFirstPerson)
+        if (configuration.DisableAutoFaceTargetInFirstPerson && vrLifecycle.IsEnabled() && gameState.IsFirstPerson())
         {
-            gameConfig.Set(UiControlOption.AutoFaceTargetOnAction, true);
+            gameConfigManager.SetSetting(UiControlOption.AutoFaceTargetOnAction.ToString(), 0);
+        }
+        else
+        {
+            gameConfigManager.Revert(UiControlOption.AutoFaceTargetOnAction.ToString());
         }
     }
 
@@ -43,15 +48,12 @@ public class Transitions(
         {
             vrLifecycle.RecenterCamera();
         }
-        if (configuration.DisableAutoFaceTargetInFirstPerson)
-        {
-            gameConfig.Set(UiControlOption.AutoFaceTargetOnAction, false);
-        }
+        UpdateAutoFaceTarget();
     }
 
     public bool PreStartVR()
     {
-        gameConfigManager.Apply();
+        gameConfigManager.ApplyVRSettings();
         if (!gameConfig.TryGet(SystemConfigOption.ScreenMode, out uint screenMode))
         {
             logger.Error("Failed to lookup screen mode");
@@ -80,7 +82,7 @@ public class Transitions(
     internal void PostStopVR()
     {
         hudLayoutManager.RequestHudLayoutUpdate();
-        MaybeEnableAutoFaceTarget();
+        UpdateAutoFaceTarget();
         gameConfigManager.Revert();
     }
 
@@ -89,13 +91,13 @@ public class Transitions(
         hudLayoutManager.RequestHudLayoutUpdate();
         if (vrLifecycle.IsEnabled())
         {
-            gameConfigManager.Apply();
+            gameConfigManager.ApplyVRSettings();
+            UpdateAutoFaceTarget();
         }
     }
 
     internal void OnLogout()
     {
-        MaybeEnableAutoFaceTarget();
         gameConfigManager.Revert();
     }
 }
