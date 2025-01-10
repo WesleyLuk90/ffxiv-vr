@@ -15,7 +15,8 @@ public unsafe class VRSystem(
     DxDevice device,
     Logger logger,
     HookStatus hookStatus,
-    Configuration configuration) : IDisposable
+    Configuration configuration
+) : IDisposable
 {
     public Session Session = new Session();
     internal ViewConfigurationType ViewConfigurationType = ViewConfigurationType.PrimaryStereo;

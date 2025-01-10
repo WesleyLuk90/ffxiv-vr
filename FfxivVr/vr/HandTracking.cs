@@ -77,8 +77,13 @@ public unsafe class HandTracking(
         var rightValid = rightHand.Any(j => j.LocationFlags != 0);
         bool isFromController = (leftDataSource.IsActive != 0 && leftDataSource.DataSource == HandTrackingDataSourceEXT.ControllerExt) ||
             (rightDataSource.IsActive != 0 && rightDataSource.DataSource == HandTrackingDataSourceEXT.ControllerExt);
-        return new HandPose(leftValid ? leftHand : null, rightValid ? rightHand : null, isFromController: isFromController);
+        // This seems to sometimes return true for a frame after the controller is no longer being tracked so make sure this is true for at least 2 frames as a work around
+        var currentIsFromController = isFromController && LastIsFromController;
+        LastIsFromController = isFromController;
+        return new HandPose(leftValid ? leftHand : null, rightValid ? rightHand : null, isFromController: currentIsFromController);
     }
+
+    private bool LastIsFromController = false;
 
     public class HandPose(HandJointLocationEXT[]? LeftHand, HandJointLocationEXT[]? RightHand, bool isFromController)
     {
