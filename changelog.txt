@@ -1,2 +1,2 @@
-[Fix] Combine VR controller with gamepad buttons
-[Feature] Add lock to head option
+[Fix] Make hands work during body tracking with controllers
+[Fix] Fix hand tracking interfering with controls
