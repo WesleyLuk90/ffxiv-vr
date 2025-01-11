@@ -125,7 +125,7 @@ public unsafe class VRSession(
                 gameModifier.HideHeadMesh();
             }
 
-            if (cameraPhase is CameraPhase phase && gameState.IsFirstPerson())
+            if (cameraPhase is CameraPhase phase && gameState.IsFirstPerson() && (!configuration.DisableMotionTrackingInCombat || !Conditions.IsInCombat))
             {
                 var camera = gameState.GetCurrentCamera();
                 var position = camera->Position.ToVector3D();
