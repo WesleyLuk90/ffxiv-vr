@@ -18,7 +18,7 @@ public class InputManager(
 {
     public unsafe void UpdateGamepad(GamepadInput* gamepadInput, VRInputData vrInput)
     {
-        var state = vrInput.GetPhysicalActionsState();
+        var state = vrInput.GetPhysicalActionsState(configuration.DisableControllersWhenTracking);
         var pressedActions = ApplyBindings(state);
         var actionsState = ApplyStates(pressedActions, gamepadInput);
         UpdateMousePosition(actionsState, vrInput.AimPose);

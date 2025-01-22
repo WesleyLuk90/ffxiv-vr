@@ -217,6 +217,7 @@ public class ConfigWindow : Window
                     Checkbox("Enable Head Mouse Control", ref config.HeadMouseControl, "Use your head to control the mouse cursor.");
                     Slider("Left Stick Deadzone", ref config.LeftStickDeadzone, defaultValue: 0, min: 0, max: 1);
                     Slider("Right Stick Deadzone", ref config.RightStickDeadzone, defaultValue: 0, min: 0, max: 1);
+                    Checkbox("Disable VR controllers while hand tracking", ref config.DisableControllersWhenTracking, "Disables controllers while hand tracking is active, prevents hand tracking gestures from triggering buttons.");
                 }
             }
         }

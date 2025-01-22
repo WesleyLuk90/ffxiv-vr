@@ -23,6 +23,8 @@ public class Configuration : IPluginConfiguration
     public bool BodyTracking = false;
     public bool ControllerTracking = false;
 
+    public bool DisableControllersWhenTracking = true;
+
     public bool DisableMotionTrackingInCombat = false;
 
     public bool MatchFloorPosition = false;

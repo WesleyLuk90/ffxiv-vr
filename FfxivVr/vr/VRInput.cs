@@ -16,9 +16,9 @@ public class VRInputData(
     public BodyJointLocationFB[]? BodyJoints { get; } = bodyJoints;
     public VRActionsState VrActionsState { get; } = vrActionsState;
 
-    public VRActionsState GetPhysicalActionsState()
+    public VRActionsState GetPhysicalActionsState(bool disableControllersWhenTracking)
     {
-        if (HandPose.IsHandTracking())
+        if (HandPose.IsHandTracking() && disableControllersWhenTracking)
         {
             return new VRActionsState();
         }
