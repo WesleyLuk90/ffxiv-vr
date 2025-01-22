@@ -1,2 +1,2 @@
-[Fix] Make hands work during body tracking with controllers
-[Fix] Fix hand tracking interfering with controls
+[Feature] Add option to toggle vr controllers while hand tracking
+[Feature] Add option to disable motion tracking in combat
