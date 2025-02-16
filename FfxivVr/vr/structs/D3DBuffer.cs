@@ -3,22 +3,13 @@ using System;
 
 namespace FfxivVR;
 
-public unsafe partial class Resources
+unsafe class D3DBuffer(ID3D11Buffer* buffer, uint length) : IDisposable
 {
-    class D3DBuffer : IDisposable
+    public ID3D11Buffer* Handle = buffer;
+    public uint Length = length;
+
+    public void Dispose()
     {
-        public ID3D11Buffer* Handle;
-        public uint Length;
-
-        internal D3DBuffer(ID3D11Buffer* buffer, uint length)
-        {
-            this.Handle = buffer;
-            this.Length = length;
-        }
-
-        public void Dispose()
-        {
-            Handle->Release();
-        }
+        Handle->Release();
     }
 }
