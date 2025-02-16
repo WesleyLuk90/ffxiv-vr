@@ -26,6 +26,7 @@ public unsafe class Renderer(
     {
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection,
+            deform: Matrix4X4<float>.Identity,
             curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
@@ -35,10 +36,11 @@ public unsafe class Renderer(
         resources.SetSampler(context, shaderResourceView);
         resources.DrawSquare(context);
     }
-    private void RenderUILayer(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
+    private void RenderUILayer(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, Matrix4X4<float> deform, bool invertAlpha = false, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection,
+            deform: deform,
             curvature: configuration.UICurvature
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
@@ -170,11 +172,12 @@ public unsafe class Renderer(
     }
     private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj)
     {
-        var matrix = vrUI.GetTransformationMatrix() * viewProj;
+        var matrix = vrUI.GetModelMatrix() * viewProj;
+        var deformMatrix = vrUI.GetDeformMatrix();
         resources.SetCompositingBlendState(context);
-        RenderUILayer(context, resources.UIRenderTarget.ShaderResourceView, matrix, false);
-        RenderUILayer(context, resources.DalamudRenderTarget.ShaderResourceView, resolutionManager.GetDalamudScale() * matrix, true);
-        RenderUILayer(context, resources.CursorRenderTarget.ShaderResourceView, matrix, false);
+        RenderUILayer(context, resources.UIRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix, false);
+        RenderUILayer(context, resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: resolutionManager.GetDalamudScale() * deformMatrix, true);
+        RenderUILayer(context, resources.CursorRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix, false);
     }
 
     private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)
@@ -219,6 +222,8 @@ public unsafe class Renderer(
                 Matrix4X4.CreateTranslation(position);
             resources.UpdateCamera(context, new CameraConstants(
                 modelViewProjection: scale,
+                deform: Matrix4X4<float>.Identity,
+
                 curvature: 0
             ));
             resources.SetStandardBlendState(context);
@@ -238,6 +243,7 @@ public unsafe class Renderer(
         var scale = Matrix4X4.CreateScale(size) * Matrix4X4.CreateTranslation(position) * viewProjectionMatrix;
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: scale,
+            deform: Matrix4X4<float>.Identity,
             curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
@@ -259,6 +265,7 @@ public unsafe class Renderer(
         * viewProjectionMatrix;
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: scale,
+            deform: Matrix4X4<float>.Identity,
             curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
