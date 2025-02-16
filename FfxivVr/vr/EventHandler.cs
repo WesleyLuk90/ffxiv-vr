@@ -10,8 +10,7 @@ public class EventHandler(
     VRState vrState,
     VRSpace vrSpace,
     WaitFrameService waitFrameService,
-    VRActionService vrInput,
-    VRCamera vrCamera)
+    VRActionService vrInput)
 {
     internal unsafe void PollEvents(System.Action onSessionEnd)
     {
@@ -55,7 +54,6 @@ public class EventHandler(
                 case StructureType.EventDataReferenceSpaceChangePending:
                     {
                         vrSpace.ResetCamera();
-                        vrCamera.ResetSavedHeadPosition();
                         break;
                     }
                 case StructureType.EventDataSessionStateChanged:

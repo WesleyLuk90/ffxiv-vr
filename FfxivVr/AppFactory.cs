@@ -69,7 +69,6 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<GameConfigManager>();
         builder.Services.AddSingleton<GameEvents>();
         builder.Services.AddSingleton<GameHooks>();
-        builder.Services.AddSingleton<GameModifier>();
         builder.Services.AddSingleton<GamepadManager>();
         builder.Services.AddSingleton<GameState>();
         builder.Services.AddSingleton<HookStatus>();
@@ -109,6 +108,8 @@ public unsafe class AppFactory
         builder.Services.AddScoped<BodySkeletonModifier>();
         builder.Services.AddScoped<HandTrackingSkeletonModifier>();
         builder.Services.AddScoped<ControllerTrackingSkeletonModifier>();
+        builder.Services.AddScoped<GameModifier>();
+        builder.Services.AddScoped<FirstPersonManager>();
         return builder.Build();
     }
 

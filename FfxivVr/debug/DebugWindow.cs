@@ -55,6 +55,7 @@ public class DebugWindow : Window
                 {
                     ImGui.Checkbox("Trace Logging", ref debugging.Trace);
                     ImGui.Checkbox("Force Hide Head", ref debugging.HideHead);
+                    ImGui.Checkbox("Always Motion Controls", ref debugging.AlwaysMotionControls);
                     ImGui.Checkbox("Enable tracking in 3rd person", ref debugging.ForceTracking);
                     ImGui.InputInt("Index", ref debugging.Index);
                     ImGui.SliderFloat("Float", ref debugging.Float, -1, 1);
@@ -76,6 +77,7 @@ public class Debugging(
     public int Index = 0;
     public float Float = 0;
     public bool HideHead = false;
+    public bool AlwaysMotionControls = false;
 
     public bool Trace = false;
 

@@ -1,4 +1,4 @@
-namespace Tests;
+namespace FfxivVR.Tests;
 
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;

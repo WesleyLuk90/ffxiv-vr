@@ -19,7 +19,9 @@ public unsafe class GameModifier(
     BodySkeletonModifier bodySkeletonModifier,
     HandTrackingSkeletonModifier handTrackingSkeletonModifier,
     ControllerTrackingSkeletonModifier controllerTrackingSkeletonModifier,
-    Configuration configuration
+    Configuration configuration,
+    FirstPersonManager firstPersonManager,
+    Debugging debugging
 )
 {
     public void UpdateCharacterVisibility(bool showInFirstPerson)
@@ -28,7 +30,7 @@ public unsafe class GameModifier(
         {
             return;
         }
-        if (gameState.IsFirstPerson() && !showInFirstPerson)
+        if (firstPersonManager.IsFirstPerson && !showInFirstPerson)
         {
             return;
         }
@@ -38,7 +40,7 @@ public unsafe class GameModifier(
         {
             gameVisibililty.UpdateVisbility(clientState.LocalPlayer, false);
         }
-        Character* character = getCharacterOrGpose();
+        Character* character = gameState.getCharacterOrGpose();
 
         SetCharacterVisible(character);
 
@@ -85,33 +87,13 @@ public unsafe class GameModifier(
         }
     }
 
-
-    public Character* getCharacterOrGpose()
-    {
-        Character* character = gameState.GetGposeTarget();
-        if (gameState.IsGPosing() && character == null)
-        {
-            return null;
-        }
-        if (character != null)
-        {
-            return character;
-        }
-        var player = clientState.LocalPlayer;
-        if (player == null)
-        {
-            return null;
-        }
-        return (Character*)player!.Address;
-    }
-
     public void HideHeadMesh(bool force = false)
     {
         if (gameState.IsInCutscene() && !force)
         {
             return;
         }
-        if (!gameState.IsFirstPerson() && !force)
+        if (!firstPersonManager.IsFirstPerson && !force)
         {
             return;
         }
@@ -126,7 +108,7 @@ public unsafe class GameModifier(
 
     public CharacterBase* GetCharacterBase()
     {
-        Character* character = getCharacterOrGpose();
+        Character* character = gameState.getCharacterOrGpose();
         if (character == null)
         {
             return null;
@@ -144,7 +126,7 @@ public unsafe class GameModifier(
         {
             return null;
         }
-        var character = getCharacterOrGpose();
+        var character = gameState.getCharacterOrGpose();
         if (character == null)
         {
             return null;
@@ -182,7 +164,7 @@ public unsafe class GameModifier(
 
     internal void UpdateMotionControls(VRInputData vrInputData, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
     {
-        Character* character = getCharacterOrGpose();
+        Character* character = gameState.getCharacterOrGpose();
         if (character == null)
         {
             return;

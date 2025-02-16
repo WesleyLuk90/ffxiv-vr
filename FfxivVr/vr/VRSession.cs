@@ -33,7 +33,9 @@ public unsafe class VRSession(
     VRUI vrUI,
     GameClock gameClock,
     VRInputService vrInputService,
-    DalamudRenderer dalamudRenderer
+    DalamudRenderer dalamudRenderer,
+    FirstPersonManager firstPersonManager,
+    Debugging debugging
 )
 {
     public VRState State = State;
@@ -110,12 +112,15 @@ public unsafe class VRSession(
 
     internal void RecenterCamera()
     {
-        vrSpace.RecenterCamera(vrSystem.Now());
-        vrCamera.ResetSavedHeadPosition();
+        vrSpace.RecenterCamera();
     }
 
     internal void UpdateVisibility()
     {
+        if (Conditions.IsOccupiedInCutSceneEvent)
+        {
+            return;
+        }
         if (State.SessionRunning)
         {
             gameModifier.UpdateCharacterVisibility(configuration.ShowBodyInFirstPerson);
@@ -125,7 +130,7 @@ public unsafe class VRSession(
                 gameModifier.HideHeadMesh();
             }
 
-            if (cameraPhase is CameraPhase phase && gameState.IsFirstPerson() && (!configuration.DisableMotionTrackingInCombat || !Conditions.IsInCombat))
+            if (cameraPhase is CameraPhase phase && EnableMotionTracking())
             {
                 var camera = gameState.GetCurrentCamera();
                 var position = camera->Position.ToVector3D();
@@ -142,6 +147,15 @@ public unsafe class VRSession(
                     gameCamera.GetYRotation());
             }
         }
+    }
+
+    private bool EnableMotionTracking()
+    {
+        if (debugging.AlwaysMotionControls)
+        {
+            return true;
+        }
+        return firstPersonManager.IsFirstPerson && (!configuration.DisableMotionTrackingInCombat || !Conditions.IsInCombat);
     }
 
     internal void PreUIRender()
@@ -172,6 +186,7 @@ public unsafe class VRSession(
     internal void PrepareVRRender()
     {
         var ticks = gameClock.GetTicks();
+        firstPersonManager.Update();
         if (State.SessionRunning)
         {
             logger.Trace("Starting cycle");
@@ -191,9 +206,9 @@ public unsafe class VRSession(
 
             if (Conditions.IsInFlight || Conditions.IsDiving)
             {
-                if (gameState.IsFirstPerson() && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation))
+                if (firstPersonManager.IsFirstPerson && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation))
                 {
-                    gameModifier.ResetVerticalCameraRotation(0);
+                    gameModifier.ResetVerticalCameraRotation(float.DegreesToRadians(15));
                 }
                 else if (configuration.DisableCameraDirectionFlyingThirdPerson || cameraType.ShouldLockCameraVerticalRotation)
                 {

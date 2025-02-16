@@ -5,7 +5,13 @@ using Silk.NET.OpenXR;
 using System;
 
 namespace FfxivVR;
-public class VRCamera(Configuration configuration, GameModifier gameModifier, GameState gameState, FreeCamera freeCamera)
+public class VRCamera(
+Configuration configuration,
+GameModifier gameModifier,
+GameState gameState,
+FreeCamera freeCamera,
+FirstPersonManager firstPersonManager
+)
 {
     private float near = 0.1f;
 
@@ -68,15 +74,15 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         {
             return new OrbitCamera();
         }
-        else if (gameState.IsFirstPerson() && (hasBodyData || configuration.LockToHead))
+        else if (firstPersonManager.IsFirstPerson && (hasBodyData || configuration.LockToHead))
         {
             return new BodyTrackingCamera();
         }
-        else if (gameState.IsFirstPerson() && configuration.FollowCharacter)
+        else if (firstPersonManager.IsFirstPerson && configuration.FollowCharacter)
         {
             return new FollowingFirstPersonCamera();
         }
-        else if (gameState.IsFirstPerson())
+        else if (firstPersonManager.IsFirstPerson)
         {
             return new FirstPersonCamera();
         }
@@ -98,7 +104,6 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
         }
     }
 
-    private Vector3D<float>? savedHeadPosition = null;
 
     public unsafe GameCamera? CreateGameCamera()
     {
@@ -112,10 +117,6 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
 
         var transform = gameModifier.GetCharacterPositionTransform();
         var head = gameModifier.GetHeadOffset();
-        if (savedHeadPosition == null)
-        {
-            savedHeadPosition = head;
-        }
         Vector3D<float>? globalHead = null;
         if (transform is { } t)
         {
@@ -124,12 +125,7 @@ public class VRCamera(Configuration configuration, GameModifier gameModifier, Ga
                 globalHead = Vector3D.Transform(h, t);
             }
         }
-        return new GameCamera(position, lookAt, globalHead);
-    }
-
-    internal void ResetSavedHeadPosition()
-    {
-        savedHeadPosition = null;
+        return new GameCamera(position, lookAt, globalHead, gameState.GetFixedHeadPosition());
     }
 
     internal unsafe void UpdateCamera(Camera* camera, GameCamera? gameCamera, VRCameraMode cameraType, View view)

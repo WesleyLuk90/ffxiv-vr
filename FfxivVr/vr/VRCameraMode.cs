@@ -4,13 +4,14 @@ using System;
 namespace FfxivVR;
 
 // Need to be careful here as the game camera values change slightly between the left and right frame rendering
-public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition)
+public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition, Vector3D<float> fixedHeadPosition)
 {
     public readonly Vector3D<float> GameCameraForwardVector = lookAt - position;
 
     public Vector3D<float> Position { get; } = position;
     public Vector3D<float> LookAt { get; } = lookAt;
     public Vector3D<float>? HeadPosition { get; } = headPosition;
+    public Vector3D<float> FixedHeadPosition { get; } = fixedHeadPosition;
     public virtual float GetYRotation()
     {
         return -MathF.PI / 2 - MathF.Atan2(GameCameraForwardVector.Z, GameCameraForwardVector.X);
@@ -56,10 +57,9 @@ class LevelOrbitCamera() : VRCameraMode
 }
 
 
-// This just works the same way as the orbit camera
 class FirstPersonCamera : LevelOrbitCamera
 {
-
+    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera) { return gameCamera.FixedHeadPosition; }
 }
 
 class FollowingFirstPersonCamera : VRCameraMode
@@ -73,7 +73,7 @@ class FollowingFirstPersonCamera : VRCameraMode
         }
         else
         {
-            return gameCamera.Position;
+            return gameCamera.FixedHeadPosition;
         }
     }
 }
