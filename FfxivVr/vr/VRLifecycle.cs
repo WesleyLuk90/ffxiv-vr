@@ -42,7 +42,7 @@ public unsafe class VRLifecycle(
             }
             else if (e is MissingDXHook)
             {
-                logger.Error("SteamVR requires Dalamud Settings > Wait for plugins before game loads to be enabled. Please enable the setting and restart the game.");
+                logger.Error("SteamVR requires 'Dalamud Settings > Wait for plugins before game loads' to be enabled. Please enable the setting and restart the game.");
             }
             else
             {
