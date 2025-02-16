@@ -32,11 +32,11 @@ public class VRUI(
     }
     public Matrix4X4<float> GetModelMatrix()
     {
-        return Matrix4X4.CreateTranslation(PlaneCenter) * Matrix4X4.CreateFromQuaternion(CurrentAngleRotation);
+        return Matrix4X4.CreateScale(configuration.UISize) * Matrix4X4.CreateFromQuaternion(CurrentAngleRotation) * Matrix4X4.CreateTranslation(PlaneCenter);
     }
     public Matrix4X4<float> GetDeformMatrix()
     {
-        return resources.UIRenderTarget.AspectRatioTransform() * Matrix4X4.CreateScale(configuration.UISize);
+        return resources.UIRenderTarget.AspectRatioTransform();
     }
 
     private Quaternion<float> CurrentAngleRotation => MathFactory.YRotation(currentAngle);
