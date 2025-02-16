@@ -3,6 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using Silk.NET.Maths;
 
 namespace FfxivVR;
 public unsafe class GameState(
@@ -36,6 +37,43 @@ public unsafe class GameState(
             return null;
         }
         return (Character*)target;
+    }
+
+    public Character* getCharacterOrGpose()
+    {
+        Character* character = GetGposeTarget();
+        if (IsGPosing() && character == null)
+        {
+            return null;
+        }
+        if (character != null)
+        {
+            return character;
+        }
+        var player = clientState.LocalPlayer;
+        if (player == null)
+        {
+            return null;
+        }
+        return (Character*)player!.Address;
+    }
+
+    public InternalCharacter* GetInternalCharacter()
+    {
+        return InternalCharacter.FromCharacter(getCharacterOrGpose());
+    }
+
+    public Vector3D<float> GetFixedHeadPosition()
+    {
+        var character = getCharacterOrGpose();
+        var internalCharacter = GetInternalCharacter();
+
+        if (character == null || internalCharacter == null)
+        {
+            // Provide a sane default here incase there is no character
+            return GetCurrentCamera()->LookAtVector.ToVector3D();
+        }
+        return character->Position.ToVector3D() + new Vector3D<float>(0, internalCharacter->FixHeadPosition, 0);
     }
 
     internal bool IsInCutscene()

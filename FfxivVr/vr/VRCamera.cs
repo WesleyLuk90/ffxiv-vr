@@ -125,7 +125,7 @@ FirstPersonManager firstPersonManager
                 globalHead = Vector3D.Transform(h, t);
             }
         }
-        return new GameCamera(position, lookAt, globalHead);
+        return new GameCamera(position, lookAt, globalHead, gameState.GetFixedHeadPosition());
     }
 
     internal unsafe void UpdateCamera(Camera* camera, GameCamera? gameCamera, VRCameraMode cameraType, View view)

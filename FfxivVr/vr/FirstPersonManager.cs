@@ -22,12 +22,14 @@ public unsafe class FirstPersonManager(
         var changed = false;
         var internalCamera = gameState.GetInternalGameCamera();
         var activeCamera = gameState.GetActiveCamera();
+        // Transition to first person can either be done by changing the camera to first person
         if (internalCamera->CameraMode == CameraView.FirstPerson)
         {
             internalCamera->CameraMode = CameraView.ThirdPerson;
             IsFirstPerson = !IsFirstPerson;
             changed = true;
         }
+        // Or zooming out while in first person
         else if (IsFirstPerson && activeCamera->Distance > 2)
         {
             IsFirstPerson = !IsFirstPerson;
@@ -35,14 +37,8 @@ public unsafe class FirstPersonManager(
         }
         if (IsFirstPerson)
         {
-            if (configuration.FollowCharacter)
-            {
-                activeCamera->Distance = 2;
-            }
-            else
-            {
-                activeCamera->Distance = 0;
-            }
+            // Fix the distance to 2 so we can detect the zoom
+            activeCamera->Distance = 2;
         }
         if (changed)
         {
@@ -59,9 +55,9 @@ public unsafe class FirstPersonManager(
     }
 
     private uint StandardMoveMode = 0;
-    public void UpdateFirstPersonSettings(bool forceDisable = false)
+    public void UpdateFirstPersonSettings()
     {
-        if (IsFirstPerson && !forceDisable)
+        if (IsFirstPerson)
         {
             if (configuration.DisableAutoFaceTargetInFirstPerson)
             {

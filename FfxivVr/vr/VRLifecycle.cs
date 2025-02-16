@@ -110,8 +110,6 @@ public unsafe class VRLifecycle(
     internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
         var active = gameState.GetActiveCamera();
-        debugging.DebugShow("Camera Target", camera->LookAtVector.ToVector3D());
-        debugging.DebugShow("Distance", active->Distance);
         lock (this)
         {
             vrSession?.UpdateCamera(camera);
