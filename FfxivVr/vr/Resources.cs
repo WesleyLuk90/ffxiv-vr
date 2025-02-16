@@ -16,6 +16,7 @@ public unsafe partial class Resources(
 
     private VertexBuffer? squareBuffer;
     private VertexBuffer? cylinderBuffer;
+    private VertexBuffer? uiBuffer;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
     private ID3D11DepthStencilState* depthStencilStateOff = null;
     private ID3D11BlendState* uiBlendState = null;
@@ -142,6 +143,7 @@ public unsafe partial class Resources(
         pixelShaderConstantsBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(PixelShaderConstants)]), BindFlag.ConstantBuffer);
         squareBuffer = CreateVertexBuffer(GeometryFactory.Plane());
         cylinderBuffer = CreateVertexBuffer(GeometryFactory.Cylinder(sides: 16));
+        uiBuffer = CreateVertexBuffer(GeometryFactory.SegmentedPlane(segments: 32));
     }
 
     private void CreateStencilState()
@@ -354,6 +356,17 @@ public unsafe partial class Resources(
             context->IASetVertexBuffers(0, 1, pHandle, &stride, &offsets);
             context->IASetPrimitiveTopology(Silk.NET.Core.Native.D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
             context->Draw(squareBuffer.VertexCount, 0);
+        }
+    }
+    public void DrawUI(ID3D11DeviceContext* context)
+    {
+        fixed (ID3D11Buffer** pHandle = &uiBuffer!.Handle)
+        {
+            uint stride = (uint)sizeof(Vertex);
+            uint offsets = 0;
+            context->IASetVertexBuffers(0, 1, pHandle, &stride, &offsets);
+            context->IASetPrimitiveTopology(Silk.NET.Core.Native.D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
+            context->Draw(uiBuffer.VertexCount, 0);
         }
     }
 

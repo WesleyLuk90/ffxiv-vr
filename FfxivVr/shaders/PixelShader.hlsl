@@ -7,7 +7,7 @@ struct VertexShaderOutput
 cbuffer PixelShaderConstants
 {
     int mode;
-    float gamma, a, b;
+    float gamma, curvature, b;
     float4 constantColor;
     float2 uvScale;
     float2 uvOffset;

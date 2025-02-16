@@ -22,7 +22,7 @@ public unsafe class Renderer(
     GameState gameState,
     VRUI vrUI)
 {
-    private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
+    private void RenderGame(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection
@@ -34,7 +34,18 @@ public unsafe class Renderer(
         resources.SetSampler(context, shaderResourceView);
         resources.DrawSquare(context);
     }
-
+    private void RenderUILayer(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
+    {
+        resources.UpdateCamera(context, new CameraConstants(
+            modelViewProjection: modelViewProjection
+        ));
+        resources.SetPixelShaderConstants(context, new PixelShaderConstants(
+            mode: invertAlpha ? ShaderMode.InvertedAlpha : ShaderMode.Texture,
+            gamma: configuration.Gamma,
+            color: new Vector4D<float>(1 - fade, 1 - fade, 1 - fade, 1)));
+        resources.SetSampler(context, shaderResourceView);
+        resources.DrawUI(context);
+    }
 
     internal void SkipFrame(FrameState frameState)
     {
@@ -119,7 +130,7 @@ public unsafe class Renderer(
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
 
         var currentEyeRenderTarget = resources.SceneRenderTargets[vrView.Eye.ToIndex()];
-        RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
+        RenderGame(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
         resources.SetCompositingBlendState(context);
         if (ShouldUseDepthTexture())
         {
@@ -159,9 +170,9 @@ public unsafe class Renderer(
     {
         var matrix = vrUI.GetTransformationMatrix() * viewProj;
         resources.SetCompositingBlendState(context);
-        RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, matrix, false);
-        RenderViewport(context, resources.DalamudRenderTarget.ShaderResourceView, resolutionManager.GetDalamudScale() * matrix, true);
-        RenderViewport(context, resources.CursorRenderTarget.ShaderResourceView, matrix, false);
+        RenderUILayer(context, resources.UIRenderTarget.ShaderResourceView, matrix, false);
+        RenderUILayer(context, resources.DalamudRenderTarget.ShaderResourceView, resolutionManager.GetDalamudScale() * matrix, true);
+        RenderUILayer(context, resources.CursorRenderTarget.ShaderResourceView, matrix, false);
     }
 
     private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)
