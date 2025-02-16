@@ -4,7 +4,6 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
-using static FfxivVR.Resources;
 
 namespace FfxivVR;
 
