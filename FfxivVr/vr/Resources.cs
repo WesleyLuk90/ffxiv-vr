@@ -7,40 +7,10 @@ using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 
-public enum ShaderMode
-{
-    Texture = 0,
-    Circle = 1,
-    InvertedAlpha = 2,
-    Fill = 3,
-}
-
-public unsafe class Resources(
+public unsafe partial class Resources(
     DxDevice device
 ) : IDisposable
 {
-    public struct CameraConstants
-    {
-        Matrix4X4<float> modelViewProjection;
-
-        public CameraConstants(Matrix4X4<float> modelViewProjection)
-        {
-            this.modelViewProjection = modelViewProjection;
-        }
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    public struct PixelShaderConstants(ShaderMode mode, float gamma, Vector4D<float> color, Vector2D<float>? uvOffset = null, Vector2D<float>? uvScale = null)
-    {
-        [FieldOffset(0)] int mode = (int)mode;
-        [FieldOffset(4)] float gamma = gamma;
-        [FieldOffset(8)] readonly float padding1 = 0;
-        [FieldOffset(12)] readonly float padding2 = 0;
-        [FieldOffset(16)] Vector4D<float> color = color;
-        [FieldOffset(32)] Vector2D<float> uvScale = uvScale ?? Vector2D<float>.One;
-        [FieldOffset(40)] Vector2D<float> uvOffset = uvOffset ?? Vector2D<float>.Zero;
-
-    }
 
     private D3DBuffer? cameraBuffer;
     private D3DBuffer? pixelShaderConstantsBuffer;
@@ -61,17 +31,6 @@ public unsafe class Resources(
     public RenderTarget CursorRenderTarget = null!;
     public RenderTarget[] SceneRenderTargets = [];
     public DepthTarget[] SceneDepthTargets = [];
-
-    public struct Vertex
-    {
-        public Vector3f Position;
-        public Vector2f UV;
-        public Vertex(Vector3f position, Vector2f uv)
-        {
-            Position = position;
-            UV = uv;
-        }
-    }
 
     public void Initialize(Vector2D<uint> size)
     {
@@ -118,68 +77,6 @@ public unsafe class Resources(
             depthStencilView,
             size
         );
-    }
-
-    public class RenderTarget : IDisposable
-    {
-        public RenderTarget(
-            ID3D11Texture2D* texture,
-            ID3D11RenderTargetView* renderTargetView,
-            ID3D11ShaderResourceView* shaderResourceView,
-            Vector2D<uint> size
-        )
-        {
-            Texture = texture;
-            RenderTargetView = renderTargetView;
-            ShaderResourceView = shaderResourceView;
-            Size = size;
-        }
-
-        public ID3D11Texture2D* Texture { get; }
-        public ID3D11RenderTargetView* RenderTargetView { get; }
-        public ID3D11ShaderResourceView* ShaderResourceView { get; }
-        public Vector2D<uint> Size { get; }
-
-        public float AspectRatio => (float)Size.Y / Size.X;
-
-        public Matrix4X4<float> AspectRatioTransform()
-        {
-            return Matrix4X4.CreateScale(1, AspectRatio, 1);
-        }
-        public void Dispose()
-        {
-            Texture->Release();
-            RenderTargetView->Release();
-            ShaderResourceView->Release();
-        }
-    }
-    public class DepthTarget : IDisposable
-    {
-        public DepthTarget(
-            ID3D11Texture2D* texture,
-            ID3D11DepthStencilView* depthStencilView,
-            Vector2D<uint> size
-        )
-        {
-            Texture = texture;
-            DepthStencilView = depthStencilView;
-            Size = size;
-        }
-
-        public ID3D11Texture2D* Texture { get; }
-        public ID3D11DepthStencilView* DepthStencilView { get; }
-        public ID3D11ShaderResourceView* ShaderResourceView { get; }
-        public Vector2D<uint> Size { get; }
-
-        public Matrix4X4<float> Scale()
-        {
-            return Matrix4X4.CreateScale(1, (float)Size.Y / Size.X, 1);
-        }
-        public void Dispose()
-        {
-            Texture->Release();
-            DepthStencilView->Release();
-        }
     }
 
     private RenderTarget CreateRenderTarget(Vector2D<uint> size)
@@ -399,23 +296,6 @@ public unsafe class Resources(
             blendOpAlpha: BlendOp.Add,
             renderTargetWriteMask: (byte)ColorWriteEnable.All
         ));
-    }
-
-    class D3DBuffer : IDisposable
-    {
-        public ID3D11Buffer* Handle;
-        public uint Length;
-
-        internal D3DBuffer(ID3D11Buffer* buffer, uint length)
-        {
-            this.Handle = buffer;
-            this.Length = length;
-        }
-
-        public void Dispose()
-        {
-            Handle->Release();
-        }
     }
 
     private D3DBuffer CreateBuffer(Span<byte> bytes, BindFlag bindFlag)
