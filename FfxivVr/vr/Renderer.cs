@@ -25,7 +25,8 @@ public unsafe class Renderer(
     private void RenderGame(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(
-            modelViewProjection: modelViewProjection
+            modelViewProjection: modelViewProjection,
+            curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: invertAlpha ? ShaderMode.InvertedAlpha : ShaderMode.Texture,
@@ -37,7 +38,8 @@ public unsafe class Renderer(
     private void RenderUILayer(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(
-            modelViewProjection: modelViewProjection
+            modelViewProjection: modelViewProjection,
+            curvature: configuration.UICurvature
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: invertAlpha ? ShaderMode.InvertedAlpha : ShaderMode.Texture,
@@ -216,7 +218,8 @@ public unsafe class Renderer(
             var scale = Matrix4X4.CreateScale(new Vector3D<float>(maybeCursor.Width / windowSize.X, maybeCursor.Height / windowSize.Y, 0f)) *
                 Matrix4X4.CreateTranslation(position);
             resources.UpdateCamera(context, new CameraConstants(
-                modelViewProjection: scale
+                modelViewProjection: scale,
+                curvature: 0
             ));
             resources.SetStandardBlendState(context);
             resources.SetSampler(context, maybeCursor.ShaderResourceView);
@@ -234,8 +237,8 @@ public unsafe class Renderer(
     {
         var scale = Matrix4X4.CreateScale(size) * Matrix4X4.CreateTranslation(position) * viewProjectionMatrix;
         resources.UpdateCamera(context, new CameraConstants(
-            modelViewProjection: scale
-
+            modelViewProjection: scale,
+            curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: ShaderMode.Circle,
@@ -255,7 +258,8 @@ public unsafe class Renderer(
         * Matrix4X4.CreateTranslation(start)
         * viewProjectionMatrix;
         resources.UpdateCamera(context, new CameraConstants(
-            modelViewProjection: scale
+            modelViewProjection: scale,
+            curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: ShaderMode.Fill,
