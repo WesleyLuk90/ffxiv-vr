@@ -16,9 +16,7 @@ public class GameEvents(
     HudLayoutManager hudLayoutManager,
     GamepadManager gamepadManager,
     FreeCamera freeCamera,
-    IGamepadState gamepadState,
-    GameState gameState,
-    Debugging debugging
+    IGamepadState gamepadState
 ) : IDisposable
 {
 
@@ -46,35 +44,11 @@ public class GameEvents(
     }
 
 
-    private Vector3D<float> fpPosition = new Vector3D<float>();
-    private Vector3D<float> thirdPersonTarget = new Vector3D<float>();
     private unsafe void FrameworkUpdate(IFramework framework)
     {
         exceptionHandler.FaultBarrier(() =>
         {
             UpdateFreeCam(framework);
-
-
-            var internalCamera = gameState.GetInternalGameCamera();
-            var currentCamera = gameState.GetCurrentCamera();
-            if (internalCamera->CameraMode == CameraView.FirstPerson)
-            {
-                fpPosition = currentCamera->Position.ToVector3D();
-            }
-            else
-            {
-                thirdPersonTarget = currentCamera->LookAtVector.ToVector3D();
-            }
-            var gamePos = clientState.LocalPlayer?.Position ?? new System.Numerics.Vector3();
-            var playerPos = new Vector3D<float>(gamePos.X, gamePos.Y, gamePos.Z);
-            debugging.DebugShow("FP Position", fpPosition);
-            debugging.DebugShow("Target", thirdPersonTarget);
-            debugging.DebugShow("Delta", fpPosition - thirdPersonTarget);
-            debugging.DebugShow("Player", playerPos);
-            debugging.DebugShow("FP to Player", fpPosition - playerPos);
-            var fixedHead = gameState.GetFixedHeadPosition();
-
-            debugging.DebugShow("Head Pos", fixedHead);
 
             hudLayoutManager.Update();
         });

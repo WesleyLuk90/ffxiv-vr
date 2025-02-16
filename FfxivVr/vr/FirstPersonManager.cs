@@ -5,11 +5,9 @@ namespace FfxivVR;
 
 public unsafe class FirstPersonManager(
     GameState gameState,
-    Logger logger,
     VRSpace vrSpace,
     Configuration configuration,
-    GameConfigManager gameConfigManager,
-    Debugging debugging
+    GameConfigManager gameConfigManager
 )
 {
     public bool IsFirstPerson { get; private set; } = false;
