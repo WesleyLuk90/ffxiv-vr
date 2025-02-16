@@ -1,8 +1,7 @@
 ﻿using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
-using Silk.NET.OpenXR;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
@@ -141,32 +140,8 @@ public unsafe partial class Resources(
     {
         cameraBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
         pixelShaderConstantsBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(PixelShaderConstants)]), BindFlag.ConstantBuffer);
-        var tr = new Vertex(new Vector3f(1, 1, 0), new Vector2f(1, 0));
-        var tl = new Vertex(new Vector3f(-1, 1, 0), new Vector2f(0, 0));
-        var bl = new Vertex(new Vector3f(-1, -1, 0), new Vector2f(0, 1));
-        var br = new Vertex(new Vector3f(1, -1, 0), new Vector2f(1, 1));
-        Vertex[] squareVertices = [
-            tr,
-            tl,
-            bl,
-            tr,
-            bl,
-            br,
-        ];
-        squareBuffer = CreateVertexBuffer(squareVertices);
-        var sides = 16;
-        var vertexCount = squareVertices.Count();
-        var cylinderVertices = new Vertex[vertexCount * sides];
-        for (int i = 0; i < sides; i++)
-        {
-            var transform = Matrix4X4.CreateScale(new Vector3D<float>(MathF.Tan(2 * MathF.PI / sides / 2), 1, 1)) * Matrix4X4.CreateTranslation(Vector3D<float>.UnitZ) * Matrix4X4.CreateRotationY<float>(2 * MathF.PI * i / sides);
-            for (int j = 0; j < vertexCount; j++)
-            {
-                cylinderVertices[i * vertexCount + j].Position = Vector3D.Transform(squareVertices[j].Position.ToVector3D(), transform).ToVector3f();
-                cylinderVertices[i * vertexCount + j].UV = squareVertices[j].UV;
-            }
-        }
-        cylinderBuffer = CreateVertexBuffer(cylinderVertices);
+        squareBuffer = CreateVertexBuffer(GeometryFactory.Plane());
+        cylinderBuffer = CreateVertexBuffer(GeometryFactory.Cylinder(sides: 16));
     }
 
     private void CreateStencilState()
@@ -323,10 +298,11 @@ public unsafe partial class Resources(
         }
     }
 
-    private VertexBuffer CreateVertexBuffer(Vertex[] vertices)
+    private VertexBuffer CreateVertexBuffer(List<Vertex> vertices)
     {
-        var buffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(vertices)), BindFlag.VertexBuffer);
-        return new VertexBuffer(vertices, buffer);
+        var array = vertices.ToArray();
+        var buffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(array)), BindFlag.VertexBuffer);
+        return new VertexBuffer(array, buffer);
     }
 
     private void SetBufferData(ID3D11DeviceContext* context, Span<byte> bytes, D3DBuffer buffer)
