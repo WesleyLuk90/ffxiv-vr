@@ -117,7 +117,7 @@ public unsafe class VRSession(
 
     internal void UpdateVisibility()
     {
-        if (Conditions.IsOccupiedInCutSceneEvent)
+        if (Conditions.Instance()->OccupiedInCutSceneEvent)
         {
             return;
         }
@@ -155,7 +155,7 @@ public unsafe class VRSession(
         {
             return true;
         }
-        return firstPersonManager.IsFirstPerson && (!configuration.DisableMotionTrackingInCombat || !Conditions.IsInCombat);
+        return firstPersonManager.IsFirstPerson && (!configuration.DisableMotionTrackingInCombat || !Conditions.Instance()->InCombat);
     }
 
     internal void PreUIRender()
@@ -204,7 +204,7 @@ public unsafe class VRSession(
             vrUI.Update(views[0], ticks);
             cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, inputData, cameraType);
 
-            if (Conditions.IsInFlight || Conditions.IsDiving)
+            if (Conditions.Instance()->InFlight || Conditions.Instance()->Diving)
             {
                 if (firstPersonManager.IsFirstPerson && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation))
                 {

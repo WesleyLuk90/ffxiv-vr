@@ -78,7 +78,7 @@ public unsafe class GameModifier(
         gameVisibililty.SetVisible(character->Mount.MountObject, true);
         gameVisibililty.SetVisible(character->OrnamentData.OrnamentObject, true);
         var drawData = character->DrawData;
-        if (character->IsWeaponDrawn || !drawData.IsWeaponHidden || Conditions.IsCrafting || Conditions.IsGathering)
+        if (character->IsWeaponDrawn || !drawData.IsWeaponHidden || Conditions.Instance()->Crafting || Conditions.Instance()->Gathering)
         {
             gameVisibililty.SetVisible(drawData.Weapon(DrawDataContainer.WeaponSlot.MainHand), true);
             gameVisibililty.SetVisible(drawData.Weapon(DrawDataContainer.WeaponSlot.OffHand), true);
@@ -102,7 +102,7 @@ public unsafe class GameModifier(
             return;
         }
         var skeleton = characterBase->Skeleton;
-        skeletonModifier.HideHead(skeleton, Conditions.IsMounted);
+        skeletonModifier.HideHead(skeleton, Conditions.Instance()->Mounted);
     }
 
     public CharacterBase* GetCharacterBase()

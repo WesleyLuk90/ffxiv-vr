@@ -13,7 +13,7 @@ public unsafe class FirstPersonManager(
     public bool IsFirstPerson { get; private set; } = false;
     public void Update()
     {
-        if (Conditions.IsOccupiedInCutSceneEvent)
+        if (Conditions.Instance()->OccupiedInCutSceneEvent)
         {
             return;
         }

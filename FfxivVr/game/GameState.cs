@@ -78,14 +78,14 @@ public unsafe class GameState(
 
     internal bool IsInCutscene()
     {
-        return Conditions.IsWatchingCutscene ||
-            Conditions.IsOccupied ||
-            Conditions.IsOccupiedInCutSceneEvent;
+        return Conditions.Instance()->WatchingCutscene ||
+            Conditions.Instance()->Occupied ||
+            Conditions.Instance()->OccupiedInCutSceneEvent;
     }
 
     internal bool IsBetweenAreas()
     {
-        return Conditions.IsInBetweenAreas;
+        return Conditions.Instance()->BetweenAreas;
     }
 
     // Returns the game camera distance regardless of walls
@@ -172,6 +172,6 @@ public unsafe class GameState(
         // Inn login/logout
         // Quest cutscene
         // Dungeon cutscene
-        return Conditions.IsOccupiedInCutSceneEvent;
+        return Conditions.Instance()->OccupiedInCutSceneEvent;
     }
 }
