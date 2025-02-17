@@ -79,4 +79,4 @@ jobs:
       - name: Push Release to Github
         run: |
           git push origin master
-          git push tag ${{ steps.prepare_release.outputs.VERSION_STRING }}
+          git push origin tag ${{ steps.prepare_release.outputs.VERSION_STRING }}
