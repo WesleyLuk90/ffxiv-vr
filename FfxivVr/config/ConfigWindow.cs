@@ -89,6 +89,7 @@ public class ConfigWindow : Window
         Slider("UI Size", ref config.UISize);
         Slider("UI Curvature", ref config.UICurvature, defaultValue: 0, min: 0, max: 2f);
         Checkbox("Keep UI In Front", ref config.KeepUIInFront);
+        Checkbox("Anchor UI position", ref config.AnchorUI);
         Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
         ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
         ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
