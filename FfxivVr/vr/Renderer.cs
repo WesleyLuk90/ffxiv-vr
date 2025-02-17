@@ -332,6 +332,6 @@ public unsafe class Renderer(
 
     private bool ShouldUseDepthTexture()
     {
-        return !configuration.KeepUIInFront && !Conditions.IsOccupiedInCutSceneEvent;
+        return !configuration.KeepUIInFront && !Conditions.Instance()->OccupiedInCutSceneEvent;
     }
 }
