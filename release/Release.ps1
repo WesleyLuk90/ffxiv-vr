@@ -6,8 +6,8 @@ $versionString = "v$nextVersion"
 
 echo "VERSION_STRING=$versionString" >> "$Env:GITHUB_OUTPUT"
 
-$changeLog = git log --pretty=format:"# %s%n%b" $versionString..HEAD --invert-grep --grep="Publish Version" | Select-String "^\[" | % { $_.Line }
-$fixes = git log --pretty=format:"# %s%n%b" $versionString..HEAD --invert-grep --grep="Publish Version" | Select-String "#\d+" | % { "Closes " + $_.Matches.Value }
+$changeLog = git log --pretty=format:"# %s%n%b" v$currentVersion..HEAD --invert-grep --grep="Publish Version" | Select-String "^\[" | % { $_.Line }
+$fixes = git log --pretty=format:"# %s%n%b" v$currentVersion..HEAD --invert-grep --grep="Publish Version" | Select-String "#\d+" | % { "Closes " + $_.Matches.Value }
 $releaseMessage = "Publish Version $nextVersion`n" + [string]::Join("`n", $fixes)
 
 if(!$changeLog){
