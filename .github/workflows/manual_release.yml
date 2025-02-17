@@ -51,34 +51,32 @@ jobs:
           path: .\FfxivVr\bin\x64\Release\FfxivVR\latest.zip
           if-no-files-found: error
 
-      # - name: Create Release
-      #   id: create_release
-      #   uses: actions/create-release@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     tag_name: ${{ github.ref }}
-      #     release_name: FFXIV VR ${{ github.ref }}
-      #     body_path: changelog.txt
-      #     draft: false
-      #     prerelease: false
-      # - name: Upload Release Asset
-      #   id: upload-release-asset
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: .\FfxivVr\bin\x64\Release\FfxivVR\latest.zip
-      #     asset_name: FfxivVR.zip
-      #     asset_content_type: application/zip
-      # - name: Publish Release
-      #   run: |
-      #     Copy-Item .\PluginRepo\next.json .\PluginRepo\pluginmaster.json
-      #     git config --global user.name "Actions User"
-      #     git config --global user.email "actions@github.com"
-      #     git fetch origin master
-      #     git checkout master
-      #     git add .\PluginRepo\pluginmaster.json
-      #     git commit -F release-message.txt
-      #     git push origin master
+      - name: Prepare Release
+        id: prepare_release
+        run: powershell release/Release.ps1
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.prepare_release.outputs.VERSION_STRING }}
+          release_name: FFXIV VR ${{ steps.prepare_release.outputs.VERSION_STRING }}
+          body_path: release/changelog.txt
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: .\FfxivVr\bin\x64\Release\FfxivVR\latest.zip
+          asset_name: FfxivVR.zip
+          asset_content_type: application/zip
+      - name: Push Release to Github
+        run: |
+          git push origin master
+          git push tag ${{ steps.prepare_release.outputs.VERSION_STRING }}

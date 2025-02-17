@@ -1,4 +1,0 @@
-Publish Version 0.0.47
-Closes #40
-Closes #12
-Closes #39
