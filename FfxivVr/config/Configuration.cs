@@ -36,6 +36,7 @@ public class Configuration : IPluginConfiguration
     public bool KeepUIInFront = true;
 
     public float UISize = 1.0f;
+    public float UICurvature = 0.0f;
 
     public int? VRHudLayout = null;
     public int? DefaultHudLayout = null;

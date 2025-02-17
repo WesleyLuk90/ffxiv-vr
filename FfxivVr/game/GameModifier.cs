@@ -20,8 +20,7 @@ public unsafe class GameModifier(
     HandTrackingSkeletonModifier handTrackingSkeletonModifier,
     ControllerTrackingSkeletonModifier controllerTrackingSkeletonModifier,
     Configuration configuration,
-    FirstPersonManager firstPersonManager,
-    Debugging debugging
+    FirstPersonManager firstPersonManager
 )
 {
     public void UpdateCharacterVisibility(bool showInFirstPerson)

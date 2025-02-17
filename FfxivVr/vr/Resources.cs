@@ -1,53 +1,22 @@
 ﻿using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
-using Silk.NET.OpenXR;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 
-public enum ShaderMode
-{
-    Texture = 0,
-    Circle = 1,
-    InvertedAlpha = 2,
-    Fill = 3,
-}
-
-public unsafe class Resources(
+public unsafe partial class Resources(
     DxDevice device
 ) : IDisposable
 {
-    public struct CameraConstants
-    {
-        Matrix4X4<float> modelViewProjection;
-
-        public CameraConstants(Matrix4X4<float> modelViewProjection)
-        {
-            this.modelViewProjection = modelViewProjection;
-        }
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    public struct PixelShaderConstants(ShaderMode mode, float gamma, Vector4D<float> color, Vector2D<float>? uvOffset = null, Vector2D<float>? uvScale = null)
-    {
-        [FieldOffset(0)] int mode = (int)mode;
-        [FieldOffset(4)] float gamma = gamma;
-        [FieldOffset(8)] readonly float padding1 = 0;
-        [FieldOffset(12)] readonly float padding2 = 0;
-        [FieldOffset(16)] Vector4D<float> color = color;
-        [FieldOffset(32)] Vector2D<float> uvScale = uvScale ?? Vector2D<float>.One;
-        [FieldOffset(40)] Vector2D<float> uvOffset = uvOffset ?? Vector2D<float>.Zero;
-
-    }
 
     private D3DBuffer? cameraBuffer;
     private D3DBuffer? pixelShaderConstantsBuffer;
-    private Vertex[]? squareVertices;
-    private Vertex[]? cylinderVertices;
-    private D3DBuffer? squareVertexBuffer;
-    private D3DBuffer? cylinderVertexBuffer;
+
+    private VertexBuffer? squareBuffer;
+    private VertexBuffer? cylinderBuffer;
+    private VertexBuffer? uiBuffer;
     private ID3D11DepthStencilState* depthStencilStateOn = null;
     private ID3D11DepthStencilState* depthStencilStateOff = null;
     private ID3D11BlendState* uiBlendState = null;
@@ -61,17 +30,6 @@ public unsafe class Resources(
     public RenderTarget CursorRenderTarget = null!;
     public RenderTarget[] SceneRenderTargets = [];
     public DepthTarget[] SceneDepthTargets = [];
-
-    public struct Vertex
-    {
-        public Vector3f Position;
-        public Vector2f UV;
-        public Vertex(Vector3f position, Vector2f uv)
-        {
-            Position = position;
-            UV = uv;
-        }
-    }
 
     public void Initialize(Vector2D<uint> size)
     {
@@ -118,68 +76,6 @@ public unsafe class Resources(
             depthStencilView,
             size
         );
-    }
-
-    public class RenderTarget : IDisposable
-    {
-        public RenderTarget(
-            ID3D11Texture2D* texture,
-            ID3D11RenderTargetView* renderTargetView,
-            ID3D11ShaderResourceView* shaderResourceView,
-            Vector2D<uint> size
-        )
-        {
-            Texture = texture;
-            RenderTargetView = renderTargetView;
-            ShaderResourceView = shaderResourceView;
-            Size = size;
-        }
-
-        public ID3D11Texture2D* Texture { get; }
-        public ID3D11RenderTargetView* RenderTargetView { get; }
-        public ID3D11ShaderResourceView* ShaderResourceView { get; }
-        public Vector2D<uint> Size { get; }
-
-        public float AspectRatio => (float)Size.Y / Size.X;
-
-        public Matrix4X4<float> AspectRatioTransform()
-        {
-            return Matrix4X4.CreateScale(1, AspectRatio, 1);
-        }
-        public void Dispose()
-        {
-            Texture->Release();
-            RenderTargetView->Release();
-            ShaderResourceView->Release();
-        }
-    }
-    public class DepthTarget : IDisposable
-    {
-        public DepthTarget(
-            ID3D11Texture2D* texture,
-            ID3D11DepthStencilView* depthStencilView,
-            Vector2D<uint> size
-        )
-        {
-            Texture = texture;
-            DepthStencilView = depthStencilView;
-            Size = size;
-        }
-
-        public ID3D11Texture2D* Texture { get; }
-        public ID3D11DepthStencilView* DepthStencilView { get; }
-        public ID3D11ShaderResourceView* ShaderResourceView { get; }
-        public Vector2D<uint> Size { get; }
-
-        public Matrix4X4<float> Scale()
-        {
-            return Matrix4X4.CreateScale(1, (float)Size.Y / Size.X, 1);
-        }
-        public void Dispose()
-        {
-            Texture->Release();
-            DepthStencilView->Release();
-        }
     }
 
     private RenderTarget CreateRenderTarget(Vector2D<uint> size)
@@ -245,33 +141,9 @@ public unsafe class Resources(
     {
         cameraBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
         pixelShaderConstantsBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(PixelShaderConstants)]), BindFlag.ConstantBuffer);
-        var tr = new Vertex(new Vector3f(1, 1, 0), new Vector2f(1, 0));
-        var tl = new Vertex(new Vector3f(-1, 1, 0), new Vector2f(0, 0));
-        var bl = new Vertex(new Vector3f(-1, -1, 0), new Vector2f(0, 1));
-        var br = new Vertex(new Vector3f(1, -1, 0), new Vector2f(1, 1));
-        squareVertices = [
-            tr,
-            tl,
-            bl,
-            tr,
-            bl,
-            br,
-        ];
-        squareVertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(squareVertices)), BindFlag.VertexBuffer);
-        var sides = 16;
-        var vertexCount = squareVertices.Count();
-        var cylinderVertices = new Vertex[vertexCount * sides];
-        for (int i = 0; i < sides; i++)
-        {
-            var transform = Matrix4X4.CreateScale(new Vector3D<float>(MathF.Tan(2 * MathF.PI / sides / 2), 1, 1)) * Matrix4X4.CreateTranslation(Vector3D<float>.UnitZ) * Matrix4X4.CreateRotationY<float>(2 * MathF.PI * i / sides);
-            for (int j = 0; j < vertexCount; j++)
-            {
-                cylinderVertices[i * vertexCount + j].Position = Vector3D.Transform(squareVertices[j].Position.ToVector3D(), transform).ToVector3f();
-                cylinderVertices[i * vertexCount + j].UV = squareVertices[j].UV;
-            }
-        }
-        this.cylinderVertices = cylinderVertices;
-        cylinderVertexBuffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(cylinderVertices)), BindFlag.VertexBuffer);
+        squareBuffer = CreateVertexBuffer(GeometryFactory.Plane());
+        cylinderBuffer = CreateVertexBuffer(GeometryFactory.Cylinder(sides: 16));
+        uiBuffer = CreateVertexBuffer(GeometryFactory.SegmentedPlane(segments: 32));
     }
 
     private void CreateStencilState()
@@ -401,23 +273,6 @@ public unsafe class Resources(
         ));
     }
 
-    class D3DBuffer : IDisposable
-    {
-        public ID3D11Buffer* Handle;
-        public uint Length;
-
-        internal D3DBuffer(ID3D11Buffer* buffer, uint length)
-        {
-            this.Handle = buffer;
-            this.Length = length;
-        }
-
-        public void Dispose()
-        {
-            Handle->Release();
-        }
-    }
-
     private D3DBuffer CreateBuffer(Span<byte> bytes, BindFlag bindFlag)
     {
         fixed (byte* p = bytes)
@@ -443,6 +298,13 @@ public unsafe class Resources(
             device.Device->CreateBuffer(ref description, ref subresourceData, ref buffer).D3D11Check("CreateBuffer");
             return new D3DBuffer(buffer, (uint)bytes.Length);
         }
+    }
+
+    private VertexBuffer CreateVertexBuffer(List<Vertex> vertices)
+    {
+        var array = vertices.ToArray();
+        var buffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(array)), BindFlag.VertexBuffer);
+        return new VertexBuffer(array, buffer);
     }
 
     private void SetBufferData(ID3D11DeviceContext* context, Span<byte> bytes, D3DBuffer buffer)
@@ -487,33 +349,44 @@ public unsafe class Resources(
 
     public void DrawSquare(ID3D11DeviceContext* context)
     {
-        fixed (ID3D11Buffer** pHandle = &squareVertexBuffer!.Handle)
+        fixed (ID3D11Buffer** pHandle = &squareBuffer!.Handle)
         {
             uint stride = (uint)sizeof(Vertex);
             uint offsets = 0;
             context->IASetVertexBuffers(0, 1, pHandle, &stride, &offsets);
             context->IASetPrimitiveTopology(Silk.NET.Core.Native.D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
-            context->Draw((uint)this.squareVertices!.Length, 0);
+            context->Draw(squareBuffer.VertexCount, 0);
+        }
+    }
+    public void DrawUI(ID3D11DeviceContext* context)
+    {
+        fixed (ID3D11Buffer** pHandle = &uiBuffer!.Handle)
+        {
+            uint stride = (uint)sizeof(Vertex);
+            uint offsets = 0;
+            context->IASetVertexBuffers(0, 1, pHandle, &stride, &offsets);
+            context->IASetPrimitiveTopology(Silk.NET.Core.Native.D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
+            context->Draw(uiBuffer.VertexCount, 0);
         }
     }
 
     public void DrawCylinder(ID3D11DeviceContext* context)
     {
-        fixed (ID3D11Buffer** pHandle = &cylinderVertexBuffer!.Handle)
+        fixed (ID3D11Buffer** pHandle = &cylinderBuffer!.Handle)
         {
             uint stride = (uint)sizeof(Vertex);
             uint offsets = 0;
             context->IASetVertexBuffers(0, 1, pHandle, &stride, &offsets);
             context->IASetPrimitiveTopology(Silk.NET.Core.Native.D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
-            context->Draw((uint)this.cylinderVertices!.Length, 0);
+            context->Draw(cylinderBuffer.VertexCount, 0);
         }
     }
 
     public void Dispose()
     {
         cameraBuffer?.Dispose();
-        squareVertexBuffer?.Dispose();
-        cylinderVertexBuffer?.Dispose();
+        cylinderBuffer?.Dispose();
+        squareBuffer?.Dispose();
         UIRenderTarget?.Dispose();
         DalamudRenderTarget?.Dispose();
         CursorRenderTarget?.Dispose();

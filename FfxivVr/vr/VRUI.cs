@@ -30,11 +30,13 @@ public class VRUI(
             }
         }
     }
-    public Matrix4X4<float> GetTransformationMatrix()
+    public Matrix4X4<float> GetModelMatrix()
     {
-        var translationMatrix = Matrix4X4.CreateTranslation(PlaneCenter) * Matrix4X4.CreateFromQuaternion(CurrentAngleRotation);
-        var uiScale = resources.UIRenderTarget.AspectRatioTransform() * Matrix4X4.CreateScale(configuration.UISize);
-        return uiScale * translationMatrix;
+        return Matrix4X4.CreateScale(configuration.UISize) * Matrix4X4.CreateTranslation(PlaneCenter) * Matrix4X4.CreateFromQuaternion(CurrentAngleRotation);
+    }
+    public Matrix4X4<float> GetDeformMatrix()
+    {
+        return resources.UIRenderTarget.AspectRatioTransform();
     }
 
     private Quaternion<float> CurrentAngleRotation => MathFactory.YRotation(currentAngle);

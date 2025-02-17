@@ -4,7 +4,6 @@ using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
-using static FfxivVR.Resources;
 
 namespace FfxivVR;
 
@@ -23,10 +22,12 @@ public unsafe class Renderer(
     GameState gameState,
     VRUI vrUI)
 {
-    private void RenderViewport(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
+    private void RenderGame(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(
-            modelViewProjection: modelViewProjection
+            modelViewProjection: modelViewProjection,
+            deform: Matrix4X4<float>.Identity,
+            curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: invertAlpha ? ShaderMode.InvertedAlpha : ShaderMode.Texture,
@@ -35,7 +36,20 @@ public unsafe class Renderer(
         resources.SetSampler(context, shaderResourceView);
         resources.DrawSquare(context);
     }
-
+    private void RenderUILayer(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, Matrix4X4<float> deform, bool invertAlpha = false, float fade = 0)
+    {
+        resources.UpdateCamera(context, new CameraConstants(
+            modelViewProjection: modelViewProjection,
+            deform: deform,
+            curvature: configuration.UICurvature
+        ));
+        resources.SetPixelShaderConstants(context, new PixelShaderConstants(
+            mode: invertAlpha ? ShaderMode.InvertedAlpha : ShaderMode.Texture,
+            gamma: configuration.Gamma,
+            color: new Vector4D<float>(1 - fade, 1 - fade, 1 - fade, 1)));
+        resources.SetSampler(context, shaderResourceView);
+        resources.DrawUI(context);
+    }
 
     internal void SkipFrame(FrameState frameState)
     {
@@ -120,7 +134,7 @@ public unsafe class Renderer(
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
 
         var currentEyeRenderTarget = resources.SceneRenderTargets[vrView.Eye.ToIndex()];
-        RenderViewport(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
+        RenderGame(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
         resources.SetCompositingBlendState(context);
         if (ShouldUseDepthTexture())
         {
@@ -158,11 +172,12 @@ public unsafe class Renderer(
     }
     private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj)
     {
-        var matrix = vrUI.GetTransformationMatrix() * viewProj;
+        var matrix = vrUI.GetModelMatrix() * viewProj;
+        var deformMatrix = vrUI.GetDeformMatrix();
         resources.SetCompositingBlendState(context);
-        RenderViewport(context, resources.UIRenderTarget.ShaderResourceView, matrix, false);
-        RenderViewport(context, resources.DalamudRenderTarget.ShaderResourceView, resolutionManager.GetDalamudScale() * matrix, true);
-        RenderViewport(context, resources.CursorRenderTarget.ShaderResourceView, matrix, false);
+        RenderUILayer(context, resources.UIRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix, false);
+        RenderUILayer(context, resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: resolutionManager.GetDalamudScale() * deformMatrix, true);
+        RenderUILayer(context, resources.CursorRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix, false);
     }
 
     private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)
@@ -206,7 +221,10 @@ public unsafe class Renderer(
             var scale = Matrix4X4.CreateScale(new Vector3D<float>(maybeCursor.Width / windowSize.X, maybeCursor.Height / windowSize.Y, 0f)) *
                 Matrix4X4.CreateTranslation(position);
             resources.UpdateCamera(context, new CameraConstants(
-                modelViewProjection: scale
+                modelViewProjection: scale,
+                deform: Matrix4X4<float>.Identity,
+
+                curvature: 0
             ));
             resources.SetStandardBlendState(context);
             resources.SetSampler(context, maybeCursor.ShaderResourceView);
@@ -224,8 +242,9 @@ public unsafe class Renderer(
     {
         var scale = Matrix4X4.CreateScale(size) * Matrix4X4.CreateTranslation(position) * viewProjectionMatrix;
         resources.UpdateCamera(context, new CameraConstants(
-            modelViewProjection: scale
-
+            modelViewProjection: scale,
+            deform: Matrix4X4<float>.Identity,
+            curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: ShaderMode.Circle,
@@ -245,7 +264,9 @@ public unsafe class Renderer(
         * Matrix4X4.CreateTranslation(start)
         * viewProjectionMatrix;
         resources.UpdateCamera(context, new CameraConstants(
-            modelViewProjection: scale
+            modelViewProjection: scale,
+            deform: Matrix4X4<float>.Identity,
+            curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
             mode: ShaderMode.Fill,

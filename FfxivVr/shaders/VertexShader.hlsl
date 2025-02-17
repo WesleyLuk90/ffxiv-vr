@@ -1,6 +1,9 @@
 cbuffer Camera
 {
     float4x4 modelViewProjection;
+    float4x4 deformMatrix;
+    float curvature;
+    float padding1, padding2, padding3;
 };
 struct VertexShaderOutput
 {
@@ -18,7 +21,14 @@ VertexShaderOutput main(VertexShaderInput input)
 {
     VertexShaderOutput output;
 
-    output.position = mul(modelViewProjection, input.position);
+    float4 position = mul(deformMatrix, input.position);
+    if (curvature > 0) {
+        float radius = 1 / curvature;
+        float angle = position.x / radius;
+        position.x = radius * sin(angle);
+        position.z = radius * (1 - cos(angle));
+    }
+    output.position = mul(modelViewProjection, position);
     output.texcoord = input.texcoord;
 
     return output;
