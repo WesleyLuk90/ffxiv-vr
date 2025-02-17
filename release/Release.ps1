@@ -1,3 +1,5 @@
+echo nope
+Exit 1
 git pull --ff-only
 
 if ( $LastExitCode -ne 0) {

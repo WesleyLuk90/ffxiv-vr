@@ -51,6 +51,10 @@ jobs:
           path: .\FfxivVr\bin\x64\Release\FfxivVR\latest.zip
           if-no-files-found: error
 
+      - name: Prepare Release
+        if: false
+        run: powershell release/Release.ps1
+
       # - name: Create Release
       #   id: create_release
       #   uses: actions/create-release@v1
