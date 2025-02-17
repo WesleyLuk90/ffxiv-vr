@@ -64,7 +64,7 @@ jobs:
         with:
           tag_name: ${{ steps.prepare_release.outputs.VERSION_STRING }}
           release_name: FFXIV VR ${{ steps.prepare_release.outputs.VERSION_STRING }}
-          body_path: changelog.txt
+          body_path: release/changelog.txt
           draft: false
           prerelease: false
       - name: Upload Release Asset

@@ -5,8 +5,8 @@ $nextVersion = "{0}.{1}.{2}" -f $currentVersion.Major, $currentVersion.Minor, ($
 $versionString = "v$nextVersion"
 
 echo "VERSION_STRING=$versionString" >> "$Env:GITHUB_OUTPUT"
-
-$changeLog = git log --pretty=format:"# %s%n%b" v$currentVersion..HEAD --invert-grep --grep="Publish Version" | Select-String "^\[" | % { $_.Line }
+echo v$currentVersion..HEAD
+$changeLog = git log --pretty=format:"# %s%n%b" v$currentVersion..HEAD --invert-grep --grep="Publish Version"
 $fixes = git log --pretty=format:"# %s%n%b" v$currentVersion..HEAD --invert-grep --grep="Publish Version" | Select-String "#\d+" | % { "Closes " + $_.Matches.Value }
 $releaseMessage = "Publish Version $nextVersion`n" + [string]::Join("`n", $fixes)
 
@@ -21,8 +21,8 @@ echo $changeLog
 echo "=== Release Message ==="
 echo $releaseMessage
 
-[IO.File]::WriteAllLines("changelog.txt", $changeLog)
-[IO.File]::WriteAllLines("release-message.txt", $releaseMessage)
+[IO.File]::WriteAllLines("release/changelog.txt", $changeLog)
+[IO.File]::WriteAllLines("release/release-message.txt", $releaseMessage)
 
 $xml.Project.PropertyGroup.Version = $nextVersion
 $xml.Save(".\FfxivVr\FfxivVR.csproj")
@@ -38,6 +38,6 @@ $repo[0].DownloadLinkUpdate = "https://github.com/WesleyLuk90/ffxiv-vr/releases/
 ConvertTo-Json $repo -depth 32| set-content 'PluginRepo/pluginmaster.json'
 
 git add .
-git commit -m "Release version $nextVersion"
+git commit -m "$releaseMessage"
 git tag $versionString
 
