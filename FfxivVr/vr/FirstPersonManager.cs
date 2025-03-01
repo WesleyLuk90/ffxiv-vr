@@ -1,5 +1,8 @@
 using Dalamud.Game.Config;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using Newtonsoft.Json;
+using SharpDX.Win32;
+using System;
 
 namespace FfxivVR;
 
@@ -7,9 +10,25 @@ public unsafe class FirstPersonManager(
     GameState gameState,
     VRSpace vrSpace,
     Configuration configuration,
-    GameConfigManager gameConfigManager
+    GameConfigManager gameConfigManager,
+    Debugging debugging
 )
 {
+
+    private bool DisableHeadRotation()
+    {
+        var conditions = Conditions.Instance();
+        // Summoning bell
+        return conditions->OccupiedInQuestEvent ||
+        conditions->OccupiedSummoningBell ||
+        conditions->OccupiedInCutSceneEvent ||
+        conditions->SufferingStatusAffliction ||
+        conditions->SufferingStatusAffliction2 ||
+        conditions->SufferingStatusAffliction63 ||
+        conditions->BetweenAreas ||
+        conditions->BetweenAreas51 ||
+        conditions->RolePlaying;
+    }
     public bool IsFirstPerson { get; private set; } = false;
     public void Update()
     {
@@ -50,6 +69,11 @@ public unsafe class FirstPersonManager(
             }
             UpdateFirstPersonSettings();
         }
+    }
+
+    public bool ShouldUpdateHeadRotation()
+    {
+        return configuration.EnableHeadRelativeMovement && IsFirstPerson && !DisableHeadRotation();
     }
 
     private uint StandardMoveMode = 0;

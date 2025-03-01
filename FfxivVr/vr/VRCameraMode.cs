@@ -14,6 +14,7 @@ public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector
     public Vector3D<float> FixedHeadPosition { get; } = fixedHeadPosition;
     public virtual float GetYRotation()
     {
+        return 0;
         return -MathF.PI / 2 - MathF.Atan2(GameCameraForwardVector.Z, GameCameraForwardVector.X);
     }
 

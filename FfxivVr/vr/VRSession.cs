@@ -1,6 +1,7 @@
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System.Collections.Generic;
@@ -107,6 +108,12 @@ public unsafe class VRSession(
             logger.Trace($"Set {phase.Eye} camera matrix");
             View view = phase.CurrentView(phase.CameraMode.UseHeadMovement);
             vrCamera.UpdateCamera(camera, phase.GetGameCamera(vrCamera.CreateGameCamera), phase.CameraMode, view);
+            var internalSceneCamera = gameState.GetInternalSceneCamera();
+            if (firstPersonManager.ShouldUpdateHeadRotation() && internalSceneCamera != null)
+            {
+                var yaw = MathFactory.GetYaw(view.Pose.Orientation.ToQuaternion());
+                internalSceneCamera->CurrentHRotation = yaw;
+            }
         }
     }
 

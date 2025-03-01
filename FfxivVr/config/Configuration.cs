@@ -26,6 +26,7 @@ public class Configuration : IPluginConfiguration
 
     public bool DisableControllersWhenTracking = true;
 
+    public bool EnableHeadRelativeMovement = false;
     public bool DisableMotionTrackingInCombat = false;
 
     public bool MatchFloorPosition = false;
