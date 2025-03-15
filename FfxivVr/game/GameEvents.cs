@@ -1,5 +1,6 @@
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,10 @@ public class GameEvents(
     HudLayoutManager hudLayoutManager,
     GamepadManager gamepadManager,
     FreeCamera freeCamera,
-    IGamepadState gamepadState
+    IGamepadState gamepadState,
+    GameState gameState,
+    Debugging debugging,
+    Configuration configuration
 ) : IDisposable
 {
 
@@ -51,8 +55,34 @@ public class GameEvents(
             UpdateFreeCam(framework);
 
             hudLayoutManager.Update();
+
+            var character = gameState.getCharacterOrGpose();
+            var internalSceneCamera = gameState.GetInternalSceneCamera();
+            if (debugging.ManualRotation && !DisableHeadRotation() && character != null && internalSceneCamera != null && configuration.EnableHeadRelativeMovement)
+            {
+                debugging.DebugShow("Char Rotation", character->Rotation);
+                debugging.DebugShow("Camera Rotation", internalSceneCamera->CurrentHRotation);
+                debugging.DebugShow("Rotation", debugging.XRotation);
+                character->SetRotation(debugging.XRotation);
+                internalSceneCamera->CurrentHRotation = debugging.XRotation + MathF.PI;
+            }
         });
     }
+    private unsafe bool DisableHeadRotation()
+    {
+        var conditions = Conditions.Instance();
+        // Summoning bell
+        return conditions->OccupiedInQuestEvent ||
+        conditions->OccupiedSummoningBell ||
+        conditions->OccupiedInCutSceneEvent ||
+        conditions->SufferingStatusAffliction ||
+        conditions->SufferingStatusAffliction2 ||
+        conditions->SufferingStatusAffliction63 ||
+        conditions->BetweenAreas ||
+        conditions->BetweenAreas51 ||
+        conditions->RolePlaying;
+    }
+
 
     private void UpdateFreeCam(IFramework framework)
     {

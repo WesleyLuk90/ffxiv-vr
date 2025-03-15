@@ -71,7 +71,7 @@ public unsafe class FirstPersonManager(
         }
     }
 
-    public bool ShouldUpdateHeadRotation()
+    private bool ShouldUpdateHeadRotation()
     {
         return configuration.EnableHeadRelativeMovement && IsFirstPerson && !DisableHeadRotation();
     }
@@ -97,4 +97,28 @@ public unsafe class FirstPersonManager(
         }
     }
 
+
+    private float offset = 0;
+    private float? lastRotation = null;
+    // Test both WASD and controller joystick, they behave differently
+    public void UpdateRotation(float yaw)
+    {
+        var internalSceneCamera = gameState.GetInternalSceneCamera();
+        var character = gameState.getCharacterOrGpose();
+        if (ShouldUpdateHeadRotation() && internalSceneCamera != null && character != null)
+        {
+            // Any difference in rotation we assume is from the player rotating their character
+            // Compute the difference and apply it to the offset
+            if (lastRotation is { } r)
+            {
+                debugging.DebugShow("Rotation delta", character->Rotation - r);
+                offset = character->Rotation - r;
+            }
+            debugging.DebugShow("Char Rotation", internalSceneCamera->CurrentHRotation);
+            debugging.DebugShow("Cmaera rotation", character->Rotation);
+            character->SetRotation(yaw + MathF.PI + offset);
+            internalSceneCamera->CurrentHRotation = yaw;
+            lastRotation = character->Rotation;
+        }
+    }
 }
