@@ -58,13 +58,16 @@ public class GameEvents(
 
             var character = gameState.getCharacterOrGpose();
             var internalSceneCamera = gameState.GetInternalSceneCamera();
-            if (debugging.ManualRotation && !DisableHeadRotation() && character != null && internalSceneCamera != null && configuration.EnableHeadRelativeMovement)
+            if (character != null && internalSceneCamera != null)
             {
                 debugging.DebugShow("Char Rotation", character->Rotation);
                 debugging.DebugShow("Camera Rotation", internalSceneCamera->CurrentHRotation);
                 debugging.DebugShow("Rotation", debugging.XRotation);
-                character->SetRotation(debugging.XRotation);
-                internalSceneCamera->CurrentHRotation = debugging.XRotation + MathF.PI;
+            }
+            if (debugging.ManualRotation && !DisableHeadRotation() && character != null && internalSceneCamera != null)
+            {
+                character->SetRotation(debugging.XRotation + debugging.XRotation + MathF.PI);
+                // internalSceneCamera->CurrentHRotation = debugging.XRotation + MathF.PI;
             }
         });
     }

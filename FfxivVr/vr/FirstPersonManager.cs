@@ -111,13 +111,12 @@ public unsafe class FirstPersonManager(
             // Compute the difference and apply it to the offset
             if (lastRotation is { } r)
             {
-                debugging.DebugShow("Rotation delta", character->Rotation - r);
-                offset = character->Rotation - r;
+                var delta = character->Rotation - r;
+                offset += delta;
+                debugging.DebugShow("Offset", offset);
             }
-            debugging.DebugShow("Char Rotation", internalSceneCamera->CurrentHRotation);
-            debugging.DebugShow("Cmaera rotation", character->Rotation);
-            character->SetRotation(yaw + MathF.PI + offset);
-            internalSceneCamera->CurrentHRotation = yaw;
+            character->SetRotation(yaw + offset + MathF.PI);
+            internalSceneCamera->CurrentHRotation = yaw + offset;
             lastRotation = character->Rotation;
         }
     }
