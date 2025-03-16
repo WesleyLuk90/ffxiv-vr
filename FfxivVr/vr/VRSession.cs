@@ -203,7 +203,8 @@ public unsafe class VRSession(
             var inputData = vrInputService.PollInput(predictedTime);
             VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight, configuration.BodyTracking && inputData.HasBodyData());
             vrUI.Update(views[0], ticks);
-            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, inputData, cameraType);
+            var headsetPosition = vrSpace.GetView(predictedTime).Position.ToVector3D();
+            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, inputData, cameraType, headsetPosition);
 
             if (Conditions.Instance()->InFlight || Conditions.Instance()->Diving)
             {

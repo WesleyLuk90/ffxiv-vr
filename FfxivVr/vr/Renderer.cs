@@ -62,7 +62,7 @@ public unsafe class Renderer(
         xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
     }
 
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView, Line? aim)
+    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, Vector3D<float> headsetPosition, EyeRender vrView, Line? aim)
     {
         var swapchainView = swapchains.Views[vrView.Eye.ToIndex()];
         CheckResolution(swapchainView);
@@ -141,7 +141,7 @@ public unsafe class Renderer(
             resources.EnableDepthStencil(context);
         }
 
-        RenderUI(context, vrViewProjectionMatrix);
+        RenderUI(context, headsetPosition, vrViewProjectionMatrix);
         if (aim != null)
         {
             RenderRay(context, 0.001f, aim.Start, aim.End, vrViewProjectionMatrix);
@@ -170,9 +170,11 @@ public unsafe class Renderer(
             resolutionErrorChecked = true;
         }
     }
-    private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj)
+    private void RenderUI(ID3D11DeviceContext* context, Vector3D<float> headsetPosition, Matrix4X4<float> viewProj)
     {
-        var matrix = vrUI.GetModelMatrix() * viewProj;
+        var position = configuration.AnchorUI ? Vector3D<float>.Zero : -headsetPosition;
+        position.Y = 0;
+        var matrix = vrUI.GetModelMatrix(position) * viewProj;
         var deformMatrix = vrUI.GetDeformMatrix();
         resources.SetCompositingBlendState(context);
         RenderUILayer(context, resources.UIRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix, false);
@@ -223,7 +225,6 @@ public unsafe class Renderer(
             resources.UpdateCamera(context, new CameraConstants(
                 modelViewProjection: scale,
                 deform: Matrix4X4<float>.Identity,
-
                 curvature: 0
             ));
             resources.SetStandardBlendState(context);

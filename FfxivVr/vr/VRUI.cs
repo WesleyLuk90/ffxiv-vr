@@ -30,9 +30,9 @@ public class VRUI(
             }
         }
     }
-    public Matrix4X4<float> GetModelMatrix()
+    public Matrix4X4<float> GetModelMatrix(Vector3D<float> position)
     {
-        return Matrix4X4.CreateScale(configuration.UISize) * Matrix4X4.CreateTranslation(PlaneCenter) * Matrix4X4.CreateFromQuaternion(CurrentAngleRotation);
+        return Matrix4X4.CreateScale(configuration.UISize) * Matrix4X4.CreateTranslation(position + PlaneCenter) * Matrix4X4.CreateFromQuaternion(CurrentAngleRotation);
     }
     public Matrix4X4<float> GetDeformMatrix()
     {
