@@ -123,7 +123,6 @@ public unsafe class FirstPersonManager(
         {
             // Any difference in rotation we assume is from the player rotating their character
             // Compute the difference and apply it to the offset
-            // TODO, when head rotation is reenabled then compute an offset so that we're facing the same direction
             var off = offset ?? character->Rotation - yaw + MathF.PI;
             offset = off;
             if (lastRotation is { } r)
@@ -131,7 +130,6 @@ public unsafe class FirstPersonManager(
                 // Use camera rotation instead so that auto face target works
                 var delta = (internalSceneCamera->CurrentHRotation - r) % (MathF.PI * 2);
                 offset += delta;
-                debugging.DebugShow("Offset", offset);
             }
             character->SetRotation(yaw + off + MathF.PI);
             internalSceneCamera->CurrentHRotation = yaw + off;

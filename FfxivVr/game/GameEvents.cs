@@ -1,6 +1,5 @@
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using System;
 using System.Collections.Generic;
 
@@ -47,20 +46,6 @@ public class GameEvents(
         {
             hudLayoutManager.Update();
         });
-    }
-    private unsafe bool DisableHeadRotation()
-    {
-        var conditions = Conditions.Instance();
-        // Summoning bell
-        return conditions->OccupiedInQuestEvent ||
-        conditions->OccupiedSummoningBell ||
-        conditions->OccupiedInCutSceneEvent ||
-        conditions->SufferingStatusAffliction ||
-        conditions->SufferingStatusAffliction2 ||
-        conditions->SufferingStatusAffliction63 ||
-        conditions->BetweenAreas ||
-        conditions->BetweenAreas51 ||
-        conditions->RolePlaying;
     }
 
     public void Dispose()
