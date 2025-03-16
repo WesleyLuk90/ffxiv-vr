@@ -1,10 +1,9 @@
+# Add head relative movement (#46)
+Add option to rotate character following head movement
+#11 
+#3
+# Update compatible patch version
+
+# Fix deprecated (#44)
+
 # Ignore zip and fix tag push
-
-# Run release as github workflow (#43)
-
-# [Feature] Add curved UI (#42)
-#38
-# Setup release action
-
-# Add quotes to error message (#41)
-Co-authored-by: Wesley Luk <wesleyluk@gmail.com>
