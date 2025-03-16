@@ -78,7 +78,6 @@ public class Debugging(
     public float Float = 0;
     public bool HideHead = false;
     public bool AlwaysMotionControls = false;
-
     public bool Trace = false;
 
     public Vector3D<float>? Location = null;

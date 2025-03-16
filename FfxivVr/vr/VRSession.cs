@@ -106,6 +106,7 @@ public unsafe class VRSession(
         {
             logger.Trace($"Set {phase.Eye} camera matrix");
             View view = phase.CurrentView(phase.CameraMode.UseHeadMovement);
+            firstPersonManager.UpdateRotation(MathFactory.GetYaw(view.Pose.Orientation.ToQuaternion()));
             vrCamera.UpdateCamera(camera, phase.GetGameCamera(vrCamera.CreateGameCamera), phase.CameraMode, view);
         }
     }

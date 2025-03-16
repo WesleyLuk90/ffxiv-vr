@@ -1,5 +1,6 @@
 using Dalamud.Game.Config;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using System;
 
 namespace FfxivVR;
 
@@ -10,6 +11,29 @@ public unsafe class FirstPersonManager(
     GameConfigManager gameConfigManager
 )
 {
+
+    private bool DisableHeadRotation()
+    {
+        var conditions = Conditions.Instance();
+        return conditions->Dead ||
+        conditions->Crafting ||
+        conditions->Gathering ||
+        conditions->RidingPillion ||
+        conditions->PlayingMiniGame ||
+        conditions->PlayingLordOfVerminion ||
+        conditions->TradeOpen ||
+        conditions->Fishing ||
+        conditions->MeldingMateria ||
+        conditions->OccupiedInQuestEvent ||
+        conditions->OccupiedSummoningBell ||
+        conditions->OccupiedInCutSceneEvent ||
+        conditions->SufferingStatusAffliction ||
+        conditions->SufferingStatusAffliction2 ||
+        conditions->SufferingStatusAffliction63 ||
+        conditions->BetweenAreas ||
+        conditions->BetweenAreas51 ||
+        conditions->RolePlaying;
+    }
     public bool IsFirstPerson { get; private set; } = false;
     public void Update()
     {
@@ -52,6 +76,11 @@ public unsafe class FirstPersonManager(
         }
     }
 
+    private bool ShouldUpdateHeadRotation()
+    {
+        return configuration.EnableHeadRelativeMovement && IsFirstPerson && !DisableHeadRotation();
+    }
+
     private uint StandardMoveMode = 0;
     public void UpdateFirstPersonSettings()
     {
@@ -73,4 +102,42 @@ public unsafe class FirstPersonManager(
         }
     }
 
+    public float? GetOffset()
+    {
+        if (!ShouldUpdateHeadRotation())
+        {
+            return null;
+        }
+        return offset;
+    }
+    private float? offset = null;
+    private float? lastRotation = null;
+    // Test both WASD and controller joystick, they behave differently
+    // Test UI rotation
+    public void UpdateRotation(float yaw)
+    {
+        var internalSceneCamera = gameState.GetInternalSceneCamera();
+        var character = gameState.getCharacterOrGpose();
+        if (ShouldUpdateHeadRotation() && internalSceneCamera != null && character != null)
+        {
+            // Any difference in rotation we assume is from the player rotating their character
+            // Compute the difference and apply it to the offset
+            var off = offset ?? character->Rotation - yaw + MathF.PI;
+            offset = off;
+            if (lastRotation is { } r)
+            {
+                // Use camera rotation instead so that auto face target works
+                var delta = (internalSceneCamera->CurrentHRotation - r) % (MathF.PI * 2);
+                offset += delta;
+            }
+            character->SetRotation(yaw + off + MathF.PI);
+            internalSceneCamera->CurrentHRotation = yaw + off;
+            lastRotation = internalSceneCamera->CurrentHRotation;
+        }
+        else
+        {
+            offset = null;
+            lastRotation = null;
+        }
+    }
 }

@@ -1,6 +1,5 @@
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
-using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
 
@@ -13,10 +12,7 @@ public class GameEvents(
     IFramework framework,
     ExceptionHandler exceptionHandler,
     VRLifecycle vrLifecycle,
-    HudLayoutManager hudLayoutManager,
-    GamepadManager gamepadManager,
-    FreeCamera freeCamera,
-    IGamepadState gamepadState
+    HudLayoutManager hudLayoutManager
 ) : IDisposable
 {
 
@@ -48,25 +44,9 @@ public class GameEvents(
     {
         exceptionHandler.FaultBarrier(() =>
         {
-            UpdateFreeCam(framework);
-
             hudLayoutManager.Update();
         });
     }
-
-    private void UpdateFreeCam(IFramework framework)
-    {
-        gamepadManager.Update();
-        var speed = 0.05f;
-        var rotationSpeed = 2 * MathF.PI / 200;
-        var timeDelta = (float)framework.UpdateDelta.TotalSeconds;
-        freeCamera.UpdatePosition(
-            walkDelta: new Vector2D<float>(gamepadState.LeftStick.X, gamepadState.LeftStick.Y) * timeDelta * speed,
-            heightDelta: gamepadState.RightStick.Y * timeDelta * speed,
-            rotationDelta: -gamepadState.RightStick.X * timeDelta * rotationSpeed
-        );
-    }
-
 
     public void Dispose()
     {

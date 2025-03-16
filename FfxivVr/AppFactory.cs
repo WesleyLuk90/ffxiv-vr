@@ -65,11 +65,9 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<Debugging>();
         builder.Services.AddSingleton<DebugWindow>();
         builder.Services.AddSingleton<ExceptionHandler>();
-        builder.Services.AddSingleton<FreeCamera>();
         builder.Services.AddSingleton<GameConfigManager>();
         builder.Services.AddSingleton<GameEvents>();
         builder.Services.AddSingleton<GameHooks>();
-        builder.Services.AddSingleton<GamepadManager>();
         builder.Services.AddSingleton<GameState>();
         builder.Services.AddSingleton<HookStatus>();
         builder.Services.AddSingleton<NameplateModifier>();

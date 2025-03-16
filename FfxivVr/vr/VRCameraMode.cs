@@ -4,7 +4,7 @@ using System;
 namespace FfxivVR;
 
 // Need to be careful here as the game camera values change slightly between the left and right frame rendering
-public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition, Vector3D<float> fixedHeadPosition)
+public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector3D<float>? headPosition, Vector3D<float> fixedHeadPosition, float? yRotation)
 {
     public readonly Vector3D<float> GameCameraForwardVector = lookAt - position;
 
@@ -12,9 +12,12 @@ public class GameCamera(Vector3D<float> position, Vector3D<float> lookAt, Vector
     public Vector3D<float> LookAt { get; } = lookAt;
     public Vector3D<float>? HeadPosition { get; } = headPosition;
     public Vector3D<float> FixedHeadPosition { get; } = fixedHeadPosition;
+
+    public float? YRotation = yRotation;
+
     public virtual float GetYRotation()
     {
-        return -MathF.PI / 2 - MathF.Atan2(GameCameraForwardVector.Z, GameCameraForwardVector.X);
+        return YRotation ?? -MathF.PI / 2 - MathF.Atan2(GameCameraForwardVector.Z, GameCameraForwardVector.X);
     }
 
 }
@@ -104,34 +107,4 @@ class LockedFloorCamera : VRCameraMode
     }
 
     public override bool ShouldLockCameraVerticalRotation { get; } = true;
-}
-
-public class FreeCamera : VRCameraMode
-{
-    public Vector3D<float> Position = Vector3D<float>.Zero;
-    public float YRotation = 0;
-    public bool Enabled = false;
-    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
-    {
-        return Position;
-    }
-
-    public override float GetYRotation(GameCamera gameCamera)
-    {
-        return YRotation;
-    }
-    public void UpdatePosition(Vector2D<float> walkDelta, float heightDelta, float rotationDelta)
-    {
-        Position.Y += heightDelta;
-        var walk = new Vector3D<float>(walkDelta.X, 0, -walkDelta.Y);
-        YRotation += rotationDelta;
-        var rotationMatrix = Matrix4X4.CreateRotationY(YRotation);
-        Position += Vector3D.Transform(walk, rotationMatrix);
-    }
-
-    internal void Reset(Vector3D<float> position, float yRotation)
-    {
-        this.Position = position;
-        this.YRotation = yRotation;
-    }
 }

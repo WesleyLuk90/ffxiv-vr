@@ -9,7 +9,6 @@ public class VRCamera(
 Configuration configuration,
 GameModifier gameModifier,
 GameState gameState,
-FreeCamera freeCamera,
 FirstPersonManager firstPersonManager
 )
 {
@@ -66,11 +65,7 @@ FirstPersonManager firstPersonManager
     {
         var characterBase = gameModifier.GetCharacterBase();
         var distance = gameState.GetGameCameraDistance();
-        if (freeCamera.Enabled)
-        {
-            return freeCamera;
-        }
-        else if (gameState.IsOccupiedInCutSceneEvent() && !configuration.KeepCutsceneCameraHorizontal)
+        if (gameState.IsOccupiedInCutSceneEvent() && !configuration.KeepCutsceneCameraHorizontal)
         {
             return new OrbitCamera();
         }
@@ -125,7 +120,7 @@ FirstPersonManager firstPersonManager
                 globalHead = Vector3D.Transform(h, t);
             }
         }
-        return new GameCamera(position, lookAt, globalHead, gameState.GetFixedHeadPosition());
+        return new GameCamera(position, lookAt, globalHead, gameState.GetFixedHeadPosition(), firstPersonManager.GetOffset());
     }
 
     internal unsafe void UpdateCamera(Camera* camera, GameCamera? gameCamera, VRCameraMode cameraType, View view)
