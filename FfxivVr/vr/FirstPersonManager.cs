@@ -16,8 +16,16 @@ public unsafe class FirstPersonManager(
     private bool DisableHeadRotation()
     {
         var conditions = Conditions.Instance();
-        // Summoning bell
-        return conditions->OccupiedInQuestEvent ||
+        return conditions->Dead ||
+        conditions->Crafting ||
+        conditions->Gathering ||
+        conditions->RidingPillion ||
+        conditions->PlayingMiniGame ||
+        conditions->PlayingLordOfVerminion ||
+        conditions->TradeOpen ||
+        conditions->Fishing ||
+        conditions->MeldingMateria ||
+        conditions->OccupiedInQuestEvent ||
         conditions->OccupiedSummoningBell ||
         conditions->OccupiedInCutSceneEvent ||
         conditions->SufferingStatusAffliction ||
@@ -26,7 +34,6 @@ public unsafe class FirstPersonManager(
         conditions->BetweenAreas ||
         conditions->BetweenAreas51 ||
         conditions->RolePlaying;
-        // TODO, dead, dying clothes
     }
     public bool IsFirstPerson { get; private set; } = false;
     public void Update()
@@ -107,6 +114,7 @@ public unsafe class FirstPersonManager(
     private float? offset = null;
     private float? lastRotation = null;
     // Test both WASD and controller joystick, they behave differently
+    // Test UI rotation
     public void UpdateRotation(float yaw)
     {
         var internalSceneCamera = gameState.GetInternalSceneCamera();
