@@ -73,4 +73,5 @@ public static class MathFactory
             return Quaternion<float>.Normalize(new Quaternion<float>(axis.X, axis.Y, axis.Z, 1 + dot));
         }
     }
+
 }

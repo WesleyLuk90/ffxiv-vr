@@ -1,7 +1,6 @@
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
 
@@ -15,8 +14,6 @@ public class GameEvents(
     ExceptionHandler exceptionHandler,
     VRLifecycle vrLifecycle,
     HudLayoutManager hudLayoutManager,
-    GamepadManager gamepadManager,
-    FreeCamera freeCamera,
     IGamepadState gamepadState,
     GameState gameState,
     Debugging debugging,
@@ -52,8 +49,6 @@ public class GameEvents(
     {
         exceptionHandler.FaultBarrier(() =>
         {
-            UpdateFreeCam(framework);
-
             hudLayoutManager.Update();
 
             var character = gameState.getCharacterOrGpose();
@@ -85,21 +80,6 @@ public class GameEvents(
         conditions->BetweenAreas51 ||
         conditions->RolePlaying;
     }
-
-
-    private void UpdateFreeCam(IFramework framework)
-    {
-        gamepadManager.Update();
-        var speed = 0.05f;
-        var rotationSpeed = 2 * MathF.PI / 200;
-        var timeDelta = (float)framework.UpdateDelta.TotalSeconds;
-        freeCamera.UpdatePosition(
-            walkDelta: new Vector2D<float>(gamepadState.LeftStick.X, gamepadState.LeftStick.Y) * timeDelta * speed,
-            heightDelta: gamepadState.RightStick.Y * timeDelta * speed,
-            rotationDelta: -gamepadState.RightStick.X * timeDelta * rotationSpeed
-        );
-    }
-
 
     public void Dispose()
     {

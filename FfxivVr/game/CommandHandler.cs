@@ -13,7 +13,6 @@ public class CommandHander(
     VRLifecycle vrLifecycle,
     Logger logger,
     ConfigManager configManager,
-    FreeCamera freeCamera,
     GameState gameState,
     DebugWindow debugWindow
 ) : IDisposable
@@ -55,21 +54,6 @@ public class CommandHander(
                         break;
                     }
                     configManager.SetConfig(name, value);
-                    break;
-                case "freecam":
-                    if (freeCamera.Enabled)
-                    {
-                        freeCamera.Enabled = false;
-                        logger.Info("Disabled free cam");
-                    }
-                    else
-                    {
-                        var active = gameState.GetCurrentCamera();
-                        var gameCamera = new GameCamera(active->Position.ToVector3D(), active->LookAtVector.ToVector3D(), null, gameState.GetFixedHeadPosition());
-                        freeCamera.Reset(gameCamera.Position, gameCamera.GetYRotation());
-                        freeCamera.Enabled = true;
-                        logger.Info("Enabled free cam");
-                    }
                     break;
                 case "debug":
                     debugWindow.Toggle();

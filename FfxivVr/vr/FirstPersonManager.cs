@@ -1,7 +1,5 @@
 using Dalamud.Game.Config;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using Newtonsoft.Json;
-using SharpDX.Win32;
 using System;
 
 namespace FfxivVR;
@@ -97,7 +95,14 @@ public unsafe class FirstPersonManager(
         }
     }
 
-
+    public float? GetOffset()
+    {
+        if (!ShouldUpdateHeadRotation())
+        {
+            return null;
+        }
+        return offset;
+    }
     private float offset = 0;
     private float? lastRotation = null;
     // Test both WASD and controller joystick, they behave differently
@@ -111,13 +116,29 @@ public unsafe class FirstPersonManager(
             // Compute the difference and apply it to the offset
             if (lastRotation is { } r)
             {
-                var delta = character->Rotation - r;
-                offset += delta;
-                debugging.DebugShow("Offset", offset);
+                // Use camera rotation instead so that auto face target works
+                var delta = (internalSceneCamera->CurrentHRotation - r) % (MathF.PI * 2);
+                if (delta > MathF.PI)
+                {
+                    delta -= MathF.PI * 2;
+                }
+                if (delta < -MathF.PI)
+                {
+                    delta += MathF.PI * 2;
+                }
+                if (MathF.Abs(delta) < 0.1f)
+                {
+                    offset += delta;
+                    debugging.DebugShow("Offset", offset);
+                }
+                if (Math.Abs(delta) != 0)
+                {
+                    debugging.DebugShow("Delta", delta);
+                }
             }
             character->SetRotation(yaw + offset + MathF.PI);
             internalSceneCamera->CurrentHRotation = yaw + offset;
-            lastRotation = character->Rotation;
+            lastRotation = internalSceneCamera->CurrentHRotation;
         }
     }
 }

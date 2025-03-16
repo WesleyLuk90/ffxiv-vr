@@ -1,10 +1,8 @@
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
