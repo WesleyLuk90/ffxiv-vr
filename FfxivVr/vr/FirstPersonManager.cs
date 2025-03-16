@@ -26,6 +26,7 @@ public unsafe class FirstPersonManager(
         conditions->BetweenAreas ||
         conditions->BetweenAreas51 ||
         conditions->RolePlaying;
+        // TODO, dead, dying clothes
     }
     public bool IsFirstPerson { get; private set; } = false;
     public void Update()
@@ -103,7 +104,7 @@ public unsafe class FirstPersonManager(
         }
         return offset;
     }
-    private float offset = 0;
+    private float? offset = null;
     private float? lastRotation = null;
     // Test both WASD and controller joystick, they behave differently
     public void UpdateRotation(float yaw)
@@ -114,31 +115,24 @@ public unsafe class FirstPersonManager(
         {
             // Any difference in rotation we assume is from the player rotating their character
             // Compute the difference and apply it to the offset
+            // TODO, when head rotation is reenabled then compute an offset so that we're facing the same direction
+            var off = offset ?? character->Rotation - yaw + MathF.PI;
+            offset = off;
             if (lastRotation is { } r)
             {
                 // Use camera rotation instead so that auto face target works
                 var delta = (internalSceneCamera->CurrentHRotation - r) % (MathF.PI * 2);
-                if (delta > MathF.PI)
-                {
-                    delta -= MathF.PI * 2;
-                }
-                if (delta < -MathF.PI)
-                {
-                    delta += MathF.PI * 2;
-                }
-                if (MathF.Abs(delta) < 0.1f)
-                {
-                    offset += delta;
-                    debugging.DebugShow("Offset", offset);
-                }
-                if (Math.Abs(delta) != 0)
-                {
-                    debugging.DebugShow("Delta", delta);
-                }
+                offset += delta;
+                debugging.DebugShow("Offset", offset);
             }
-            character->SetRotation(yaw + offset + MathF.PI);
-            internalSceneCamera->CurrentHRotation = yaw + offset;
+            character->SetRotation(yaw + off + MathF.PI);
+            internalSceneCamera->CurrentHRotation = yaw + off;
             lastRotation = internalSceneCamera->CurrentHRotation;
+        }
+        else
+        {
+            offset = null;
+            lastRotation = null;
         }
     }
 }
