@@ -13,7 +13,6 @@ public class CommandHander(
     VRLifecycle vrLifecycle,
     Logger logger,
     ConfigManager configManager,
-    GameState gameState,
     DebugWindow debugWindow
 ) : IDisposable
 {

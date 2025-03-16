@@ -13,11 +13,7 @@ public class GameEvents(
     IFramework framework,
     ExceptionHandler exceptionHandler,
     VRLifecycle vrLifecycle,
-    HudLayoutManager hudLayoutManager,
-    IGamepadState gamepadState,
-    GameState gameState,
-    Debugging debugging,
-    Configuration configuration
+    HudLayoutManager hudLayoutManager
 ) : IDisposable
 {
 
@@ -50,20 +46,6 @@ public class GameEvents(
         exceptionHandler.FaultBarrier(() =>
         {
             hudLayoutManager.Update();
-
-            var character = gameState.getCharacterOrGpose();
-            var internalSceneCamera = gameState.GetInternalSceneCamera();
-            if (character != null && internalSceneCamera != null)
-            {
-                debugging.DebugShow("Char Rotation", character->Rotation);
-                debugging.DebugShow("Camera Rotation", internalSceneCamera->CurrentHRotation);
-                debugging.DebugShow("Rotation", debugging.XRotation);
-            }
-            if (debugging.ManualRotation && !DisableHeadRotation() && character != null && internalSceneCamera != null)
-            {
-                character->SetRotation(debugging.XRotation + debugging.XRotation + MathF.PI);
-                // internalSceneCamera->CurrentHRotation = debugging.XRotation + MathF.PI;
-            }
         });
     }
     private unsafe bool DisableHeadRotation()
