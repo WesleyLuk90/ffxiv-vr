@@ -8,8 +8,7 @@ public unsafe class FirstPersonManager(
     GameState gameState,
     VRSpace vrSpace,
     Configuration configuration,
-    GameConfigManager gameConfigManager,
-    Debugging debugging
+    GameConfigManager gameConfigManager
 )
 {
 
