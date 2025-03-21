@@ -65,9 +65,16 @@ FirstPersonManager firstPersonManager
     {
         var characterBase = gameModifier.GetCharacterBase();
         var distance = gameState.GetGameCameraDistance();
-        if (gameState.IsOccupiedInCutSceneEvent() && !configuration.KeepCutsceneCameraHorizontal)
+        if (gameState.IsOccupiedInCutSceneEvent())
         {
-            return new OrbitCamera();
+            if (configuration.KeepCutsceneCameraHorizontal)
+            {
+                return new LevelOrbitCamera();
+            }
+            else
+            {
+                return new OrbitCamera();
+            }
         }
         else if (firstPersonManager.IsFirstPerson && (hasBodyData || configuration.LockToHead))
         {
