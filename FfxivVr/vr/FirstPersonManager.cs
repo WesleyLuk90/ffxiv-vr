@@ -32,7 +32,8 @@ public unsafe class FirstPersonManager(
         conditions->SufferingStatusAffliction63 ||
         conditions->BetweenAreas ||
         conditions->BetweenAreas51 ||
-        conditions->RolePlaying;
+        conditions->RolePlaying ||
+        conditions->Jumping61; // Nier raid while using flying drones
     }
     public bool IsFirstPerson { get; private set; } = false;
     public void Update()
