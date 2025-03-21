@@ -1,4 +1,1 @@
-# Remove tag push step
-
-# Fix camera during cutscenes when started in first person (#48)
-#47
+# Fix extra rotation in neir raids (#49)
