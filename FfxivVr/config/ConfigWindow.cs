@@ -71,7 +71,6 @@ public class ConfigWindow : Window
 
     private void FirstPersonTab()
     {
-        Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
         Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
         Checkbox("Use Standard Movement", ref config.EnableStandardMovementInFirstPerson);
         Checkbox("Head Relative Movement", ref config.EnableHeadRelativeMovement, "Movement is relative to your head facing direction.");
@@ -102,6 +101,8 @@ public class ConfigWindow : Window
         Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
         Slider("World Scale", ref config.WorldScale);
         Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
+        Checkbox("Body", ref config.AlwaysShowPlayerBody);
+        Checkbox("Show Body", ref config.AlwaysShowPlayerBody);
     }
 
     private void GeneralTab()

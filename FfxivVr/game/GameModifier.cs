@@ -1,7 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects;
-using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.Gui.NamePlate;
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
@@ -11,11 +8,8 @@ using System.Collections.Generic;
 namespace FfxivVR;
 public unsafe class GameModifier(
     GameState gameState,
-    ITargetManager targetManager,
-    IClientState clientState,
     NameplateModifier nameplateModifier,
     SkeletonModifier skeletonModifier,
-    GameVisibililty gameVisibililty,
     BodySkeletonModifier bodySkeletonModifier,
     HandTrackingSkeletonModifier handTrackingSkeletonModifier,
     ControllerTrackingSkeletonModifier controllerTrackingSkeletonModifier,
@@ -23,69 +17,6 @@ public unsafe class GameModifier(
     FirstPersonManager firstPersonManager
 )
 {
-    public void UpdateCharacterVisibility(bool showInFirstPerson)
-    {
-        if (gameState.IsInCutscene() || gameState.IsBetweenAreas())
-        {
-            return;
-        }
-        if (firstPersonManager.IsFirstPerson && !showInFirstPerson)
-        {
-            return;
-        }
-        gameVisibililty.UpdateVisbility(targetManager.Target, true);
-
-        if (gameState.IsGPosing())
-        {
-            gameVisibililty.UpdateVisbility(clientState.LocalPlayer, false);
-        }
-        Character* character = gameState.getCharacterOrGpose();
-
-        SetCharacterVisible(character);
-
-        var manager = CharacterManager.Instance();
-        if (clientState.LocalPlayer is IPlayerCharacter localPlayer)
-        {
-            // If we're a passenger in someone elses mount then make it visible
-            var owner = manager->LookupBattleCharaByEntityId(localPlayer.OwnerId);
-            if (owner != null)
-            {
-                SetCharacterVisible((Character*)owner);
-            }
-            // If someone else is our passenger, then make them visible
-            for (int i = 0; i < manager->BattleCharas.Length; i++)
-            {
-                var chara = manager->BattleCharas[i];
-                if (chara.Value != null)
-                {
-                    if (chara.Value->OwnerId == localPlayer.EntityId)
-                    {
-                        SetCharacterVisible((Character*)chara.Value);
-                    }
-                }
-            }
-        }
-    }
-
-    private void SetCharacterVisible(Character* character)
-    {
-        if (character == null)
-        {
-            return;
-        }
-        gameVisibililty.SetVisible(character, true);
-
-        gameVisibililty.SetVisible(character->Mount.MountObject, true);
-        gameVisibililty.SetVisible(character->OrnamentData.OrnamentObject, true);
-        var drawData = character->DrawData;
-        if (character->IsWeaponDrawn || !drawData.IsWeaponHidden || Conditions.Instance()->Crafting || Conditions.Instance()->Gathering)
-        {
-            gameVisibililty.SetVisible(drawData.Weapon(DrawDataContainer.WeaponSlot.MainHand), true);
-            gameVisibililty.SetVisible(drawData.Weapon(DrawDataContainer.WeaponSlot.OffHand), true);
-            gameVisibililty.SetVisible(drawData.Weapon(DrawDataContainer.WeaponSlot.Unk), true);
-        }
-    }
-
     public void HideHeadMesh(bool force = false)
     {
         if (gameState.IsInCutscene() && !force)

@@ -2,9 +2,13 @@
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Common.Math;
 using Silk.NET.DXGI;
+using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -58,6 +62,7 @@ public unsafe class GameHooks(
         InitializeHook(UpdateLetterboxingHook, nameof(UpdateLetterboxingHook));
         InitializeHook(GamepadPollHook, nameof(GamepadPollHook));
         InitializeHook(MousePointToRayHook, nameof(MousePointToRayHook));
+        InitializeHook(shouldDrawGameObjectHook, nameof(shouldDrawGameObjectHook));
     }
     private void InitializeHook<T>(Hook<T>? hook, string name) where T : Delegate
     {
@@ -259,5 +264,18 @@ public unsafe class GameHooks(
             }
         });
         return value;
+    }
+
+    [Signature("E8 ?? ?? ?? ?? 84 C0 75 18 48 8D 0D ?? ?? ?? ?? B3 01 ?? ?? ?? ?? ?? ??", DetourName = nameof(ShouldDrawGameObjectDetour))]
+    private Hook<CameraBase.Delegates.ShouldDrawGameObject> shouldDrawGameObjectHook = null!;
+
+    public bool ShouldDrawGameObjectDetour(CameraBase* thisPtr, GameObject* gameObject, Vector3* sceneCameraPos, Vector3* lookAtVector)
+    {
+        var shouldDraw = shouldDrawGameObjectHook!.Original(thisPtr, gameObject, sceneCameraPos, lookAtVector);
+        exceptionHandler.FaultBarrier(() =>
+        {
+            shouldDraw = vrLifecycle.ShouldDrawGameObject(shouldDraw, gameObject, new Vector3D<float>(sceneCameraPos->X, sceneCameraPos->Y, sceneCameraPos->Z));
+        });
+        return shouldDraw;
     }
 }
