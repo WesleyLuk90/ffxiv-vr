@@ -281,6 +281,7 @@ public unsafe class GameHooks(
         return shouldDraw;
     }
 
+    // https://github.com/awgil/ffxiv_navmesh/blob/master/vnavmesh/Movement/OverrideMovement.cs#L61
     private delegate void RMIFlyDelegate(void* self, PlayerMoveControllerFlyInput* result);
     [Signature("E8 ?? ?? ?? ?? 0F B6 0D ?? ?? ?? ?? B8", DetourName = nameof(RMIFlyDetour))]
     private Hook<RMIFlyDelegate> RMIFlyHook = null!;
