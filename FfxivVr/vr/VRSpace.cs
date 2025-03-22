@@ -135,4 +135,11 @@ public unsafe class VRSpace(
         }
         return views;
     }
+
+    public Posef GetView(long predictedDisplayTime)
+    {
+        var spaceLocation = new SpaceLocation(next: null);
+        xr.LocateSpace(LocalSpace, ViewSpace, predictedDisplayTime, ref spaceLocation).CheckResult("LocateSpace");
+        return spaceLocation.Pose;
+    }
 }

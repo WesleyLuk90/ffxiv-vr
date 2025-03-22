@@ -1,3 +1,4 @@
+using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
 using System.Threading.Tasks;
@@ -9,7 +10,8 @@ public class CameraPhase(
     View[] views,
     Task<FrameState> waitFrameTask,
     VRInputData vrInputData,
-    VRCameraMode caneraMode
+    VRCameraMode caneraMode,
+    Vector3D<float> headsetPosition
 )
 {
     public Eye Eye { get; private set; } = eye;
@@ -19,6 +21,8 @@ public class CameraPhase(
     private GameCamera? GameCamera = null;
 
     public VRInputData VRInputData { get; } = vrInputData;
+    public Vector3D<float> HeadsetPosition { get; } = headsetPosition;
+
     public View CurrentView(bool includeHeadMovement)
     {
         if (includeHeadMovement)
@@ -41,7 +45,7 @@ public class CameraPhase(
 
     internal RenderPhase StartRender()
     {
-        return new LeftRenderPhase(Views, WaitFrameTask, VRInputData);
+        return new LeftRenderPhase(Views, HeadsetPosition, WaitFrameTask, VRInputData);
     }
 
     // Create it once per eye so we have consistent data    
