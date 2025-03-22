@@ -1,8 +1,11 @@
 using Dalamud.Game.ClientState.GamePad;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
@@ -124,9 +127,7 @@ public unsafe class VRSession(
         }
         if (State.SessionRunning)
         {
-            gameModifier.UpdateCharacterVisibility(configuration.ShowBodyInFirstPerson);
-
-            if (configuration.ShowBodyInFirstPerson)
+            if (firstPersonManager.IsFirstPerson)
             {
                 gameModifier.HideHeadMesh();
             }
@@ -270,5 +271,21 @@ public unsafe class VRSession(
         {
             return null;
         }
+    }
+
+    internal bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Vector3D<float> cameraPosition, Vector3D<float> lookAtPosition)
+    {
+        if (shouldDraw)
+        {
+            return true;
+        }
+        if (gameState.IsInCutscene() || gameState.IsBetweenAreas())
+        {
+            return shouldDraw;
+        }
+        var radius = Math.Max(gameObject->GetRadius() * 1.1, 2);
+        var cameraDistance = (gameObject->Position.ToVector3D() - cameraPosition).Length;
+        var targetDistance = (gameObject->Position.ToVector3D() - lookAtPosition).Length;
+        return cameraDistance < radius;
     }
 }

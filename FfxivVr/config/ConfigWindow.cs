@@ -71,7 +71,6 @@ public class ConfigWindow : Window
 
     private void FirstPersonTab()
     {
-        Checkbox("Show Body", ref config.ShowBodyInFirstPerson);
         Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
         Checkbox("Use Standard Movement", ref config.EnableStandardMovementInFirstPerson);
         Checkbox("Head Relative Movement", ref config.EnableHeadRelativeMovement, "Movement is relative to your head facing direction.");

@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -197,6 +198,14 @@ public unsafe class VRLifecycle(
         lock (this)
         {
             return vrSession?.GetTargetRay(camera);
+        }
+    }
+
+    internal bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Silk.NET.Maths.Vector3D<float> cameraPosition, Silk.NET.Maths.Vector3D<float> lookAtPosition)
+    {
+        lock (this)
+        {
+            return vrSession?.ShouldDrawGameObject(shouldDraw, gameObject, cameraPosition, lookAtPosition) ?? shouldDraw;
         }
     }
 }
