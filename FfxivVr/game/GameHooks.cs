@@ -22,7 +22,8 @@ public unsafe class GameHooks(
     Logger logger,
     HookStatus hookStatus,
     IGameInteropProvider gameInteropProvider,
-    GameState gameState
+    GameState gameState,
+    Debugging debugging
 ) : IDisposable
 {
     /**
