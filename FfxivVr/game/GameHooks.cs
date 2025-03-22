@@ -9,11 +9,9 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using Silk.NET.DXGI;
 using Silk.NET.Maths;
-using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Runtime.InteropServices;
 using static FfxivVR.RenderPipelineInjector;
 using CSRay = FFXIVClientStructs.FFXIV.Client.Graphics.Ray;
 
@@ -66,7 +64,7 @@ public unsafe class GameHooks(
         InitializeHook(GamepadPollHook, nameof(GamepadPollHook));
         InitializeHook(MousePointToRayHook, nameof(MousePointToRayHook));
         InitializeHook(shouldDrawGameObjectHook, nameof(shouldDrawGameObjectHook));
-        InitializeHook(_rmiCameraHook, nameof(_rmiCameraHook));
+        InitializeHook(RMIFlyHook, nameof(RMIFlyHook));
     }
     private void InitializeHook<T>(Hook<T>? hook, string name) where T : Delegate
     {
@@ -282,27 +280,20 @@ public unsafe class GameHooks(
         });
         return shouldDraw;
     }
-    // https://github.com/AtmoOmen/ffxiv_navmesh-cn/blob/master/vnavmesh/Movement/OverrideCamera.cs
-    private delegate void RMICameraDelegate(CameraEx* self, int inputMode, float speedH, float speedV);
-    [Signature("E8 ?? ?? ?? ?? EB 05 E8 ?? ?? ?? ?? 44 0F 28 4C 24 ??")]
-    private Hook<RMICameraDelegate> _rmiCameraHook = null!;
-    private void RMICameraDetour(CameraEx* self, int inputMode, float speedH, float speedV)
-    {
-        _rmiCameraHook.Original(self, inputMode, speedH, speedV);
-        debugging.DebugShow("DeltaH", self->InputDeltaH);
-        debugging.DebugShow("DeltaV", self->InputDeltaV);
-    }
 
-}
-[StructLayout(LayoutKind.Explicit, Size = 0x2B0)]
-public unsafe struct CameraEx
-{
-    [FieldOffset(0x130)] public float DirH; // 0 is north, increases CW
-    [FieldOffset(0x134)] public float DirV; // 0 is horizontal, positive is looking up, negative looking down
-    [FieldOffset(0x138)] public float InputDeltaHAdjusted;
-    [FieldOffset(0x13C)] public float InputDeltaVAdjusted;
-    [FieldOffset(0x140)] public float InputDeltaH;
-    [FieldOffset(0x144)] public float InputDeltaV;
-    [FieldOffset(0x148)] public float DirVMin; // -85deg by default
-    [FieldOffset(0x14C)] public float DirVMax; // +45deg by default
+    private delegate void RMIFlyDelegate(void* self, PlayerMoveControllerFlyInput* result);
+    [Signature("E8 ?? ?? ?? ?? 0F B6 0D ?? ?? ?? ?? B8", DetourName = nameof(RMIFlyDetour))]
+    private Hook<RMIFlyDelegate> RMIFlyHook = null!;
+    private void RMIFlyDetour(void* self, PlayerMoveControllerFlyInput* result)
+    {
+        RMIFlyHook.Original(self, result);
+        exceptionHandler.FaultBarrier(() =>
+        {
+            if (result->Up == 0 && result->Forward != 0 && vrLifecycle.ShouldDisableCameraVerticalFly())
+            {
+                // If this is non-zero then it overwrites the vertial movement so set it to a small value
+                result->Up = 0.0001f;
+            }
+        });
+    }
 }

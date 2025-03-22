@@ -43,7 +43,7 @@ public unsafe class FirstPersonManager(
             return;
         }
         var changed = false;
-        var internalCamera = gameState.GetInternalGameCamera();
+        var internalCamera = gameState.GetGameCameraExtended();
         var activeCamera = gameState.GetActiveCamera();
         // Transition to first person can either be done by changing the camera to first person
         if (internalCamera->CameraMode == CameraView.FirstPerson)
@@ -117,7 +117,7 @@ public unsafe class FirstPersonManager(
     // Test UI rotation
     public void UpdateRotation(float yaw)
     {
-        var internalSceneCamera = gameState.GetInternalSceneCamera();
+        var internalSceneCamera = gameState.GetSceneCameraExtended();
         var character = gameState.getCharacterOrGpose();
         if (ShouldUpdateHeadRotation() && internalSceneCamera != null && character != null)
         {
