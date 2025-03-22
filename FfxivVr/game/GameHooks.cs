@@ -22,7 +22,8 @@ public unsafe class GameHooks(
     Logger logger,
     HookStatus hookStatus,
     IGameInteropProvider gameInteropProvider,
-    GameState gameState
+    GameState gameState,
+    Debugging debugging
 ) : IDisposable
 {
     /**
@@ -63,6 +64,7 @@ public unsafe class GameHooks(
         InitializeHook(GamepadPollHook, nameof(GamepadPollHook));
         InitializeHook(MousePointToRayHook, nameof(MousePointToRayHook));
         InitializeHook(shouldDrawGameObjectHook, nameof(shouldDrawGameObjectHook));
+        InitializeHook(RMIFlyHook, nameof(RMIFlyHook));
     }
     private void InitializeHook<T>(Hook<T>? hook, string name) where T : Delegate
     {
@@ -277,5 +279,22 @@ public unsafe class GameHooks(
             shouldDraw = vrLifecycle.ShouldDrawGameObject(shouldDraw, gameObject, new Vector3D<float>(sceneCameraPos->X, sceneCameraPos->Y, sceneCameraPos->Z), new Vector3D<float>(lookAtVector->X, lookAtVector->Y, lookAtVector->Z));
         });
         return shouldDraw;
+    }
+
+    // https://github.com/awgil/ffxiv_navmesh/blob/master/vnavmesh/Movement/OverrideMovement.cs#L61
+    private delegate void RMIFlyDelegate(void* self, PlayerMoveControllerFlyInput* result);
+    [Signature("E8 ?? ?? ?? ?? 0F B6 0D ?? ?? ?? ?? B8", DetourName = nameof(RMIFlyDetour))]
+    private Hook<RMIFlyDelegate> RMIFlyHook = null!;
+    private void RMIFlyDetour(void* self, PlayerMoveControllerFlyInput* result)
+    {
+        RMIFlyHook.Original(self, result);
+        exceptionHandler.FaultBarrier(() =>
+        {
+            if (result->Up == 0 && result->Forward != 0 && vrLifecycle.ShouldDisableCameraVerticalFly())
+            {
+                // If this is non-zero then it overwrites the vertial movement so set it to a small value
+                result->Up = 0.0001f;
+            }
+        });
     }
 }

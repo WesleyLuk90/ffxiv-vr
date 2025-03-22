@@ -208,4 +208,12 @@ public unsafe class VRLifecycle(
             return vrSession?.ShouldDrawGameObject(shouldDraw, gameObject, cameraPosition, lookAtPosition) ?? shouldDraw;
         }
     }
+
+    internal bool ShouldDisableCameraVerticalFly()
+    {
+        lock (this)
+        {
+            return vrSession?.ShouldDisableCameraVerticalFly() ?? false;
+        }
+    }
 }

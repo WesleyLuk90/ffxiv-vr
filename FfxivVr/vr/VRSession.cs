@@ -1,5 +1,4 @@
 using Dalamud.Game.ClientState.GamePad;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -206,19 +205,7 @@ public unsafe class VRSession(
             vrUI.Update(views[0], ticks);
             cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, inputData, cameraType);
 
-            if (Conditions.Instance()->InFlight || Conditions.Instance()->Diving)
-            {
-                if (firstPersonManager.IsFirstPerson && (configuration.DisableCameraDirectionFlying || cameraType.ShouldLockCameraVerticalRotation))
-                {
-                    gameModifier.ResetVerticalCameraRotation(float.DegreesToRadians(15));
-                }
-                else if (configuration.DisableCameraDirectionFlyingThirdPerson || cameraType.ShouldLockCameraVerticalRotation)
-                {
-                    // Vertical rotation is offset by about 15 degress for some reason
-                    gameModifier.ResetVerticalCameraRotation(float.DegreesToRadians(15));
-                }
-            }
-            else if (cameraType.ShouldLockCameraVerticalRotation)
+            if (cameraType.ShouldLockCameraVerticalRotation)
             {
                 gameModifier.ResetVerticalCameraRotation(0);
             }
@@ -287,5 +274,17 @@ public unsafe class VRSession(
         var cameraDistance = (gameObject->Position.ToVector3D() - cameraPosition).Length;
         var targetDistance = (gameObject->Position.ToVector3D() - lookAtPosition).Length;
         return cameraDistance < radius;
+    }
+
+    internal bool ShouldDisableCameraVerticalFly()
+    {
+        if (firstPersonManager.IsFirstPerson)
+        {
+            return configuration.DisableCameraDirectionFlying;
+        }
+        else
+        {
+            return configuration.DisableCameraDirectionFlyingThirdPerson;
+        }
     }
 }

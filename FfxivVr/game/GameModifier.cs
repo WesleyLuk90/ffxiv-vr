@@ -136,7 +136,7 @@ public unsafe class GameModifier(
 
     internal void ResetVerticalCameraRotation(float rotation)
     {
-        var rawCamera = gameState.GetInternalSceneCamera();
+        var rawCamera = gameState.GetSceneCameraExtended();
         if (rawCamera != null)
         {
             rawCamera->CurrentVRotation = rotation;
@@ -155,7 +155,7 @@ public unsafe class GameModifier(
 
     internal void SetCameraRotation(float rotation)
     {
-        var rawCamera = gameState.GetInternalSceneCamera();
+        var rawCamera = gameState.GetSceneCameraExtended();
         if (rawCamera != null)
         {
             rawCamera->CurrentHRotation = rotation;

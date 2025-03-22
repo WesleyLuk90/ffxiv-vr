@@ -10,8 +10,10 @@ public enum CameraView
 }
 
 [StructLayout(LayoutKind.Explicit)]
-public unsafe struct InternalGameCamera
+public unsafe struct GameCameraExtended
 {
-    public static InternalGameCamera* FromCamera(Camera* camera) => (InternalGameCamera*)camera;
+    public static GameCameraExtended* FromCamera(Camera* camera) => (GameCameraExtended*)camera;
+    [FieldOffset(0x130)] public float DirectionHorizontal;
+    [FieldOffset(0x134)] public float DirectionVertical;
     [FieldOffset(0x170)] public CameraView CameraMode;
 }

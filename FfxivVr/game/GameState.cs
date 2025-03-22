@@ -119,14 +119,14 @@ public unsafe class GameState(
         return manager->CurrentCamera;
     }
 
-    public InternalSceneCamera* GetInternalSceneCamera()
+    public SceneCameraExtended* GetSceneCameraExtended()
     {
-        return InternalSceneCamera.FromCamera(GetCurrentCamera());
+        return SceneCameraExtended.FromCamera(GetCurrentCamera());
     }
 
-    public InternalGameCamera* GetInternalGameCamera()
+    public GameCameraExtended* GetGameCameraExtended()
     {
-        return InternalGameCamera.FromCamera(GetActiveCamera());
+        return GameCameraExtended.FromCamera(GetActiveCamera());
     }
 
     private AddonFade* FadeMiddle = null;
