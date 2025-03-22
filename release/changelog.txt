@@ -1,1 +1,3 @@
-# Fix extra rotation in neir raids (#49)
+# Change how we lock vertical movement when flying/swimming (#51)
+
+# Improve camera culling disable mode (#50)
