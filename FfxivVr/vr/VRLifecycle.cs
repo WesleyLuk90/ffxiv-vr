@@ -201,11 +201,11 @@ public unsafe class VRLifecycle(
         }
     }
 
-    internal bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Silk.NET.Maths.Vector3D<float> cameraPosition)
+    internal bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Silk.NET.Maths.Vector3D<float> cameraPosition, Silk.NET.Maths.Vector3D<float> lookAtPosition)
     {
         lock (this)
         {
-            return vrSession?.ShouldDrawGameObject(shouldDraw, gameObject, cameraPosition) ?? shouldDraw;
+            return vrSession?.ShouldDrawGameObject(shouldDraw, gameObject, cameraPosition, lookAtPosition) ?? shouldDraw;
         }
     }
 }

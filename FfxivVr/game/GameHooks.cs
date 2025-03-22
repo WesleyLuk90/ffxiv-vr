@@ -274,7 +274,7 @@ public unsafe class GameHooks(
         var shouldDraw = shouldDrawGameObjectHook!.Original(thisPtr, gameObject, sceneCameraPos, lookAtVector);
         exceptionHandler.FaultBarrier(() =>
         {
-            shouldDraw = vrLifecycle.ShouldDrawGameObject(shouldDraw, gameObject, new Vector3D<float>(sceneCameraPos->X, sceneCameraPos->Y, sceneCameraPos->Z));
+            shouldDraw = vrLifecycle.ShouldDrawGameObject(shouldDraw, gameObject, new Vector3D<float>(sceneCameraPos->X, sceneCameraPos->Y, sceneCameraPos->Z), new Vector3D<float>(lookAtVector->X, lookAtVector->Y, lookAtVector->Z));
         });
         return shouldDraw;
     }

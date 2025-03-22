@@ -1,9 +1,11 @@
 using Dalamud.Game.ClientState.GamePad;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
@@ -125,9 +127,7 @@ public unsafe class VRSession(
         }
         if (State.SessionRunning)
         {
-            // gameModifier.UpdateCharacterVisibility(configuration.ShowBodyInFirstPerson);
-
-            if (configuration.AlwaysShowPlayerBody)
+            if (firstPersonManager.IsFirstPerson)
             {
                 gameModifier.HideHeadMesh();
             }
@@ -273,26 +273,21 @@ public unsafe class VRSession(
         }
     }
 
-    internal bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Vector3D<float> cameraPosition)
+    internal bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Vector3D<float> cameraPosition, Vector3D<float> lookAtPosition)
     {
+        if (shouldDraw)
+        {
+            return true;
+        }
         if (gameState.IsInCutscene() || gameState.IsBetweenAreas())
         {
             return shouldDraw;
         }
-        if (gameObject == gameState.getCharacterOrGpose())
+        if (configuration.DisableCameraCulling)
         {
-            if (configuration.AlwaysShowPlayerBody)
-            {
-                return true;
-            }
-        }
-        else
-        {
-            if (configuration.DisableCameraCulling)
-            {
-                // Do a distance based cull so that we aren't wasting time drawing things off camera
-                return shouldDraw || (gameObject->Position.ToVector3D() - cameraPosition).Length < gameObject->GetRadius() * 1.1;
-            }
+            var radius = Math.Max(gameObject->GetRadius() * 1.1, 2);
+            var cameraDistance = (gameObject->Position.ToVector3D() - cameraPosition).Length;
+            return cameraDistance < radius;
         }
         return shouldDraw;
     }
