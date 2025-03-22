@@ -44,7 +44,7 @@ public class Configuration : IPluginConfiguration
 
     public bool DisableCutsceneLetterbox = true;
 
-    public bool ShowBodyInFirstPerson = true;
+    public bool DisableCameraCulling = true;
     public bool KeepCameraHorizontal = true;
     public bool KeepCutsceneCameraHorizontal = true;
     public bool WindowAlwaysOnTop = false;
