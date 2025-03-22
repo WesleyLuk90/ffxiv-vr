@@ -101,7 +101,6 @@ public class ConfigWindow : Window
         Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
         Slider("World Scale", ref config.WorldScale);
         Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
-        Checkbox("Disable Camera Culling", ref config.DisableCameraCulling, "Prevents objects from disappearing when the camera is too close");
     }
 
     private void GeneralTab()

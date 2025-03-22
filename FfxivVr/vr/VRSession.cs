@@ -283,12 +283,9 @@ public unsafe class VRSession(
         {
             return shouldDraw;
         }
-        if (configuration.DisableCameraCulling)
-        {
-            var radius = Math.Max(gameObject->GetRadius() * 1.1, 2);
-            var cameraDistance = (gameObject->Position.ToVector3D() - cameraPosition).Length;
-            return cameraDistance < radius;
-        }
-        return shouldDraw;
+        var radius = Math.Max(gameObject->GetRadius() * 1.1, 2);
+        var cameraDistance = (gameObject->Position.ToVector3D() - cameraPosition).Length;
+        var targetDistance = (gameObject->Position.ToVector3D() - lookAtPosition).Length;
+        return cameraDistance < radius;
     }
 }
