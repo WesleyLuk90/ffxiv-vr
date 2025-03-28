@@ -285,7 +285,7 @@ public class InputManager(
             }
             var gamepadButtonBit = GetButton(action);
             var isPressed = vrActions.VRActions.Contains(action) || (pressedGamepad & (GamepadButtonsFlags)gamepadButtonBit) != 0;
-            actionStates[action].Update(gamepadInput, isPressed, (GamepadButtons)gamepadButtonBit);
+            actionStates[action].Update(gamepadInput, isPressed, gamepadButtonBit);
         }
         return actionStates;
     }

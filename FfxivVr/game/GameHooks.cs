@@ -52,6 +52,7 @@ public unsafe class GameHooks(
     public void Initialize()
     {
         gameInteropProvider.InitializeFromAttributes(this);
+        GamepadPollHook = gameInteropProvider.HookFromAddress<GamepadPollDelegate>((nint)PadDevice.StaticVirtualTablePointer->Poll, GamepadPollDetour);
         InitializeHook(FrameworkTickHook, nameof(FrameworkTickHook));
         InitializeHook(DXGIPresentHook, nameof(DXGIPresentHook));
         InitializeHook(SetMatricesHook, nameof(SetMatricesHook));
@@ -238,7 +239,6 @@ public unsafe class GameHooks(
 
     // https://github.com/goatcorp/Dalamud/blob/4c9b2a1577f8cd8c8b99e828d174b7122730e808/Dalamud/Game/ClientState/ClientStateAddressResolver.cs#L47
     private delegate int GamepadPollDelegate(PadDevice* thisptr);
-    [Signature("40 55 53 57 41 54 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 44 0F 29 B4 24", DetourName = nameof(GamepadPollDetour))]
     private Hook<GamepadPollDelegate>? GamepadPollHook = null;
     private int GamepadPollDetour(PadDevice* gamepadInput)
     {
