@@ -192,6 +192,20 @@ public unsafe class GameHooks(
         PushbackUIHook!.Original(a, b);
     }
 
+    //    1403c5694 c7 44 24        MOV        dword ptr [RSP + local_3ac],0xb000
+    //              7c 00 b0 
+    //              00 00
+    //    1403c569c 4c 89 6d 80     MOV        qword ptr [RBP + local_3a8],R13
+    //    1403c56a0 4c 89 6c        MOV        qword ptr [RSP + local_3d0],R13
+    //              24 58
+    //    1403c56a5 e8 be 70        CALL       DXGI.DLL::CreateDXGIFactory                      undefined CreateDXGIFactory() HOOK HERE
+    //              b5 01
+    //    1403c56aa 85 c0           TEST       EAX,EAX
+    //    1403c56ac 0f 88 84        JS         LAB_1403c5f36
+    //              08 00 00
+    //    1403c56b2 48 8b 8f        MOV        RCX,qword ptr [RDI + 0xe0a98]
+    //              98 0a 0e 00
+
     private delegate int CreateDXGIFactoryDelegate(IntPtr guid, void** ppFactory);
     [Signature("E8 ?? ?? ?? ?? 85 C0 0F 88 ?? ?? ?? ?? 48 8B 8F", DetourName = nameof(CreateDXGIFactoryDetour))]
     private Hook<CreateDXGIFactoryDelegate>? CreateDXGIFactoryHook = null;
@@ -274,6 +288,22 @@ public unsafe class GameHooks(
 
     // Used for aoe targeting
     // Test using Explorer Mode and cast a magic dps LB
+    //    1405e6412 f3 0f 10        MOVSS      XMM7,dword ptr [DAT_142000644]                   = 7F7FFFFFh
+    //              3d 2a a2 
+    //              a1 01
+    //    1405e641a 44 8b c2        MOV        param_3,param_2
+    //    1405e641d 48 8d 54        LEA        param_2=>local_68,[RSP + 0x40]
+    //              24 40
+    //    1405e6422 33 f6           XOR        ESI,ESI
+    //    1405e6424 49 8d 4d 10     LEA        param_1,[R13 + 0x10]
+    //    1405e6428 e8 a3 0a        CALL       FUN_140556ed0                                    undefined FUN_140556ed0() HOOK HERE
+    //              f7 ff
+    //    1405e642d 4c 8b e0        MOV        R12,RAX
+    //    1405e6430 4c 8b fb        MOV        R15,RBX
+    //    1405e6433 85 db           TEST       EBX,EBX
+    //    1405e6435 0f 8e 17        JLE        LAB_1405e6652
+    //              02 00 00
+
     private delegate CSRay* MousePointToRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* gameCamera, CSRay* ray, int mousePosX, int mousePosY);
     [Signature("E8 ?? ?? ?? ?? 4C 8B E0 4C 8B FB", DetourName = nameof(MousePointToRayDetour))]
     private Hook<MousePointToRay>? MousePointToRayHook = null;
