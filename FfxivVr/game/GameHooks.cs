@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using Silk.NET.DXGI;
 using Silk.NET.Maths;
@@ -22,8 +23,7 @@ public unsafe class GameHooks(
     Logger logger,
     HookStatus hookStatus,
     IGameInteropProvider gameInteropProvider,
-    GameState gameState,
-    Debugging debugging
+    GameState gameState
 ) : IDisposable
 {
     /**
@@ -52,6 +52,7 @@ public unsafe class GameHooks(
     public void Initialize()
     {
         gameInteropProvider.InitializeFromAttributes(this);
+        GamepadPollHook = gameInteropProvider.HookFromAddress<GamepadPollDelegate>((nint)PadDevice.StaticVirtualTablePointer->Poll, GamepadPollDetour);
         InitializeHook(FrameworkTickHook, nameof(FrameworkTickHook));
         InitializeHook(DXGIPresentHook, nameof(DXGIPresentHook));
         InitializeHook(SetMatricesHook, nameof(SetMatricesHook));
@@ -191,8 +192,22 @@ public unsafe class GameHooks(
         PushbackUIHook!.Original(a, b);
     }
 
+    //    1403c5694 c7 44 24        MOV        dword ptr [RSP + local_3ac],0xb000
+    //              7c 00 b0 
+    //              00 00
+    //    1403c569c 4c 89 6d 80     MOV        qword ptr [RBP + local_3a8],R13
+    //    1403c56a0 4c 89 6c        MOV        qword ptr [RSP + local_3d0],R13
+    //              24 58
+    //    1403c56a5 e8 be 70        CALL       DXGI.DLL::CreateDXGIFactory                      undefined CreateDXGIFactory() HOOK HERE
+    //              b5 01
+    //    1403c56aa 85 c0           TEST       EAX,EAX
+    //    1403c56ac 0f 88 84        JS         LAB_1403c5f36
+    //              08 00 00
+    //    1403c56b2 48 8b 8f        MOV        RCX,qword ptr [RDI + 0xe0a98]
+    //              98 0a 0e 00
+
     private delegate int CreateDXGIFactoryDelegate(IntPtr guid, void** ppFactory);
-    [Signature("E8 ?? ?? ?? ?? 85 C0 0F ?? ?? ?? ?? ?? 48 8B 8F ?? ?? 00 00 4C 8D 44 24", DetourName = nameof(CreateDXGIFactoryDetour))]
+    [Signature("E8 ?? ?? ?? ?? 85 C0 0F 88 ?? ?? ?? ?? 48 8B 8F", DetourName = nameof(CreateDXGIFactoryDetour))]
     private Hook<CreateDXGIFactoryDelegate>? CreateDXGIFactoryHook = null;
 
     private unsafe int CreateDXGIFactoryDetour(IntPtr guid, void** ppFactory)
@@ -206,6 +221,26 @@ public unsafe class GameHooks(
             return api.CreateDXGIFactory1(guidPtr, ppFactory);
         }
     }
+
+    //    140092af8 48 8b 98        MOV        RBX,qword ptr [RAX + 0x7a8]
+    //              a8 07 00 00
+    //    140092aff ff 15 e3        CALL       qword ptr [->USER32.DLL::GetCursorPos]           = 025d79ce
+    //              9f e6 01
+    //    140092b05 48 8d 54        LEA        RDX=>local_38,[RSP + 0x20]
+    //              24 20
+    //    140092b0a 48 8b cb        MOV        RCX,RBX
+    //    140092b0d e8 9e 3b        CALL       FUN_1400666b0                                    undefined FUN_1400666b0() HOOK HERE
+    //              fd ff
+    //    140092b12 48 8b 4b 18     MOV        RCX,qword ptr [RBX + 0x18]
+    //    140092b16 48 8d 54        LEA        RDX=>local_28,[RSP + 0x30]
+    //              24 30
+    //    140092b1b ff 15 e7        CALL       qword ptr [->USER32.DLL::GetClientRect]          = 025d798e
+    //              9f e6 01
+    //    140092b21 48 8b 44        MOV        RAX,qword ptr [RSP + local_38]
+    //              24 20
+    //    140092b26 3b 44 24 30     CMP        EAX,dword ptr [RSP + local_28]
+    //    140092b2a 0f 8c 3b        JL         LAB_140092c6b
+    //              01 00 00
 
     private delegate void MousePointScreenToClientDelegate(long frameworkInstance, Point* mousePos);
     [Signature("E8 ?? ?? ?? ?? 48 8B 4B ?? 48 8D 54 24 ?? FF 15", DetourName = nameof(MousePointScreenToClientDetour))]
@@ -237,10 +272,9 @@ public unsafe class GameHooks(
     }
 
     // https://github.com/goatcorp/Dalamud/blob/4c9b2a1577f8cd8c8b99e828d174b7122730e808/Dalamud/Game/ClientState/ClientStateAddressResolver.cs#L47
-    private delegate int GamepadPollDelegate(GamepadInput* thisptr);
-    [Signature("40 55 53 57 41 54 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 44 0F 29 B4 24", DetourName = nameof(GamepadPollDetour))]
+    private delegate int GamepadPollDelegate(PadDevice* thisptr);
     private Hook<GamepadPollDelegate>? GamepadPollHook = null;
-    private int GamepadPollDetour(GamepadInput* gamepadInput)
+    private int GamepadPollDetour(PadDevice* gamepadInput)
     {
         logger.Trace("GamepadPollDetour");
         var returnVaue = GamepadPollHook!.Original(gamepadInput);
@@ -250,9 +284,28 @@ public unsafe class GameHooks(
         });
         return returnVaue;
     }
+
+
+    // Used for aoe targeting
+    // Test using Explorer Mode and cast a magic dps LB
+    //    1405e6412 f3 0f 10        MOVSS      XMM7,dword ptr [DAT_142000644]                   = 7F7FFFFFh
+    //              3d 2a a2 
+    //              a1 01
+    //    1405e641a 44 8b c2        MOV        param_3,param_2
+    //    1405e641d 48 8d 54        LEA        param_2=>local_68,[RSP + 0x40]
+    //              24 40
+    //    1405e6422 33 f6           XOR        ESI,ESI
+    //    1405e6424 49 8d 4d 10     LEA        param_1,[R13 + 0x10]
+    //    1405e6428 e8 a3 0a        CALL       FUN_140556ed0                                    undefined FUN_140556ed0() HOOK HERE
+    //              f7 ff
+    //    1405e642d 4c 8b e0        MOV        R12,RAX
+    //    1405e6430 4c 8b fb        MOV        R15,RBX
+    //    1405e6433 85 db           TEST       EBX,EBX
+    //    1405e6435 0f 8e 17        JLE        LAB_1405e6652
+    //              02 00 00
+
     private delegate CSRay* MousePointToRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* gameCamera, CSRay* ray, int mousePosX, int mousePosY);
-    // https://github.com/ProjectMimer/xivr-Ex/blob/main/xivr-Ex/xivr_hooks.cs#L2191
-    [Signature("E8 ?? ?? ?? ?? 4C 8B E0 48 8B EB", DetourName = nameof(MousePointToRayDetour))]
+    [Signature("E8 ?? ?? ?? ?? 4C 8B E0 4C 8B FB", DetourName = nameof(MousePointToRayDetour))]
     private Hook<MousePointToRay>? MousePointToRayHook = null;
 
     private CSRay* MousePointToRayDetour(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* gameCamera, CSRay* ray, int mousePosX, int mousePosY)

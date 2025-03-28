@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -22,6 +22,9 @@
     <PackageReference Include="OpenXR.Loader" Version="1.0.10.2" GeneratePathProperty="true" />
     <Reference Include="Dalamud">
       <HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
+    </Reference>
+    <Reference Include="FFXIVClientStructs">
+      <HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
