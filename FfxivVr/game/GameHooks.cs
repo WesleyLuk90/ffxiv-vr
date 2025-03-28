@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.ClientState.GamePad;
-using Dalamud.Hooking;
+﻿using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;

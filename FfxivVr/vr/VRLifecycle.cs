@@ -1,6 +1,6 @@
-﻿using FFXIVClientStructs.FFXIV.Client.System.Input;
-using Dalamud.Game.Gui.NamePlate;
+﻿using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.System.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
