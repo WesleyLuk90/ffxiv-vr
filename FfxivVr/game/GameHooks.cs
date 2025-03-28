@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using Silk.NET.DXGI;
 using Silk.NET.Maths;
@@ -22,8 +23,7 @@ public unsafe class GameHooks(
     Logger logger,
     HookStatus hookStatus,
     IGameInteropProvider gameInteropProvider,
-    GameState gameState,
-    Debugging debugging
+    GameState gameState
 ) : IDisposable
 {
     /**
@@ -237,10 +237,10 @@ public unsafe class GameHooks(
     }
 
     // https://github.com/goatcorp/Dalamud/blob/4c9b2a1577f8cd8c8b99e828d174b7122730e808/Dalamud/Game/ClientState/ClientStateAddressResolver.cs#L47
-    private delegate int GamepadPollDelegate(GamepadInput* thisptr);
+    private delegate int GamepadPollDelegate(PadDevice* thisptr);
     [Signature("40 55 53 57 41 54 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 44 0F 29 B4 24", DetourName = nameof(GamepadPollDetour))]
     private Hook<GamepadPollDelegate>? GamepadPollHook = null;
-    private int GamepadPollDetour(GamepadInput* gamepadInput)
+    private int GamepadPollDetour(PadDevice* gamepadInput)
     {
         logger.Trace("GamepadPollDetour");
         var returnVaue = GamepadPollHook!.Original(gamepadInput);

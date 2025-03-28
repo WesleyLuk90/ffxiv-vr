@@ -1,7 +1,7 @@
-using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.System.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
@@ -223,7 +223,7 @@ public unsafe class VRSession(
         gameModifier.OnNamePlateUpdate(context, handlers);
     }
 
-    internal void UpdateGamepad(GamepadInput* gamepadInput)
+    internal void UpdateGamepad(PadDevice* gamepadInput)
     {
         if (cameraPhase is CameraPhase phase)
         {

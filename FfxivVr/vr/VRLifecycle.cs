@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.ClientState.GamePad;
+﻿using FFXIVClientStructs.FFXIV.Client.System.Input;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Microsoft.Extensions.DependencyInjection;
@@ -185,7 +185,7 @@ public unsafe class VRLifecycle(
         }
     }
 
-    internal void UpdateGamepad(GamepadInput* gamepadInput)
+    internal void UpdateGamepad(PadDevice* gamepadInput)
     {
         lock (this)
         {

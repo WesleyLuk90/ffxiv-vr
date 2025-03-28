@@ -4,7 +4,7 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.Interop;
 using System.Collections.Generic;
-using static FFXIVClientStructs.FFXIV.Client.UI.AddonNamePlate;
+using FFXIVClientStructs.FFXIV.Client.UI.Arrays;
 
 namespace FfxivVR;
 public unsafe class NameplateModifier(
@@ -20,7 +20,7 @@ public unsafe class NameplateModifier(
         {
             if (handlers[i].GameObjectId == target?.GameObjectId || handlers[i].GameObjectId == softTarget?.GameObjectId)
             {
-                var namePlateArray = (AddonNamePlateNumberArray*)context.NumberArrayDataEntryAddress;
+                var namePlateArray = (NamePlateNumberArray*)context.NumberArrayDataEntryAddress;
                 var objectData = namePlateArray->ObjectData.GetPointer(handlers[i].ArrayIndex);
                 // Set this to the normal flag to prevent the target nameplate from moving around
                 objectData->DrawFlags |= 1 << 3;
