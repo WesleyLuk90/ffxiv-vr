@@ -1,3 +1,3 @@
-# Update api version (#55)
+# Fix rotation while sitting (#57)
 
-# Cleanup (#54)
+# Add format check (#56)
