@@ -37,6 +37,9 @@ jobs:
           Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/stg/latest.zip -OutFile latest.zip
           Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev\"
 
+      - name: Format Check
+        run: |
+          dotnet format --verify-no-changes
       - name: Build
         run: |
           dotnet build --configuration Release --nologo
