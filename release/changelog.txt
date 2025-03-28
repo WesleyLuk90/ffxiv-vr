@@ -1,1 +1,3 @@
-# Update plugin for API 12/FFXIV 7.2 (#52)
+# Update api version (#55)
+
+# Cleanup (#54)

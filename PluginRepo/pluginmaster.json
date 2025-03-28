@@ -1,25 +1,25 @@
 [
-  {
-    "Author": "Steelgunner90",
-    "Name": "FFXIV VR",
-    "Punchline": "A VR plugin for FFXIV.",
-    "Description": "A VR plugin for FFXIV.",
-    "Changelog": "",
-    "InternalName": "FfxivVR",
-    "AssemblyVersion": "0.0.53",
-    "RepoUrl": "https://github.com/WesleyLuk90/ffxiv-vr",
-    "ApplicableVersion": "any",
-    "DalamudApiLevel": 12,
-    "LoadPriority": 69420,
-    "LoadRequiredState": 2,
-    "LoadSync": true,
-    "IconUrl": "",
-    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.53/FfxivVR.zip",
-    "IsHide": false,
-    "IsTestingExclusive": false,
-    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.53/FfxivVR.zip",
-    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.53/FfxivVR.zip",
-    "DownloadCount": 0,
-    "LastUpdated": 1743179940
-  }
+    {
+        "Author":  "Steelgunner90",
+        "Name":  "FFXIV VR",
+        "Punchline":  "A VR plugin for FFXIV.",
+        "Description":  "A VR plugin for FFXIV.",
+        "Changelog":  "",
+        "InternalName":  "FfxivVR",
+        "AssemblyVersion":  "0.0.54",
+        "RepoUrl":  "https://github.com/WesleyLuk90/ffxiv-vr",
+        "ApplicableVersion":  "any",
+        "DalamudApiLevel":  12,
+        "LoadPriority":  69420,
+        "LoadRequiredState":  2,
+        "LoadSync":  true,
+        "IconUrl":  "",
+        "DownloadLinkInstall":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.54/FfxivVR.zip",
+        "IsHide":  false,
+        "IsTestingExclusive":  false,
+        "DownloadLinkTesting":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.54/FfxivVR.zip",
+        "DownloadLinkUpdate":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.54/FfxivVR.zip",
+        "DownloadCount":  0,
+        "LastUpdated":  1743189968
+    }
 ]

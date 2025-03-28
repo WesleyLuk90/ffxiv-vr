@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/12.0.2">
   <PropertyGroup>
-    <Version>0.0.53</Version>
+    <Version>0.0.54</Version>
     <Description>A VR plugin for FFXIV.</Description>
     <PackageProjectUrl>https://github.com/WesleyLuk90/ffxiv-vr</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
