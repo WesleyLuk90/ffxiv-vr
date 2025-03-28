@@ -12,7 +12,7 @@ public unsafe class FirstPersonManager(
 )
 {
 
-    private bool DisableHeadRotation()
+    private bool DisableBodyRotation()
     {
         var conditions = Conditions.Instance();
         return conditions->Dead ||
@@ -33,7 +33,8 @@ public unsafe class FirstPersonManager(
         conditions->BetweenAreas ||
         conditions->BetweenAreas51 ||
         conditions->RolePlaying ||
-        conditions->Jumping61; // Nier raid while using flying drones
+        conditions->InThatPosition || // Using /sit
+        conditions->Jumping61; // Gold Saucer juming fountains
     }
     public bool IsFirstPerson { get; private set; } = false;
     public void Update()
@@ -79,7 +80,7 @@ public unsafe class FirstPersonManager(
 
     private bool ShouldUpdateHeadRotation()
     {
-        return configuration.EnableHeadRelativeMovement && IsFirstPerson && !DisableHeadRotation();
+        return configuration.EnableHeadRelativeMovement && IsFirstPerson && !DisableBodyRotation();
     }
 
     private uint StandardMoveMode = 0;
