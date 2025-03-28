@@ -1,10 +1,10 @@
 ﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.UI.Arrays;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.Interop;
 using System.Collections.Generic;
-using FFXIVClientStructs.FFXIV.Client.UI.Arrays;
 
 namespace FfxivVR;
 public unsafe class NameplateModifier(
