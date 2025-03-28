@@ -1,3 +1,1 @@
-# Change how we lock vertical movement when flying/swimming (#51)
-
-# Improve camera culling disable mode (#50)
+# Update plugin for API 12/FFXIV 7.2 (#52)
