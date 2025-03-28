@@ -223,11 +223,12 @@ public unsafe class VRSession(
         gameModifier.OnNamePlateUpdate(context, handlers);
     }
 
-    internal void UpdateGamepad(PadDevice* gamepadInput)
+    internal void UpdateGamepad(PadDevice* padDevice)
     {
         if (cameraPhase is CameraPhase phase)
         {
-            inputManager.UpdateGamepad(gamepadInput, phase.VRInputData);
+            var padDeviceExtended = PadDeviceExtended.FromPadDevice(padDevice);
+            inputManager.UpdateGamepad(&padDevice->GamepadInputData, phase.VRInputData, padDeviceExtended->IsActive);
         }
     }
 

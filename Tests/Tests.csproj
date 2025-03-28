@@ -23,6 +23,9 @@
     <Reference Include="Dalamud">
       <HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
     </Reference>
+    <Reference Include="FFXIVClientStructs">
+      <HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="$(PkgOpenXR_Loader)\native\x64\release\bin\openxr_loader.dll">

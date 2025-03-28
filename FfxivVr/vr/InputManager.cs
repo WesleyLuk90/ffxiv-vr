@@ -17,11 +17,11 @@ public class InputManager(
     VRUI vrUI
 )
 {
-    public unsafe void UpdateGamepad(GamepadInputData* gamepadInput, VRInputData vrInput)
+    public unsafe void UpdateGamepad(GamepadInputData* gamepadInput, VRInputData vrInput, bool isGamepadActive)
     {
         var state = vrInput.GetPhysicalActionsState(configuration.DisableControllersWhenTracking);
         var pressedActions = ApplyBindings(state);
-        var actionsState = ApplyStates(pressedActions, gamepadInput);
+        var actionsState = ApplyStates(pressedActions, gamepadInput, isGamepadActive);
         UpdateMousePosition(actionsState, vrInput.AimPose);
     }
 
@@ -222,7 +222,7 @@ public class InputManager(
             return 210 + nextRepeat * 50;
         }
 
-        public unsafe void Update(PadDevice* gamepadInput, bool isPressed, GamepadButtons buttonBit)
+        public unsafe void Update(GamepadInputData* gamepadInput, bool isPressed, GamepadButtons buttonBit)
         {
             WasPressed = false;
             WasReleased = false;
@@ -230,23 +230,23 @@ public class InputManager(
             {
                 if (!IsActive)
                 {
-                    // gamepadInput->GamepadInputData.ButtonsPressed |= (ushort)buttonBit;
+                    gamepadInput->ButtonsPressed |= (GamepadButtonsFlags)buttonBit;
                     stopwatch.Restart();
                     nextRepeat = 1;
                     WasPressed = true;
                 }
 
-                // gamepadInput->GamepadInputData.ButtonsRaw |= (ushort)buttonBit;
+                gamepadInput->Buttons |= (GamepadButtonsFlags)buttonBit;
                 if (DoRepeat())
                 {
-                    // gamepadInput->GamepadInputData.ButtonsRepeat |= (ushort)buttonBit;
+                    gamepadInput->ButtonsRepeat |= (GamepadButtonsFlags)buttonBit;
                 }
             }
             else
             {
                 if (IsActive)
                 {
-                    // gamepadInput->GamepadInputData.ButtonsReleased = (ushort)buttonBit;
+                    gamepadInput->ButtonsReleased = (GamepadButtonsFlags)buttonBit;
                     WasReleased = true;
                 }
             }
@@ -264,20 +264,19 @@ public class InputManager(
     }
 
     private Dictionary<VRAction, ActionState> actionStates = new();
-    private unsafe Dictionary<VRAction, ActionState> ApplyStates(VRActionsState vrActions, GamepadInputData* gamepadInput)
+    private unsafe Dictionary<VRAction, ActionState> ApplyStates(VRActionsState vrActions, GamepadInputData* gamepadInput, bool isGamepadActive)
     {
-        var internalGamepadInput = InternalGamepadInput.FromGamepadInput(gamepadInput);
         // If the gamepad is not active then the values are never reset from the previous frame so we need to clear them
-        if (!internalGamepadInput->IsActive)
+        if (!isGamepadActive)
         {
             Clear(gamepadInput);
         }
-        mergeStickInput(ref gamepadInput->GamepadInputData.LeftStickX, vrActions.LeftStick.X);
-        mergeStickInput(ref gamepadInput->GamepadInputData.LeftStickY, vrActions.LeftStick.Y);
-        mergeStickInput(ref gamepadInput->GamepadInputData.RightStickX, vrActions.RightStick.X);
-        mergeStickInput(ref gamepadInput->GamepadInputData.RightStickY, vrActions.RightStick.Y);
+        mergeStickInput(ref gamepadInput->LeftStickX, vrActions.LeftStick.X);
+        mergeStickInput(ref gamepadInput->LeftStickY, vrActions.LeftStick.Y);
+        mergeStickInput(ref gamepadInput->RightStickX, vrActions.RightStick.X);
+        mergeStickInput(ref gamepadInput->RightStickY, vrActions.RightStick.Y);
 
-        var pressedGamepad = gamepadInput->GamepadInputData.Buttons;
+        var pressedGamepad = gamepadInput->Buttons;
         foreach (var action in Enum.GetValues<VRAction>())
         {
             if (!actionStates.ContainsKey(action))
@@ -285,22 +284,22 @@ public class InputManager(
                 actionStates[action] = new();
             }
             var gamepadButtonBit = GetButton(action);
-            // var isPressed = vrActions.VRActions.Contains(action) || (pressedGamepad & (int)gamepadButtonBit) != 0;
-            // actionStates[action].Update(gamepadInput, isPressed, gamepadButtonBit);
+            var isPressed = vrActions.VRActions.Contains(action) || (pressedGamepad & (GamepadButtonsFlags)gamepadButtonBit) != 0;
+            actionStates[action].Update(gamepadInput, isPressed, (GamepadButtons)gamepadButtonBit);
         }
         return actionStates;
     }
 
-    private static unsafe void Clear(PadDevice* gamepadInput)
+    private static unsafe void Clear(GamepadInputData* gamepadInput)
     {
-        gamepadInput->GamepadInputData.ButtonsPressed = 0;
-        // gamepadInput->GamepadInputData.ButtonsRaw = 0;
-        // gamepadInput->GamepadInputData.ButtonsReleased = 0;
-        // gamepadInput->GamepadInputData.ButtonsRepeat = 0;
-        gamepadInput->GamepadInputData.LeftStickX = 0;
-        gamepadInput->GamepadInputData.LeftStickY = 0;
-        gamepadInput->GamepadInputData.RightStickX = 0;
-        gamepadInput->GamepadInputData.RightStickY = 0;
+        gamepadInput->ButtonsPressed = 0;
+        gamepadInput->Buttons = 0;
+        gamepadInput->ButtonsReleased = 0;
+        gamepadInput->ButtonsRepeat = 0;
+        gamepadInput->LeftStickX = 0;
+        gamepadInput->LeftStickY = 0;
+        gamepadInput->RightStickX = 0;
+        gamepadInput->RightStickY = 0;
     }
 
     private void mergeStickInput(ref int gamepadStick, float vrActionStick)
@@ -312,27 +311,26 @@ public class InputManager(
         }
     }
 
-    private GamepadButtonsFlags GetButton(VRAction action)
+    private GamepadButtons GetButton(VRAction action)
     {
         switch (action)
         {
-            // FIXME
-            case VRAction.A: return GamepadButtonsFlags.Circle;
-            case VRAction.B: return GamepadButtonsFlags.Circle;
-            case VRAction.X: return GamepadButtonsFlags.Circle;
-            case VRAction.Y: return GamepadButtonsFlags.Circle;
-            case VRAction.Up: return GamepadButtonsFlags.DPadUp;
-            case VRAction.Down: return GamepadButtonsFlags.DPadDown;
-            case VRAction.Left: return GamepadButtonsFlags.DPadLeft;
-            case VRAction.Right: return GamepadButtonsFlags.DPadRight;
-            case VRAction.L1: return GamepadButtonsFlags.L1;
-            case VRAction.L2: return GamepadButtonsFlags.L2;
-            case VRAction.L3: return GamepadButtonsFlags.L3;
-            case VRAction.R1: return GamepadButtonsFlags.R1;
-            case VRAction.R2: return GamepadButtonsFlags.R2;
-            case VRAction.R3: return GamepadButtonsFlags.R3;
-            case VRAction.Start: return GamepadButtonsFlags.Start;
-            case VRAction.Select: return GamepadButtonsFlags.Select;
+            case VRAction.A: return GamepadButtons.South;
+            case VRAction.B: return GamepadButtons.East;
+            case VRAction.X: return GamepadButtons.West;
+            case VRAction.Y: return GamepadButtons.North;
+            case VRAction.Up: return GamepadButtons.DpadUp;
+            case VRAction.Down: return GamepadButtons.DpadDown;
+            case VRAction.Left: return GamepadButtons.DpadLeft;
+            case VRAction.Right: return GamepadButtons.DpadRight;
+            case VRAction.L1: return GamepadButtons.L1;
+            case VRAction.L2: return GamepadButtons.L2;
+            case VRAction.L3: return GamepadButtons.L3;
+            case VRAction.R1: return GamepadButtons.R1;
+            case VRAction.R2: return GamepadButtons.R2;
+            case VRAction.R3: return GamepadButtons.R3;
+            case VRAction.Start: return GamepadButtons.Start;
+            case VRAction.Select: return GamepadButtons.Select;
             default: return 0;
         }
     }
