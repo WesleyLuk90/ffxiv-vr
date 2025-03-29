@@ -44,7 +44,7 @@ public unsafe class HandTracking(
     private uint JointCount = (uint)HandJointEXT.LittleTipExt + 1; // Last value in enum
     public HandPose GetHandTrackingData(Space space, long predictedTime)
     {
-        HandJointsMotionRangeInfoEXT motionRangeInfo = new HandJointsMotionRangeInfoEXT(handJointsMotionRange: HandJointsMotionRangeEXT.UnobstructedExt);
+        HandJointsMotionRangeInfoEXT motionRangeInfo = new HandJointsMotionRangeInfoEXT(handJointsMotionRange: HandJointsMotionRangeEXT.ConformingToControllerExt);
         var locateInfo = new HandJointsLocateInfoEXT(
             next: &motionRangeInfo,
             baseSpace: space,
