@@ -1,3 +1,1 @@
-# Fix rotation while sitting (#57)
-
-# Add format check (#56)
+# Fix hand tracking error (#58)
