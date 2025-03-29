@@ -60,7 +60,7 @@ public unsafe class HandTracking(
                 jointCount: JointCount,
                 jointLocations: ptr
             );
-            // Some runtimes/headsets return a validation failure here
+            // This is reported to throw a validation error on Vive Pro 2 and SteamVR
             var result = handTracking.LocateHandJoints(leftHandTracker, &locateInfo, &locations);
             if (result == Result.ErrorValidationFailure)
             {
