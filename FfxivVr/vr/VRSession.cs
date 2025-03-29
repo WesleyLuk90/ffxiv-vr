@@ -186,7 +186,7 @@ public unsafe class VRSession(
 
     internal void PrepareVRRender()
     {
-        var ticks = gameClock.GetTicks();
+        var ticks = gameClock.MarkFrame();
         firstPersonManager.Update();
         if (State.SessionRunning)
         {
