@@ -41,11 +41,12 @@ public unsafe class HandTracking(
         }
     }
 
-    private uint JointCount = 26; // Number of values in HandJointEXT enum
+    private uint JointCount = (uint)HandJointEXT.LittleTipExt + 1; // Last value in enum
     public HandPose GetHandTrackingData(Space space, long predictedTime)
     {
         HandJointsMotionRangeInfoEXT motionRangeInfo = new HandJointsMotionRangeInfoEXT(handJointsMotionRange: HandJointsMotionRangeEXT.UnobstructedExt);
         var locateInfo = new HandJointsLocateInfoEXT(
+            next: &motionRangeInfo,
             baseSpace: space,
             time: predictedTime
         );
@@ -59,7 +60,13 @@ public unsafe class HandTracking(
                 jointCount: JointCount,
                 jointLocations: ptr
             );
-            handTracking.LocateHandJoints(leftHandTracker, &locateInfo, &locations).CheckResult("LocateHandJointsEXT");
+            // Some runtimes/headsets return a validation failure here
+            var result = handTracking.LocateHandJoints(leftHandTracker, &locateInfo, &locations);
+            if (result == Result.ErrorValidationFailure)
+            {
+                return new HandPose(null, null, isFromController: false);
+            }
+            result.CheckResult("LocateHandJointsEXT");
         }
         var rightHand = new HandJointLocationEXT[JointCount];
         var rightSpan = new Span<HandJointLocationEXT>(rightHand);
@@ -71,7 +78,12 @@ public unsafe class HandTracking(
                 jointCount: JointCount,
                 jointLocations: ptr
             );
-            handTracking.LocateHandJoints(rightHandTracker, &locateInfo, &locations).CheckResult("LocateHandJointsEXT");
+            var result = handTracking.LocateHandJoints(rightHandTracker, &locateInfo, &locations);
+            if (result == Result.ErrorValidationFailure)
+            {
+                return new HandPose(null, null, isFromController: false);
+            }
+            result.CheckResult("LocateHandJointsEXT");
         }
         var leftValid = leftHand.Any(j => j.LocationFlags != 0);
         var rightValid = rightHand.Any(j => j.LocationFlags != 0);
