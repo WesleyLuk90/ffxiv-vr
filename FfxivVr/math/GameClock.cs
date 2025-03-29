@@ -14,7 +14,7 @@ public class GameClock(
     private float frameTime = 0f;
     private float smoothingFactor = 0.9f;
 
-    private IDtrBarEntry fpsEntry = dtrBar.Get("VR FPS", "FPS: N/A");
+    private IDtrBarEntry fpsEntry = dtrBar.Get("VR FPS", "VR FPS: N/A");
 
     public void Dispose()
     {
@@ -31,7 +31,7 @@ public class GameClock(
         {
             var fps = 1f / frameTime;
             updateTimer.Restart();
-            fpsEntry.Text = $"FPS: {fps:F1}";
+            fpsEntry.Text = $"VR FPS: {fps:F1}";
         }
         return elapsed;
     }
