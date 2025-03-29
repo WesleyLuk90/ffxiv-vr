@@ -30,6 +30,7 @@ public unsafe class AppFactoryTests
         AppFactory.CommandManager = new Mock<ICommandManager>().Object;
         AppFactory.Framework = new Mock<IFramework>().Object;
         AppFactory.NamePlateGui = new Mock<INamePlateGui>().Object;
+        AppFactory.DtrBar = new Mock<IDtrBar>().Object;
 
         var factory = new AppFactory(device: new DxDevice(null));
 
