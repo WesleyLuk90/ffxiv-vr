@@ -1,6 +1,8 @@
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
@@ -37,7 +39,8 @@ public unsafe class VRSession(
     VRInputService vrInputService,
     DalamudRenderer dalamudRenderer,
     FirstPersonManager firstPersonManager,
-    Debugging debugging
+    Debugging debugging,
+    ITargetManager targetManager
 )
 {
     public VRState State = State;
@@ -271,10 +274,14 @@ public unsafe class VRSession(
         {
             return shouldDraw;
         }
-        var radius = Math.Max(gameObject->GetRadius() * 1.1, 2);
+        if ((IntPtr)gameObject == targetManager.Target?.Address)
+        {
+            return true;
+        }
+        var radius = Math.Max(gameObject->GetRadius() + 1, 2);
         var cameraDistance = (gameObject->Position.ToVector3D() - cameraPosition).Length;
         var targetDistance = (gameObject->Position.ToVector3D() - lookAtPosition).Length;
-        return cameraDistance < radius;
+        return cameraDistance < radius || cameraDistance < radius;
     }
 
     internal bool ShouldDisableCameraVerticalFly()
