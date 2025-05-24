@@ -7,3 +7,4 @@ TestResults
 *.cso
 dalamud-latest
 latest.zip
+.aider*

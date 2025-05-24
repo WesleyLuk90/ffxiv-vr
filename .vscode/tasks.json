@@ -1,0 +1,14 @@
+{
+  "tasks": [
+    {
+      "label": "format",
+      "type": "shell",
+      "command": "dotnet format",
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

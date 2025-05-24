@@ -265,13 +265,20 @@ public unsafe class VRSession(
 
     internal bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Vector3D<float> cameraPosition, Vector3D<float> lookAtPosition)
     {
-        if (shouldDraw)
-        {
-            return true;
-        }
         if (gameState.IsInCutscene() || gameState.IsBetweenAreas())
         {
             return shouldDraw;
+        }
+        if (firstPersonManager.IsFirstPerson && configuration.HideBodyInFirstPerson)
+        {
+            if (gameObject->EntityId == gameState.getCharacterOrGpose()->EntityId)
+            {
+                return false;
+            }
+        }
+        if (shouldDraw)
+        {
+            return true;
         }
         if ((IntPtr)gameObject == targetManager.Target?.Address)
         {

@@ -29,6 +29,8 @@ public class Configuration : IPluginConfiguration
     public bool EnableHeadRelativeMovement = false;
     public bool DisableMotionTrackingInCombat = false;
 
+    public bool HideBodyInFirstPerson = false;
+
     public bool MatchFloorPosition = false;
     public float FloorHeightOffset = 0;
     public bool DisableCameraDirectionFlying = false;
