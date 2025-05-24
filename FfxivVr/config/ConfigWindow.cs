@@ -7,6 +7,7 @@ using System.Linq;
 using System.Numerics;
 
 namespace FfxivVR;
+
 public class ConfigWindow : Window
 {
     private readonly Configuration config;
@@ -76,6 +77,7 @@ public class ConfigWindow : Window
         Checkbox("Head Relative Movement", ref config.EnableHeadRelativeMovement, "Movement is relative to your head facing direction.");
         Checkbox("Camera follows Head", ref config.FollowCharacter, "Centers the camera on your characters head.");
         Checkbox("Camera is locked to Head", ref config.LockToHead, "Locks the camera to your characters head.");
+        Checkbox("Hide Body", ref config.HideBodyInFirstPerson, "Hides your character's body.");
         Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlying);
         Checkbox("Disable motion tracking in combat", ref config.DisableMotionTrackingInCombat, "Disables all motion tracking when in combat.");
         Checkbox("Enable hand tracking", ref config.HandTracking, "Uses your headsets hand tracking to control your characters hands and fingers, not all headsets are supported.");
