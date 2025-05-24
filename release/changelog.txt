@@ -1,1 +1,5 @@
-# Fix hand tracking error (#58)
+# Add hide body option back #68 (#69)
+
+# Adjust camera culling calc (#60)
+
+# Add VR FPS Tracker (#59)
