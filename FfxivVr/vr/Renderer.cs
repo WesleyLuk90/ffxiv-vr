@@ -328,10 +328,42 @@ public unsafe class Renderer(
             context->CopyResource((ID3D11Resource*)depthTarget.Texture, (ID3D11Resource*)depthTexture->D3D11Texture2D);
         }
 
+        ClearRenderTarget(context);
+        if (eye == Eye.Right)
+        {
+            RenderGameWindowView(context);
+        }
+    }
+
+    private void RenderGameWindowView(ID3D11DeviceContext* context)
+    {
+        resources.SetSceneBlendState(context);
+        shaders.SetShaders(context);
+        resources.UpdateCamera(context, new CameraConstants(
+            modelViewProjection: Matrix4X4<float>.Identity,
+            deform: Matrix4X4<float>.Identity,
+            curvature: 0
+        ));
+        resources.SetPixelShaderConstants(context, new PixelShaderConstants(
+            mode: ShaderMode.Texture,
+            gamma: 1.0f,
+            color: new Vector4D<float>(1, 1, 1, 1),
+            uvOffset: new Vector2D<float>(0.25f, 0.25f),
+            uvScale: new Vector2D<float>(0.5f, 0.5f)));
+        resources.SetSampler(context, resources.SceneRenderTargets[0].ShaderResourceView);
+        resources.DrawSquare(context);
     }
 
     private bool ShouldUseDepthTexture()
     {
         return !configuration.KeepUIInFront && !Conditions.Instance()->OccupiedInCutSceneEvent;
+    }
+
+    internal void ClearRenderTarget(ID3D11DeviceContext* context)
+    {
+        ID3D11RenderTargetView* renderTarget = null;
+        context->OMGetRenderTargets(1, &renderTarget, null);
+        var color = new float[] { 0f, 0f, 0f, 0f };
+        context->ClearRenderTargetView(renderTarget, ref color[0]);
     }
 }
