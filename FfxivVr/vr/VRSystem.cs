@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
+
 public unsafe class VRSystem(
     XR xr,
     DxDevice device,
@@ -29,6 +30,7 @@ public unsafe class VRSystem(
 
     public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
     public class MissingDXHook() : Exception("DX Hook was not configured");
+    public class ShaderModDetected() : Exception("Shader mod detected");
 
     private List<string> wantedExtensions = [
         KhrD3D11Enable.ExtensionName,
@@ -91,7 +93,14 @@ public unsafe class VRSystem(
         }
         if (runtimeName.Contains("SteamVR") && !hookStatus.IsHookAdded())
         {
-            throw new MissingDXHook();
+            if (ModDetection.HasShaderMod())
+            {
+                throw new ShaderModDetected();
+            }
+            else
+            {
+                throw new MissingDXHook();
+            }
         }
 
         var getInfo = new SystemGetInfo(next: null, formFactor: FormFactor.HeadMountedDisplay);

@@ -9,6 +9,7 @@ using static FfxivVR.VRSystem;
 using CSRay = FFXIVClientStructs.FFXIV.Client.Graphics.Ray;
 
 namespace FfxivVR;
+
 public unsafe class VRLifecycle(
         IServiceScopeFactory scopeFactory,
         Logger logger,
@@ -40,6 +41,10 @@ public unsafe class VRLifecycle(
             if (e is FormFactorUnavailableException)
             {
                 logger.Error("Failed to start VR, headset not found");
+            }
+            else if (e is ShaderModDetected)
+            {
+                logger.Error("GShade or ReShade is not supported using SteamVR. Either delete GShade/ReShade or use a different runtime.");
             }
             else if (e is MissingDXHook)
             {
