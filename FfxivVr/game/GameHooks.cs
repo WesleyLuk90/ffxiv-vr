@@ -16,6 +16,7 @@ using static FfxivVR.RenderPipelineInjector;
 using CSRay = FFXIVClientStructs.FFXIV.Client.Graphics.Ray;
 
 namespace FfxivVR;
+
 public unsafe class GameHooks(
     VRLifecycle vrLifecycle,
     ExceptionHandler exceptionHandler,
@@ -58,7 +59,10 @@ public unsafe class GameHooks(
         InitializeHook(RenderThreadSetRenderTargetHook, nameof(RenderThreadSetRenderTargetHook));
         InitializeHook(RenderSkeletonListHook, nameof(RenderSkeletonListHook));
         InitializeHook(PushbackUIHook, nameof(PushbackUIHook));
-        InitializeHook(CreateDXGIFactoryHook, nameof(CreateDXGIFactoryHook));
+        if (!ModDetection.HasShaderMod())
+        {
+            InitializeHook(CreateDXGIFactoryHook, nameof(CreateDXGIFactoryHook));
+        }
         InitializeHook(MousePointScreenToClientHook, nameof(MousePointScreenToClientHook));
         InitializeHook(UpdateLetterboxingHook, nameof(UpdateLetterboxingHook));
         InitializeHook(GamepadPollHook, nameof(GamepadPollHook));
