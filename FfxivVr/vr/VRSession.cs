@@ -271,7 +271,7 @@ public unsafe class VRSession(
         }
         if (firstPersonManager.IsFirstPerson && configuration.HideBodyInFirstPerson)
         {
-            if (gameObject->EntityId == gameState.getCharacterOrGpose()->EntityId)
+            if (gameState.IsPlayer(gameObject->EntityId))
             {
                 return false;
             }
@@ -280,7 +280,7 @@ public unsafe class VRSession(
         {
             return true;
         }
-        if ((IntPtr)gameObject == targetManager.Target?.Address)
+        if ((IntPtr)gameObject == targetManager.Target?.Address || gameState.IsPlayer(gameObject->EntityId))
         {
             return true;
         }

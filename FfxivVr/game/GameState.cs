@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Silk.NET.Maths;
 
 namespace FfxivVR;
+
 public unsafe class GameState(
     IClientState clientState,
     IGameGui gameGui)
@@ -56,6 +57,16 @@ public unsafe class GameState(
             return null;
         }
         return (Character*)player!.Address;
+    }
+
+    public bool IsPlayer(uint entityID)
+    {
+        var character = getCharacterOrGpose();
+        if (character == null)
+        {
+            return false;
+        }
+        return character->GameObject.EntityId == entityID;
     }
 
     public InternalCharacter* GetInternalCharacter()
