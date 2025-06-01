@@ -36,6 +36,13 @@ public class Configuration : IPluginConfiguration
     public bool DisableCameraDirectionFlying = false;
     public bool DisableCameraDirectionFlyingThirdPerson = false;
 
+    public enum AutoCombatView
+    {
+        FirstPerson = 0,
+        ThirdPerson = 1,
+    }
+    public int? AutoCombatViewMode = null;
+
     public bool KeepUIInFront = true;
 
     public float UISize = 1.0f;

@@ -37,6 +37,8 @@ public unsafe class FirstPersonManager(
         conditions->Jumping61; // Gold Saucer juming fountains
     }
     public bool IsFirstPerson { get; private set; } = false;
+
+    private bool? WasInCombat = null;
     public void Update()
     {
         if (Conditions.Instance()->OccupiedInCutSceneEvent)
@@ -46,8 +48,23 @@ public unsafe class FirstPersonManager(
         var changed = false;
         var internalCamera = gameState.GetGameCameraExtended();
         var activeCamera = gameState.GetActiveCamera();
-        // Transition to first person can either be done by changing the camera to first person
-        if (internalCamera->CameraMode == CameraView.FirstPerson)
+        if (configuration.AutoCombatViewMode != null && WasInCombat != null && WasInCombat != Conditions.Instance()->InCombat)
+        {
+            var CombatThirdPerson = configuration.AutoCombatViewMode == (int)Configuration.AutoCombatView.ThirdPerson;
+            if (Conditions.Instance()->InCombat)
+            {
+                changed = IsFirstPerson == CombatThirdPerson;
+                IsFirstPerson = !CombatThirdPerson;
+            }
+            else
+            {
+                changed = IsFirstPerson == !CombatThirdPerson;
+                IsFirstPerson = CombatThirdPerson;
+            }
+
+            // Transition to first person can either be done by changing the camera to first person
+        }
+        else if (internalCamera->CameraMode == CameraView.FirstPerson)
         {
             internalCamera->CameraMode = CameraView.ThirdPerson;
             IsFirstPerson = !IsFirstPerson;
@@ -56,9 +73,10 @@ public unsafe class FirstPersonManager(
         // Or zooming out while in first person
         else if (IsFirstPerson && activeCamera->Distance > 2)
         {
-            IsFirstPerson = !IsFirstPerson;
+            IsFirstPerson = false;
             changed = true;
         }
+        WasInCombat = Conditions.Instance()->InCombat;
         if (IsFirstPerson)
         {
             // Fix the distance to 2 so we can detect the zoom

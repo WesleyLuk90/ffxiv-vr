@@ -101,6 +101,7 @@ public class ConfigWindow : Window
     {
         Checkbox("Recenter Camera on View Change", ref config.RecenterOnViewChange, "Recenters the camera when switching between first and third person.");
         Checkbox("Disable cutscene black bars", ref config.DisableCutsceneLetterbox);
+        ComboDropdown("Switch View Mode when Entering Combat", ["Disabled", "First Person", "Third Person"], ref config.AutoCombatViewMode);
         Slider("World Scale", ref config.WorldScale);
         Slider("Gamma", ref config.Gamma, defaultValue: 2.2f);
     }
