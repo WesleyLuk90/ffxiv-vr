@@ -1,5 +1,1 @@
-# Add option to auto toggle view mode #70 (#74)
-* Fix body sometimes not being shown
-# Prevent crashing when using ReShade or GShade (#73)
-* Avoid crashing the game if reshade exists
-* Print an error if reshade is being used with SteamVR
+# Update offset for fixed head position (#77)
