@@ -9,16 +9,16 @@ using Windows.Win32.System.Memory;
 namespace FfxivVR;
 public unsafe class RenderPipelineInjector
 {
-    private delegate void PushbackDg(UInt64 a, UInt64 b);
+    private delegate void PushbackDg(ulong a, ulong b);
     [Signature("E8 ?? ?? ?? ?? 0F 28 B4 24 A0 01 00 00 48 8B 8C 24 90 01 00 00", Fallibility = Fallibility.Fallible)]
     private PushbackDg? PushbackFn = null;
 
-    private delegate UInt64 AllocateQueueMemoryDg(UInt64 a, UInt64 b);
+    private delegate ulong AllocateQueueMemoryDg(ulong a, ulong b);
     [Signature("E8 ?? ?? ?? ?? 48 8B F8 48 85 C0 0f 84 ?? ?? ?? ?? 45 33 C0 41 BA 05 00 00 00", Fallibility = Fallibility.Fallible)]
     private AllocateQueueMemoryDg? AllocateQueueMemmoryFn = null;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate UInt64 GetThreadedDataDg();
+    private delegate ulong GetThreadedDataDg();
     GetThreadedDataDg GetThreadedDataFn;
 
     private GCHandle getThreadedDataHandle;
@@ -31,6 +31,8 @@ public unsafe class RenderPipelineInjector
             };
     private nint tls_index;
 
+    private readonly Logger logger;
+    private readonly IGameInteropProvider gameInteropProvider;
     public void Initialize()
     {
         gameInteropProvider.InitializeFromAttributes(this);
@@ -56,13 +58,13 @@ public unsafe class RenderPipelineInjector
         this.gameInteropProvider = gameInteropProvider;
     }
 
-    public UInt64 GetThreadedOffset()
+    public ulong GetThreadedOffset()
     {
-        UInt64 threadedData = GetThreadedDataFn();
+        ulong threadedData = GetThreadedDataFn();
         if (threadedData != 0)
         {
-            threadedData = *(UInt64*)(threadedData + (UInt64)((*(int*)tls_index) * 8));
-            threadedData = *(UInt64*)(threadedData + 0x250);
+            threadedData = *(ulong*)(threadedData + (ulong)((*(int*)tls_index) * 8));
+            threadedData = *(ulong*)(threadedData + 0x250);
         }
         return threadedData;
     }
@@ -71,7 +73,7 @@ public unsafe class RenderPipelineInjector
     public static int RightEyeRenderTargetNumber = 102;
     public void QueueRenderTargetCommand(Eye eye)
     {
-        UInt64 threadedOffset = GetThreadedOffset();
+        ulong threadedOffset = GetThreadedOffset();
         if (threadedOffset != 0)
         {
             SetRenderTargetCommand* queueData = (SetRenderTargetCommand*)AllocateQueueMemmoryFn!(threadedOffset, (ulong)sizeof(SetRenderTargetCommand));
@@ -82,38 +84,6 @@ public unsafe class RenderPipelineInjector
                 queueData->numRenderTargets = eye == Eye.Left ? LeftEyeRenderTargetNumber : RightEyeRenderTargetNumber;
                 queueData->RenderTarget0 = null;
                 PushbackFn!(threadedOffset, (ulong)queueData);
-            }
-        }
-    }
-
-    private readonly Logger logger;
-    private readonly IGameInteropProvider gameInteropProvider;
-
-    public void QueueClearCommand()
-    {
-        bool depth = false;
-        float r = 0;
-        float g = 0;
-        float b = 0;
-        float a = 0;
-        UInt64 threadedOffset = GetThreadedOffset();
-        if (threadedOffset != 0)
-        {
-            UInt64 queueData = AllocateQueueMemmoryFn!(threadedOffset, (ulong)sizeof(ClearCommand));
-            if (queueData != 0)
-            {
-                ClearCommand* cmd = (ClearCommand*)queueData;
-                *cmd = new ClearCommand();
-                cmd->SwitchType = 4;
-                cmd->clearType = ((depth) ? 7 : 1);
-                cmd->colorR = r;
-                cmd->colorG = g;
-                cmd->colorB = b;
-                cmd->colorA = a;
-                cmd->clearDepth = 1;
-                cmd->clearStencil = 0;
-                cmd->clearCheck = 0;
-                PushbackFn!(threadedOffset, queueData);
             }
         }
     }
