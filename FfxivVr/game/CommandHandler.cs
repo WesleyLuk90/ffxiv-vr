@@ -57,11 +57,20 @@ public class CommandHander(
                 case "debug":
                     debugWindow.Toggle();
                     break;
+                case "self-test":
+                    selfTest();
+                    break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");
                     break;
             }
         }
+    }
+
+    public void selfTest()
+    {
+        new DalamudRenderer().Initialize();
+        logger.Info("Self test complete");
     }
 
     public void Dispose()

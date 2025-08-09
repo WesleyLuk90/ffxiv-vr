@@ -148,7 +148,7 @@ public unsafe class GameState(
         {
             return FadeMiddle;
         }
-        FadeMiddle = (AddonFade*)gameGui.GetAddonByName("FadeMiddle");
+        FadeMiddle = (AddonFade*)gameGui.GetAddonByName("FadeMiddle").Address;
         return FadeMiddle;
     }
     private AddonFade* GetFadeBack()
@@ -157,7 +157,7 @@ public unsafe class GameState(
         {
             return FadeBack;
         }
-        FadeBack = (AddonFade*)gameGui.GetAddonByName("FadeBack");
+        FadeBack = (AddonFade*)gameGui.GetAddonByName("FadeBack").Address;
         return FadeBack;
     }
 

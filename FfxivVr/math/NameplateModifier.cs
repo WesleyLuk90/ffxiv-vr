@@ -7,6 +7,7 @@ using FFXIVClientStructs.Interop;
 using System.Collections.Generic;
 
 namespace FfxivVR;
+
 public unsafe class NameplateModifier(
     IGameGui gameGui,
     ITargetManager targetManager)
@@ -31,7 +32,7 @@ public unsafe class NameplateModifier(
 
     private void HideTargetArrow()
     {
-        AtkUnitBase* targetAddon = (AtkUnitBase*)gameGui!.GetAddonByName("_TargetCursor", 1);
+        AtkUnitBase* targetAddon = (AtkUnitBase*)gameGui!.GetAddonByName("_TargetCursor", 1).Address;
         if (targetAddon != null)
         {
             targetAddon->Hide(true, false, 0);
