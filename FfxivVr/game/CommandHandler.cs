@@ -71,7 +71,6 @@ public class CommandHander(
     {
         try
         {
-            new DalamudRenderer(logger);
             logger.Info("Self test complete");
         }
         catch (Exception e)

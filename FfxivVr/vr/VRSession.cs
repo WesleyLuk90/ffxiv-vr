@@ -164,7 +164,6 @@ public unsafe class VRSession(
         if (State.SessionRunning && cameraPhase is CameraPhase phase)
         {
             logger.Trace($"Queue {phase.Eye} render");
-
             renderPipelineInjector.QueueRenderTargetCommand(phase.Eye);
             // Only clear the left view to get a clean render for copying
             // The right view we skip clearing which lets it display the VR view

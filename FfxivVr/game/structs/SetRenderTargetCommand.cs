@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 
-[StructLayout(LayoutKind.Explicit)]
+[StructLayout(LayoutKind.Explicit, Size = 0x38)]
 public unsafe struct SetRenderTargetCommand
 {
     [FieldOffset(0x00)] public int SwitchType;
@@ -14,8 +14,4 @@ public unsafe struct SetRenderTargetCommand
     [FieldOffset(0x20)] public Texture* RenderTarget3;
     [FieldOffset(0x28)] public Texture* RenderTarget4;
     [FieldOffset(0x30)] public Texture* DepthBuffer;
-    [FieldOffset(0x38)] public short unk3;
-    [FieldOffset(0x38)] public short unk4;
-    [FieldOffset(0x38)] public short unk5;
-    [FieldOffset(0x38)] public short unk6;
 };
