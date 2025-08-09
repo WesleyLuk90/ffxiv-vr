@@ -69,8 +69,15 @@ public class CommandHander(
 
     public void selfTest()
     {
-        new DalamudRenderer(logger);
-        logger.Info("Self test complete");
+        try
+        {
+            new DalamudRenderer(logger);
+            logger.Info("Self test complete");
+        }
+        catch (Exception e)
+        {
+            logger.Error($"Self test failed {e}");
+        }
     }
 
     public void Dispose()
