@@ -22,10 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <IgnoresAccessChecksTo Include="Dalamud.Interface.Internal" />
     <IgnoresAccessChecksTo Include="Dalamud" />
-    <IgnoresAccessChecksToExcludeTypeName Include="Dalamud.Game.Framework" />
+    <IgnoresAccessChecksToExcludeTypeName Include="Dalamud" />
     <IgnoresAccessChecksToExcludeTypeName Include="Dalamud.Injector" />
+    <IgnoresAccessChecksToExcludeTypeName Include="Dalamud.Game.Framework" />
   </ItemGroup>
 
   <ItemGroup>

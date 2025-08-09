@@ -69,7 +69,7 @@ public class CommandHander(
 
     public void selfTest()
     {
-        new DalamudRenderer(logger).Initialize();
+        new DalamudRenderer(logger);
         logger.Info("Self test complete");
     }
 

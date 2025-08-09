@@ -12,7 +12,7 @@ namespace FfxivVR;
 public unsafe class DalamudRenderer
 {
      private Logger logger;
-     private Dx11Renderer renderer;
+     // private Dx11Renderer renderer;
 
      public DalamudRenderer(
           Logger logger
@@ -23,15 +23,15 @@ public unsafe class DalamudRenderer
           logger.Info($"Interface manager {interfaceManager}");
           var backend = interfaceManager.Backend as Dx11Win32Backend ?? throw new Exception("Failed to get Dx11Win32Backend"); ;
           logger.Info($"Backend {backend}");
-          renderer = backend.Renderer as Dx11Renderer ?? throw new Exception("Failed to get Dx11Renderer");
+          // renderer = backend.Renderer as Dx11Renderer ?? throw new Exception("Failed to get Dx11Renderer");
 
-          var assembly = Assembly.GetAssembly(typeof(Dx11Renderer));
+          // var assembly = Assembly.GetAssembly(typeof(Dx11Renderer));
      }
 
      internal void Render(ID3D11RenderTargetView* renderTargetView)
      {
-          logger.Info($"renderer {renderer}");
-          renderer.RenderDrawData(ImGui.GetDrawData());
+          // logger.Info($"renderer {renderer}");
+          // renderer.RenderDrawData(ImGui.GetDrawData());
      }
 
      // private RenderTargetView? SwapRenderTargetView(RenderTargetView? renderTargetView)
