@@ -67,8 +67,8 @@
       },
       "DalamudPackager": {
         "type": "Transitive",
-        "resolved": "12.0.0",
-        "contentHash": "J5TJLV3f16T/E2H2P17ClWjtfEBPpq3yxvqW46eN36JCm6wR+EaoaYkqG9Rm5sHqs3/nK/vKjWWyvEs/jhKoXw=="
+        "resolved": "13.0.0",
+        "contentHash": "Mb3cUDSK/vDPQ8gQIeuCw03EMYrej1B4J44a1AvIJ9C759p9XeqdU9Hg4WgOmlnlPe0G7ILTD32PKSUpkQNa8w=="
       },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
@@ -531,7 +531,7 @@
       "ffxivvr": {
         "type": "Project",
         "dependencies": {
-          "DalamudPackager": "[12.0.0, )",
+          "DalamudPackager": "[13.0.0, )",
           "Microsoft.Extensions.Hosting": "[9.0.0, )",
           "OpenXR.Loader": "[1.0.10.2, )",
           "Silk.NET.Direct3D11": "[2.21.0, )",

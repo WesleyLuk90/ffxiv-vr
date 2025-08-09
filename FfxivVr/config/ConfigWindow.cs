@@ -1,6 +1,5 @@
 ﻿using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
