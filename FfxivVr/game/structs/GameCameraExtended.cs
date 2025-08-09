@@ -15,5 +15,5 @@ public unsafe struct GameCameraExtended
     public static GameCameraExtended* FromCamera(Camera* camera) => (GameCameraExtended*)camera;
     [FieldOffset(0x130)] public float DirectionHorizontal;
     [FieldOffset(0x134)] public float DirectionVertical;
-    [FieldOffset(0x170)] public CameraView CameraMode;
+    [FieldOffset(0x180)] public CameraView CameraMode;
 }

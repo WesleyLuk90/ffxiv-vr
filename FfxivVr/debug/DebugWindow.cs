@@ -1,14 +1,15 @@
-﻿using Dalamud.Interface.Utility;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using ImGuiNET;
 using Silk.NET.Maths;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Numerics;
 
 namespace FfxivVR;
+
 public class DebugWindow : Window
 {
     private readonly Debugging debugging;

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/12.0.2">
+<Project Sdk="Dalamud.NET.Sdk/13.0.0">
   <PropertyGroup>
     <Version>0.0.59</Version>
     <Description>A VR plugin for FFXIV.</Description>
@@ -20,7 +20,16 @@
     <EmbeddedResource Include=".\shaders\VertexShader.cso" WithCulture="false" Type="Non-Resx" />
     <EmbeddedResource Include=".\shaders\PixelShader.cso" WithCulture="false" Type="Non-Resx" />
   </ItemGroup>
+
   <ItemGroup>
+    <IgnoresAccessChecksTo Include="Dalamud" />
+    <IgnoresAccessChecksToExcludeTypeName Include="Dalamud" />
+    <IgnoresAccessChecksToExcludeTypeName Include="Dalamud.Injector" />
+    <IgnoresAccessChecksToExcludeTypeName Include="Dalamud.Game.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.8.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
     <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.106">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

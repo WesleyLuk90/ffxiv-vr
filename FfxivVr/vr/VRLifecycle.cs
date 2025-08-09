@@ -181,7 +181,7 @@ public unsafe class VRLifecycle(
         }
     }
 
-    internal void UpdateLetterboxing(InternalLetterboxing* internalLetterbox)
+    internal void UpdateLetterboxing(LetterboxingExtended* internalLetterbox)
     {
         // Always enable regardless of VR
         if (configuration.DisableCutsceneLetterbox)

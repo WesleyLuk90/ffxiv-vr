@@ -4,8 +4,8 @@ using System.Runtime.InteropServices;
 namespace FfxivVR;
 
 [StructLayout(LayoutKind.Explicit)]
-public unsafe struct InternalCharacterBase
+public unsafe struct CharacterBaseExtended
 {
-    public static InternalCharacterBase* FromCharacterBase(CharacterBase* characterBase) => (InternalCharacterBase*)characterBase;
+    public static CharacterBaseExtended* FromCharacterBase(CharacterBase* characterBase) => (CharacterBaseExtended*)characterBase;
     [FieldOffset(0x2A4)] public float Height;
 }

@@ -1,54 +1,42 @@
 ﻿using Dalamud;
-using ImGuiScene;
-using SharpDX.Direct3D11;
+using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.ImGuiBackend;
+using Dalamud.Interface.ImGuiBackend.Renderers;
+using Dalamud.Interface.Internal;
 using Silk.NET.Direct3D11;
 using System;
+using System.Linq;
 using System.Reflection;
 
 namespace FfxivVR;
+
 public unsafe class DalamudRenderer
 {
-    private RawDX11Scene? scene;
-    private FieldInfo? renderTargetViewProperty;
+    private Dx11Renderer? renderer;
+    private MethodInfo? renderDrawDataInternalMethod;
 
-    // Use reflection to get access to RawDX11Scene, swap out the render target view and render
-    internal void Initialize()
+    public void Initialize()
     {
-        var assembly = Assembly.GetAssembly(typeof(IServiceType)) ?? throw new Exception("Failed to find assembly");
-        var interfaceManagerType = assembly.GetType("Dalamud.Interface.Internal.InterfaceManager")
-             ?? throw new Exception("Failed to find InterfaceManager type");
-        var service = assembly.GetType("Dalamud.Service`1")
-             ?? throw new Exception("Failed to find Dalamud.Service type");
-        var genericService = service.MakeGenericType(interfaceManagerType)
-             ?? throw new Exception("Failed to make Dalamud.Service generic");
-        var method = genericService.GetMethod("Get")
-             ?? throw new Exception("Failed to find Service.Get method");
-        var interfaceManager = method.Invoke(service, null)
-             ?? throw new Exception("Failed to get interfaceManager");
-        var sceneMethod = interfaceManagerType.GetProperty("Scene")
-             ?? throw new Exception("Failed to find Scene property");
-        var scene = sceneMethod.GetValue(interfaceManager)
-             ?? throw new Exception("Failed to get Scene property");
-        this.scene = (RawDX11Scene)(scene);
-        renderTargetViewProperty = this.scene.GetType().GetField("rtv",
-                         BindingFlags.NonPublic |
-                         BindingFlags.Instance)
-             ?? throw new Exception("Failed to get renderTargetViewProperty");
+        var interfaceManager = Service<InterfaceManager>.GetNullable() ?? throw new Exception("Failed to get InterfaceManager");
+        var backend = interfaceManager.Backend as Dx11Win32Backend ?? throw new Exception("Failed to get Dx11Win32Backend"); ;
+        renderer = backend.Renderer as Dx11Renderer ?? throw new Exception("Failed to get Dx11Renderer");
+
+        var assembly = Assembly.GetAssembly(typeof(Dx11Renderer)) ?? throw new Exception("Failed to get Assembly");
+        var type = assembly.GetType("Dalamud.Interface.ImGuiBackend.Renderers.Dx11Renderer") ?? throw new Exception("Failed to get Dx11Renderer type");
+        renderDrawDataInternalMethod = type.GetRuntimeMethods().Where(m => m.Name == "RenderDrawDataInternal").First();
     }
 
     internal void Render(ID3D11RenderTargetView* renderTargetView)
     {
-        var temp = new RenderTargetView((IntPtr)renderTargetView);
-        var original = SwapRenderTargetView(temp);
-        scene?.Render();
-        SwapRenderTargetView(original);
+        RenderDrawDataInternal(renderTargetView, ImGui.GetDrawData(), false);
     }
 
-    private RenderTargetView? SwapRenderTargetView(RenderTargetView? renderTargetView)
+    private void RenderDrawDataInternal(
+       ID3D11RenderTargetView* renderTargetView,
+       ImDrawDataPtr drawData,
+       bool clearRenderTarget)
     {
-        var original = (RenderTargetView?)renderTargetViewProperty?.GetValue(scene);
-
-        renderTargetViewProperty?.SetValue(scene, renderTargetView);
-        return original;
+        renderDrawDataInternalMethod?.Invoke(renderer, [(IntPtr)renderTargetView, drawData, clearRenderTarget]);
     }
+
 }

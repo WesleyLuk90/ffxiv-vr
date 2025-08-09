@@ -3,6 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Maths;
 
 namespace FfxivVR;
@@ -59,6 +60,21 @@ public unsafe class GameState(
         return (Character*)player!.Address;
     }
 
+    public CharacterBase* GetCharacterBase()
+    {
+        Character* character = getCharacterOrGpose();
+        if (character == null)
+        {
+            return null;
+        }
+        return (CharacterBase*)character->GameObject.DrawObject;
+    }
+
+    public CharacterBaseExtended* GetCharacterBaseExtended()
+    {
+        return CharacterBaseExtended.FromCharacterBase(GetCharacterBase());
+    }
+
     public bool IsPlayer(uint entityID)
     {
         var character = getCharacterOrGpose();
@@ -69,15 +85,15 @@ public unsafe class GameState(
         return character->GameObject.EntityId == entityID;
     }
 
-    public InternalCharacter* GetInternalCharacter()
+    public CharacterExtended* GetCharacterExtended()
     {
-        return InternalCharacter.FromCharacter(getCharacterOrGpose());
+        return CharacterExtended.FromCharacter(getCharacterOrGpose());
     }
 
     public Vector3D<float> GetFixedHeadPosition()
     {
         var character = getCharacterOrGpose();
-        var internalCharacter = GetInternalCharacter();
+        var internalCharacter = GetCharacterExtended();
 
         if (character == null || internalCharacter == null)
         {
@@ -148,7 +164,7 @@ public unsafe class GameState(
         {
             return FadeMiddle;
         }
-        FadeMiddle = (AddonFade*)gameGui.GetAddonByName("FadeMiddle");
+        FadeMiddle = (AddonFade*)gameGui.GetAddonByName("FadeMiddle").Address;
         return FadeMiddle;
     }
     private AddonFade* GetFadeBack()
@@ -157,7 +173,7 @@ public unsafe class GameState(
         {
             return FadeBack;
         }
-        FadeBack = (AddonFade*)gameGui.GetAddonByName("FadeBack");
+        FadeBack = (AddonFade*)gameGui.GetAddonByName("FadeBack").Address;
         return FadeBack;
     }
 

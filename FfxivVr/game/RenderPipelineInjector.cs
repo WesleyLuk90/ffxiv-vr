@@ -7,6 +7,7 @@ using Windows.Win32;
 using Windows.Win32.System.Memory;
 
 namespace FfxivVR;
+
 public unsafe class RenderPipelineInjector
 {
     private delegate void PushbackDg(UInt64 a, UInt64 b);
@@ -62,7 +63,7 @@ public unsafe class RenderPipelineInjector
         if (threadedData != 0)
         {
             threadedData = *(UInt64*)(threadedData + (UInt64)((*(int*)tls_index) * 8));
-            threadedData = *(UInt64*)(threadedData + 0x250);
+            threadedData = *(UInt64*)(threadedData + 0x238);
         }
         return threadedData;
     }

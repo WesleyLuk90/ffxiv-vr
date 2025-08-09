@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 namespace FfxivVR;
 
 [StructLayout(LayoutKind.Explicit)]
-unsafe struct InternalRenderTargetManager
+unsafe struct RenderTargetManagerExtended
 {
-    public static InternalRenderTargetManager* Instance() => (InternalRenderTargetManager*)RenderTargetManager.Instance();
+    public static RenderTargetManagerExtended* Instance() => (RenderTargetManagerExtended*)RenderTargetManager.Instance();
 
     [FieldOffset(624 + 32 * 8)]
     public unsafe Texture* DrawTexture;
