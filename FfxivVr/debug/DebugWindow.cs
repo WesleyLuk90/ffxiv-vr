@@ -2,7 +2,6 @@
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using Dalamud.Bindings.ImGui;
 using Silk.NET.Maths;
 using System.Collections.Concurrent;
 using System.Linq;
