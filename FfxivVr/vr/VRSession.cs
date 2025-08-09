@@ -36,6 +36,7 @@ public unsafe class VRSession(
     VRUI vrUI,
     GameClock gameClock,
     VRInputService vrInputService,
+        DalamudRenderer dalamudRenderer,
     FirstPersonManager firstPersonManager,
     Debugging debugging,
     ITargetManager targetManager
@@ -44,6 +45,7 @@ public unsafe class VRSession(
     public VRState State = State;
     public void Initialize()
     {
+        dalamudRenderer.Initialize();
         vrSystem.Initialize();
         vrShaders.Initialize();
         var size = swapchains.Initialize();

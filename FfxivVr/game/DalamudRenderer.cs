@@ -12,10 +12,10 @@ namespace FfxivVR;
 
 public unsafe class DalamudRenderer
 {
-    private Dx11Renderer renderer;
-    private MethodInfo renderDrawDataInternalMethod;
+    private Dx11Renderer? renderer;
+    private MethodInfo? renderDrawDataInternalMethod;
 
-    public DalamudRenderer()
+    public void Initialize()
     {
         var interfaceManager = Service<InterfaceManager>.GetNullable() ?? throw new Exception("Failed to get InterfaceManager");
         var backend = interfaceManager.Backend as Dx11Win32Backend ?? throw new Exception("Failed to get Dx11Win32Backend"); ;
@@ -36,7 +36,7 @@ public unsafe class DalamudRenderer
        ImDrawDataPtr drawData,
        bool clearRenderTarget)
     {
-        renderDrawDataInternalMethod.Invoke(renderer, [(IntPtr)renderTargetView, drawData, clearRenderTarget]);
+        renderDrawDataInternalMethod?.Invoke(renderer, [(IntPtr)renderTargetView, drawData, clearRenderTarget]);
     }
 
 }
