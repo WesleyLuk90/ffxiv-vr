@@ -22,7 +22,7 @@ public unsafe class Renderer(
     GameState gameState,
     VRUI vrUI)
 {
-    private void RenderGame(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, bool invertAlpha = false, float fade = 0)
+    private void RenderGame(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection,
@@ -30,13 +30,13 @@ public unsafe class Renderer(
             curvature: 0
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
-            mode: invertAlpha ? ShaderMode.InvertedAlpha : ShaderMode.Texture,
+            mode: ShaderMode.Texture,
             gamma: configuration.Gamma,
             color: new Vector4D<float>(1 - fade, 1 - fade, 1 - fade, 1)));
         resources.SetSampler(context, shaderResourceView);
         resources.DrawSquare(context);
     }
-    private void RenderUILayer(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, Matrix4X4<float> deform, bool invertAlpha = false, float fade = 0)
+    private void RenderUILayer(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, Matrix4X4<float> deform, float fade = 0)
     {
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: modelViewProjection,
@@ -44,7 +44,7 @@ public unsafe class Renderer(
             curvature: configuration.UICurvature
         ));
         resources.SetPixelShaderConstants(context, new PixelShaderConstants(
-            mode: invertAlpha ? ShaderMode.InvertedAlpha : ShaderMode.Texture,
+            mode: ShaderMode.Texture,
             gamma: configuration.Gamma,
             color: new Vector4D<float>(1 - fade, 1 - fade, 1 - fade, 1)));
         resources.SetSampler(context, shaderResourceView);
@@ -175,9 +175,9 @@ public unsafe class Renderer(
         var matrix = vrUI.GetModelMatrix() * viewProj;
         var deformMatrix = vrUI.GetDeformMatrix();
         resources.SetCompositingBlendState(context);
-        RenderUILayer(context, resources.UIRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix, false);
-        RenderUILayer(context, resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: resolutionManager.GetDalamudScale() * deformMatrix, true);
-        RenderUILayer(context, resources.CursorRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix, false);
+        RenderUILayer(context, resources.UIRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix);
+        RenderUILayer(context, resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: resolutionManager.GetDalamudScale() * deformMatrix);
+        RenderUILayer(context, resources.CursorRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix);
     }
 
     private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)
@@ -188,7 +188,7 @@ public unsafe class Renderer(
         context->CopySubresourceRegion((ID3D11Resource*)resources.UIRenderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D, 0, ref box);
 
         resources.SetUIBlendState(context);
-        var color = new float[] { 0f, 0f, 0f, 1f };
+        var color = new float[] { 0f, 0f, 0f, 0f };
         context->ClearRenderTargetView(resources.DalamudRenderTarget.RenderTargetView, ref color[0]);
         dalamudRenderer.Render(resources.DalamudRenderTarget.RenderTargetView);
 
