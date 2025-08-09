@@ -1,11 +1,10 @@
 ﻿using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Maths;
 using System.Collections.Generic;
 
 namespace FfxivVR;
+
 public unsafe class GameModifier(
     GameState gameState,
     NameplateModifier nameplateModifier,
@@ -27,7 +26,7 @@ public unsafe class GameModifier(
         {
             return;
         }
-        var characterBase = GetCharacterBase();
+        var characterBase = gameState.GetCharacterBase();
         if (characterBase == null)
         {
             return;
@@ -36,22 +35,12 @@ public unsafe class GameModifier(
         skeletonModifier.HideHead(skeleton, Conditions.Instance()->Mounted);
     }
 
-    public CharacterBase* GetCharacterBase()
-    {
-        Character* character = gameState.getCharacterOrGpose();
-        if (character == null)
-        {
-            return null;
-        }
-        return (CharacterBase*)character->GameObject.DrawObject;
-    }
-
 
     // Test with Alte Roite mount
     // Stand on a slope with a mount
     public Matrix4X4<float>? GetCharacterPositionTransform()
     {
-        var characterBase = GetCharacterBase();
+        var characterBase = gameState.GetCharacterBase();
         if (characterBase == null)
         {
             return null;
@@ -74,7 +63,7 @@ public unsafe class GameModifier(
         {
             headTransforms = MathFactory.CreateScaleRotationTranslationMatrix(characterBase->Scale.ToVector3D(), characterBase->DrawObject.Rotation.ToQuaternion(), characterBase->Position.ToVector3D());
         }
-        var actorModel = InternalCharacterBase.FromCharacterBase(characterBase);
+        var actorModel = gameState.GetCharacterBaseExtended();
         var actorScale = Matrix4X4.CreateScale(actorModel->Height);
         var skeleton = characterBase->Skeleton;
         var headPosition = skeletonModifier.GetHeadPosition(skeleton);
@@ -83,7 +72,7 @@ public unsafe class GameModifier(
 
     internal Vector3D<float>? GetHeadOffset()
     {
-        var characterBase = GetCharacterBase();
+        var characterBase = gameState.GetCharacterBase();
         if (characterBase == null)
         {
             return null;
@@ -94,17 +83,12 @@ public unsafe class GameModifier(
 
     internal void UpdateMotionControls(VRInputData vrInputData, RuntimeAdjustments runtimeAdjustments, float cameraYRotation)
     {
-        Character* character = gameState.getCharacterOrGpose();
-        if (character == null)
-        {
-            return;
-        }
-        var characterBase = (CharacterBase*)character->GameObject.DrawObject;
+        var characterBase = gameState.GetCharacterBase();
         if (characterBase == null)
         {
             return;
         }
-        var actorModel = InternalCharacterBase.FromCharacterBase(characterBase);
+        var actorModel = gameState.GetCharacterBaseExtended();
         var skeleton = characterBase->Skeleton;
         var pose = SkeletonModifier.GetPose(skeleton);
         if (pose == null)
@@ -148,7 +132,7 @@ public unsafe class GameModifier(
         nameplateModifier.UpdateVRNameplates(context, handlers);
     }
 
-    internal void UpdateLetterboxing(InternalLetterboxing* internalLetterboxing)
+    internal void UpdateLetterboxing(LetterboxingExtended* internalLetterboxing)
     {
         internalLetterboxing->ShouldLetterBox &= ~LetterBoxingOption.EnableLetterboxing;
     }

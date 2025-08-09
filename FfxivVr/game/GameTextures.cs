@@ -24,11 +24,11 @@ public static unsafe class GameTextures
 {
     public static Texture* GetGameRenderTexture()
     {
-        return InternalRenderTargetManager.Instance()->DrawTexture;
+        return RenderTargetManagerExtended.Instance()->DrawTexture;
     }
     public static Texture* GetGameDepthTexture()
     {
-        return InternalRenderTargetManager.Instance()->DepthStencilTexture;
+        return RenderTargetManagerExtended.Instance()->DepthStencilTexture;
     }
 
     internal static Cursor? GetCursorTexture()

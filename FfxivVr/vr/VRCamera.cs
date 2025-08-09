@@ -5,6 +5,7 @@ using Silk.NET.OpenXR;
 using System;
 
 namespace FfxivVR;
+
 public class VRCamera(
 Configuration configuration,
 GameModifier gameModifier,
@@ -63,7 +64,7 @@ FirstPersonManager firstPersonManager
 
     public unsafe VRCameraMode GetVRCameraType(float? localSpaceHeight, bool hasBodyData)
     {
-        var characterBase = gameModifier.GetCharacterBase();
+        var characterBase = gameState.GetCharacterBase();
         var distance = gameState.GetGameCameraDistance();
         if (gameState.IsOccupiedInCutSceneEvent())
         {

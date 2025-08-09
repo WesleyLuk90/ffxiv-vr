@@ -262,10 +262,10 @@ public unsafe class GameHooks(
     }
 
     // https://github.com/goaaats/Dalamud.FullscreenCutscenes/blob/main/Dalamud.FullscreenCutscenes/Plugin.cs
-    private delegate nint UpdateLetterboxingDelegate(InternalLetterboxing* thisptr);
+    private delegate nint UpdateLetterboxingDelegate(LetterboxingExtended* thisptr);
     [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 8B ?? ?? ?? ??", DetourName = nameof(UpdateLetterboxingDetour))]
     private Hook<UpdateLetterboxingDelegate>? UpdateLetterboxingHook = null;
-    private nint UpdateLetterboxingDetour(InternalLetterboxing* internalLetterbox)
+    private nint UpdateLetterboxingDetour(LetterboxingExtended* internalLetterbox)
     {
         exceptionHandler.FaultBarrier(() =>
         {

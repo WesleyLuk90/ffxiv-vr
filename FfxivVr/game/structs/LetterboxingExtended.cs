@@ -8,7 +8,7 @@ enum LetterBoxingOption
 }
 
 [StructLayout(LayoutKind.Explicit)]
-struct InternalLetterboxing
+struct LetterboxingExtended
 {
     [FieldOffset(0x40)] public LetterBoxingOption ShouldLetterBox;
 }

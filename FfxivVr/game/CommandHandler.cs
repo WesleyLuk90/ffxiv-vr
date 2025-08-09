@@ -13,7 +13,8 @@ public class CommandHander(
     VRLifecycle vrLifecycle,
     Logger logger,
     ConfigManager configManager,
-    DebugWindow debugWindow
+    DebugWindow debugWindow,
+    GameState gameState
 ) : IDisposable
 {
     private const string CommandName = "/vr";
@@ -67,10 +68,19 @@ public class CommandHander(
         }
     }
 
-    public void selfTest()
+    public unsafe void selfTest()
     {
         try
         {
+            logger.Info($"FixHeadPosition: {gameState.GetCharacterExtended()->FixHeadPosition}");
+            logger.Info($"Height: {gameState.GetCharacterBaseExtended()->Height}");
+            var sceneCamera = gameState.GetSceneCameraExtended();
+            logger.Info($"CurrentHRotation: {float.RadiansToDegrees(sceneCamera->CurrentHRotation)}");
+            logger.Info($"CurrentVRotation: {float.RadiansToDegrees(sceneCamera->CurrentVRotation)}");
+            var gameCamera = gameState.GetGameCameraExtended();
+            logger.Info($"DirectionHorizontal: {float.RadiansToDegrees(gameCamera->DirectionHorizontal)}");
+            logger.Info($"DirectionVertical: {float.RadiansToDegrees(gameCamera->DirectionVertical)}");
+            logger.Info($"CameraMode: {gameCamera->CameraMode}");
             logger.Info("Self test complete");
         }
         catch (Exception e)
