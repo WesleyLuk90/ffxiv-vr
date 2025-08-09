@@ -72,7 +72,9 @@ public class CommandHander(
     {
         try
         {
-            logger.Info($"FixHeadPosition: {gameState.GetCharacterExtended()->FixHeadPosition}");
+            var charPos = gameState.getCharacterOrGpose()->Position.Y;
+            var camPos = gameState.GetCurrentCamera()->Position.Y;
+            logger.Info($"FixHeadPosition: {gameState.GetCharacterExtended()->FixHeadPosition} == {camPos - charPos}");
             logger.Info($"Height: {gameState.GetCharacterBaseExtended()->Height}");
             var sceneCamera = gameState.GetSceneCameraExtended();
             logger.Info($"CurrentHRotation: {float.RadiansToDegrees(sceneCamera->CurrentHRotation)}");
