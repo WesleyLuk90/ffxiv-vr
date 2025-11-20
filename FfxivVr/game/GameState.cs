@@ -10,6 +10,7 @@ namespace FfxivVR;
 
 public unsafe class GameState(
     IClientState clientState,
+    IObjectTable objectTable,
     IGameGui gameGui)
 {
 
@@ -52,7 +53,7 @@ public unsafe class GameState(
         {
             return character;
         }
-        var player = clientState.LocalPlayer;
+        var player = objectTable.LocalPlayer;
         if (player == null)
         {
             return null;

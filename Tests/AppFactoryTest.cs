@@ -22,6 +22,7 @@ public unsafe class AppFactoryTests
         AppFactory.Log = new Mock<IPluginLog>().Object;
         AppFactory.ChatGui = new Mock<IChatGui>().Object;
         AppFactory.ClientState = new Mock<IClientState>().Object;
+        AppFactory.ObjectTable = new Mock<IObjectTable>().Object;
         AppFactory.GameGui = new Mock<IGameGui>().Object;
         AppFactory.TargetManager = new Mock<ITargetManager>().Object;
         AppFactory.GameConfig = new Mock<IGameConfig>().Object;
