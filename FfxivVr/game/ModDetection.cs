@@ -4,6 +4,12 @@ namespace FfxivVR;
 
 public static class ModDetection
 {
+    private static bool CheckDisabled = false;
+
+    public static void DisableCheck()
+    {
+        CheckDisabled = true;
+    }
 
     private static readonly string[] ShaderModFiles = new[]
     {
@@ -13,6 +19,12 @@ public static class ModDetection
     };
     public static bool HasShaderMod()
     {
+        // If shader mod check is disabled in config, return false immediately
+        if (CheckDisabled == true)
+        {
+            return false;
+        }
+
         var gameDir = Directory.GetCurrentDirectory();
         foreach (var file in ShaderModFiles)
         {

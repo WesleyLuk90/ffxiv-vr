@@ -23,7 +23,8 @@ public unsafe class GameHooks(
     Logger logger,
     HookStatus hookStatus,
     IGameInteropProvider gameInteropProvider,
-    GameState gameState
+    GameState gameState,
+    Configuration configuration
 ) : IDisposable
 {
     /**
@@ -51,6 +52,10 @@ public unsafe class GameHooks(
 
     public void Initialize()
     {
+        if (configuration.DisableShaderModCheck)
+        {
+            ModDetection.DisableCheck();
+        }
         gameInteropProvider.InitializeFromAttributes(this);
         GamepadPollHook = gameInteropProvider.HookFromAddress<GamepadPollDelegate>((nint)PadDevice.StaticVirtualTablePointer->Poll, GamepadPollDetour);
         InitializeHook(FrameworkTickHook, nameof(FrameworkTickHook));

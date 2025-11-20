@@ -114,6 +114,7 @@ public class ConfigWindow : Window
         }
         Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
         Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);
+        Checkbox("Disable shader mod check", ref config.DisableShaderModCheck, "Disable the check for ReShade/GShade dlls (Requires Game Restart).");
     }
 
     private void RenderGameConfig()

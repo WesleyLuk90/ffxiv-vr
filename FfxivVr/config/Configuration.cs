@@ -71,6 +71,7 @@ public class Configuration : IPluginConfiguration
     public Dictionary<string, uint> VRGameSettings = new();
 
     public bool HeadMouseControl = false;
+    public bool DisableShaderModCheck = false;
 
     public uint? GetVRGameSetting(string id)
     {

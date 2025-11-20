@@ -21,6 +21,7 @@ public unsafe class AppFactory
     [PluginService] public static IPluginLog Log { get; set; } = null!;
     [PluginService] public static IChatGui ChatGui { get; set; } = null!;
     [PluginService] public static IClientState ClientState { get; set; } = null!;
+    [PluginService] public static IObjectTable ObjectTable { get; set; } = null!;
     [PluginService] public static IGameGui GameGui { get; set; } = null!;
     [PluginService] public static IGameConfig GameConfig { get; set; } = null!;
     [PluginService] public static ITargetManager TargetManager { get; set; } = null!;
@@ -51,6 +52,7 @@ public unsafe class AppFactory
         builder.Services.AddSingleton(Log);
         builder.Services.AddSingleton(ChatGui);
         builder.Services.AddSingleton(ClientState);
+        builder.Services.AddSingleton(ObjectTable);
         builder.Services.AddSingleton(GameGui);
         builder.Services.AddSingleton(GameConfig);
         builder.Services.AddSingleton(TargetManager);
