@@ -1,4 +1,4 @@
-using Dalamud.Game.ClientState.Objects;
+using Dalamud.Plugin.Services;
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;

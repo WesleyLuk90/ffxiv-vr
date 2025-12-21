@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/13.0.0">
+<Project Sdk="Dalamud.NET.Sdk/14.0.0">
   <PropertyGroup>
     <Version>0.0.60</Version>
     <Description>A VR plugin for FFXIV.</Description>
@@ -40,8 +40,5 @@
     <PackageReference Include="Silk.NET.OpenXR.Extensions.EXT" Version="2.21.0" />
     <PackageReference Include="Silk.NET.OpenXR.Extensions.FB" Version="2.21.0" />
     <PackageReference Include="Silk.NET.OpenXR.Extensions.KHR" Version="2.21.0" />
-    <Reference Include="SharpDX" Private="false" />
-    <Reference Include="SharpDX.Direct3D11" Private="false" />
-    <Reference Include="SharpDX.DXGI" Private="false" />
   </ItemGroup>
 </Project>
