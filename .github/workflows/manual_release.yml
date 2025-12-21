@@ -51,7 +51,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: latest
-          path: .\FfxivVr\bin\x64\Release\FfxivVR\latest.zip
+          path: .\FfxivVr\bin\x64\latest.zip
           if-no-files-found: error
 
       - name: Prepare Release
@@ -76,7 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: .\FfxivVr\bin\x64\Release\FfxivVR\latest.zip
+          asset_path: .\FfxivVr\bin\x64\latest.zip
           asset_name: FfxivVR.zip
           asset_content_type: application/zip
       - name: Push Release to Github
