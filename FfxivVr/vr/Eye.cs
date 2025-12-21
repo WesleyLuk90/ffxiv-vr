@@ -1,6 +1,7 @@
 ﻿using System;
 
 namespace FfxivVR;
+
 public enum Eye
 {
     Left,

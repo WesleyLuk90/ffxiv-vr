@@ -1,5 +1,6 @@
 using Silk.NET.Maths;
 namespace FfxivVR;
+
 public class Ray(Vector3D<float> Origin, Vector3D<float> Direction)
 {
     public Vector3D<float> Origin { get; } = Origin;

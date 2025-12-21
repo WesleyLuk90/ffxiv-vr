@@ -2,6 +2,7 @@
 using System;
 
 namespace FfxivVR;
+
 public class InverseKinematics
 {
     private float Epsilon = 1E-3f;

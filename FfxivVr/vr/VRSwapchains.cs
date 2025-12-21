@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 namespace FfxivVR;
+
 public unsafe class VRSwapchains(
     XR xr,
     VRSystem system,

@@ -1,4 +1,5 @@
 ﻿namespace FfxivVR.Tests;
+
 public class VRShadersTest
 {
     [Test()]

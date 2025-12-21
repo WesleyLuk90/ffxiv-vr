@@ -2,6 +2,7 @@
 using Silk.NET.OpenXR;
 
 namespace FfxivVR;
+
 public unsafe class VRSpace(
     XR xr,
     Logger logger,

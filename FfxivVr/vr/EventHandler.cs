@@ -3,6 +3,7 @@ using System;
 using System.Runtime.CompilerServices;
 
 namespace FfxivVR;
+
 public class EventHandler(
     XR xr,
     VRSystem vrSystem,

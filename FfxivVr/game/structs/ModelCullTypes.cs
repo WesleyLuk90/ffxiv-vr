@@ -1,4 +1,5 @@
 namespace FfxivVR;
+
 public enum ModelCullTypes : byte
 {
     None = 0,

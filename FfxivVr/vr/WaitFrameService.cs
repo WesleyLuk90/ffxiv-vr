@@ -3,6 +3,7 @@ using System;
 using System.Threading;
 
 namespace FfxivVR;
+
 public unsafe class WaitFrameService(
     VRSystem system,
     XR xr)
