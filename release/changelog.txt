@@ -1,1 +1,7 @@
-# Update to api v13 (#78)
+# Fix release
+
+# Update to dalamud api 14 (#85)
+
+# Add option to disable shader mod detection #80 (#82)
+
+# Update repo version number

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/14.0.0">
   <PropertyGroup>
-    <Version>0.0.60</Version>
+    <Version>0.0.61</Version>
     <Description>A VR plugin for FFXIV.</Description>
     <PackageProjectUrl>https://github.com/WesleyLuk90/ffxiv-vr</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
@@ -42,9 +42,6 @@
     <PackageReference Include="Silk.NET.OpenXR.Extensions.KHR" Version="2.21.0" />
   </ItemGroup>
   <Target Name="ZipOutputPath" AfterTargets="Build">
-      <ZipDirectory
-          SourceDirectory="$(OutputPath)"
-          DestinationFile="$(OutputPath)\..\latest.zip"
-          Overwrite="true" />
+    <ZipDirectory SourceDirectory="$(OutputPath)" DestinationFile="$(OutputPath)\..\latest.zip" Overwrite="true" />
   </Target>
 </Project>
