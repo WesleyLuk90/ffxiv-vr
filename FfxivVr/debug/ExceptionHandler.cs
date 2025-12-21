@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 namespace FfxivVR;
+
 public class ExceptionHandler
 {
     private Logger logger;

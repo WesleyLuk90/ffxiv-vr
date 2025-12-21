@@ -1,4 +1,5 @@
 ﻿namespace FfxivVR;
+
 public class FramePrediction(
     VRSystem vrSystem
 )

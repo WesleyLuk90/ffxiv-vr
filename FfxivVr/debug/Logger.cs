@@ -1,6 +1,7 @@
 using Dalamud.Plugin.Services;
 
 namespace FfxivVR;
+
 public class Logger(
     IPluginLog log,
     IChatGui chatGui,

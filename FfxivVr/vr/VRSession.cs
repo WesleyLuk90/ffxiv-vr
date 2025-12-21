@@ -1,5 +1,5 @@
-using Dalamud.Plugin.Services;
 using Dalamud.Game.Gui.NamePlate;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.Input;

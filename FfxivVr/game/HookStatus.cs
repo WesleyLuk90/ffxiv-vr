@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 namespace FfxivVR;
+
 public class HookStatus(IDalamudPluginInterface pluginInterface)
 {
     public void MarkHookAdded()

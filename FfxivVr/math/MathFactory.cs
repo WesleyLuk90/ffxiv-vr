@@ -2,6 +2,7 @@
 using System;
 
 namespace FfxivVR;
+
 public static class MathFactory
 {
     public static Quaternion<float> XRotation(float angle)

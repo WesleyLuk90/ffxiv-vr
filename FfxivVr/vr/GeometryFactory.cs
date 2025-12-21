@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 
 namespace FfxivVR;
+
 public static class GeometryFactory
 {
     public static List<Vertex> Plane(Matrix4X4<float>? positionTransform = null, Matrix4X4<float>? uvTransform = null)

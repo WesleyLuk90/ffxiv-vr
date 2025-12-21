@@ -1,4 +1,5 @@
 ﻿using Dalamud;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Silk.NET.Maths;
@@ -8,7 +9,6 @@ using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Gdi;
 using Windows.Win32.UI.WindowsAndMessaging;
-using Dalamud.Plugin.Services;
 
 namespace FfxivVR;
 

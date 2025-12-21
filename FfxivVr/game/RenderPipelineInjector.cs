@@ -1,5 +1,4 @@
-﻿using Dalamud.Game;
-using Dalamud.Plugin.Services;
+﻿using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using System;
 using System.Runtime.InteropServices;

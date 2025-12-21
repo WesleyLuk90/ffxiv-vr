@@ -2,6 +2,7 @@ using Silk.NET.OpenXR;
 using System.Threading.Tasks;
 
 namespace FfxivVR;
+
 abstract class RenderPhase;
 class LeftRenderPhase(View[] views, Task<FrameState> waitFrameTask, VRInputData vrInputData) : RenderPhase
 {
