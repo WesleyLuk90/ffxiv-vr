@@ -36,5 +36,12 @@
   <ItemGroup>
     <ProjectReference Include="..\FfxivVr\FfxivVR.csproj" />
   </ItemGroup>
-
+  <ItemGroup>
+    <Content Include="..\FfxivVr\FfxivVR.csproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\PluginRepo\pluginmaster.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
