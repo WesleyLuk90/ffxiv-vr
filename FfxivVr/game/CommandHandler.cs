@@ -13,8 +13,7 @@ public class CommandHander(
     VRLifecycle vrLifecycle,
     Logger logger,
     ConfigManager configManager,
-    DebugWindow debugWindow,
-    GameState gameState
+    DebugWindow debugWindow
 ) : IDisposable
 {
     private const string CommandName = "/vr";
@@ -58,9 +57,6 @@ public class CommandHander(
                 case "debug":
                     debugWindow.Toggle();
                     break;
-                case "self-test":
-                    selfTest();
-                    break;
                 default:
                     logger.Error($"Unknown command {arguments.FirstOrDefault()}");
                     break;
@@ -68,28 +64,6 @@ public class CommandHander(
         }
     }
 
-    public unsafe void selfTest()
-    {
-        try
-        {
-            var charPos = gameState.getCharacterOrGpose()->Position.Y;
-            var camPos = gameState.GetCurrentCamera()->Position.Y;
-            logger.Info($"FixHeadPosition: {gameState.GetCharacterExtended()->FixHeadPosition} == {camPos - charPos}");
-            logger.Info($"Height: {gameState.GetCharacterBaseExtended()->Height}");
-            var sceneCamera = gameState.GetSceneCameraExtended();
-            logger.Info($"CurrentHRotation: {float.RadiansToDegrees(sceneCamera->CurrentHRotation)}");
-            logger.Info($"CurrentVRotation: {float.RadiansToDegrees(sceneCamera->CurrentVRotation)}");
-            var gameCamera = gameState.GetGameCameraExtended();
-            logger.Info($"DirectionHorizontal: {float.RadiansToDegrees(gameCamera->DirectionHorizontal)}");
-            logger.Info($"DirectionVertical: {float.RadiansToDegrees(gameCamera->DirectionVertical)}");
-            logger.Info($"CameraMode: {gameCamera->CameraMode}");
-            logger.Info("Self test complete");
-        }
-        catch (Exception e)
-        {
-            logger.Error($"Self test failed {e}");
-        }
-    }
 
     public void Dispose()
     {
