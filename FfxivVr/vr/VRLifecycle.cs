@@ -14,8 +14,7 @@ public unsafe class VRLifecycle(
         IServiceScopeFactory scopeFactory,
         Logger logger,
         Configuration configuration,
-        Debugging debugging,
-        GameState gameState
+        Debugging debugging
 ) : IDisposable
 {
     private IServiceScope? scope;
@@ -115,7 +114,6 @@ public unsafe class VRLifecycle(
 
     internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
-        var active = gameState.GetActiveCamera();
         lock (this)
         {
             vrSession?.UpdateCamera(camera);

@@ -4,6 +4,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Silk.NET.Maths;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Numerics;
@@ -13,13 +14,15 @@ namespace FfxivVR;
 public class DebugWindow : Window
 {
     private readonly Debugging debugging;
+    private readonly GameState gameState;
 
-    public DebugWindow(Debugging debugging) : base("FFXIV VR Debug")
+    public DebugWindow(Debugging debugging, GameState gameState) : base("FFXIV VR Debug")
     {
         Flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoResize;
         Size = new Vector2(450, 700);
         this.debugging = debugging;
+        this.gameState = gameState;
     }
 
     public override void Draw()
@@ -62,7 +65,21 @@ public class DebugWindow : Window
                     ImGui.SliderFloat("Float", ref debugging.Float, -1, 1);
                 }
             }
+            using (var tab = ImRaii.TabItem("Custom Data"))
+            {
+                if (tab)
+                {
+                    rendercustomTab();
+                }
+            }
         }
+    }
+    private unsafe void rendercustomTab()
+    {
+        var sceneCameraEx = gameState.GetSceneCameraExtended();
+        ImGui.Text($"Camera Extras 0x{Convert.ToString((long)sceneCameraEx, 16)}");
+        ImGui.Text($"Horizontal Rotation Rad:{sceneCameraEx->CurrentHRotation:F2} Deg:{float.RadiansToDegrees(sceneCameraEx->CurrentHRotation):F0}");
+        ImGui.Text($"Vertial Rotation Rad:{sceneCameraEx->CurrentVRotation:F2} Deg:{float.RadiansToDegrees(sceneCameraEx->CurrentVRotation):F0}");
     }
 }
 
