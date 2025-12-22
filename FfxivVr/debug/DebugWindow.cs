@@ -69,12 +69,12 @@ public class DebugWindow : Window
             {
                 if (tab)
                 {
-                    rendercustomTab();
+                    renderCustomData();
                 }
             }
         }
     }
-    private unsafe void rendercustomTab()
+    private unsafe void renderCustomData()
     {
         var sceneCameraEx = gameState.GetSceneCameraExtended();
         var gameCamera = gameState.GetGameCameraExtended();
@@ -83,20 +83,32 @@ public class DebugWindow : Window
         var charOrGpose = gameState.getCharacterOrGpose();
         var currentCamera = gameState.GetCurrentCamera();
 
-        ImGui.Text($"Camera Extras 0x{Convert.ToString((long)sceneCameraEx, 16)}");
-        ImGui.Text($"Horizontal Rotation Rad:{sceneCameraEx->CurrentHRotation:F2} Deg:{float.RadiansToDegrees(sceneCameraEx->CurrentHRotation):F2}");
-        ImGui.Text($"Vertical Rotation Rad:{sceneCameraEx->CurrentVRotation:F2} Deg:{float.RadiansToDegrees(sceneCameraEx->CurrentVRotation):F2}");
+        if (sceneCameraEx != null)
+        {
+            ImGui.Text($"Camera Extras 0x{Convert.ToString((long)sceneCameraEx, 16)}");
+            ImGui.Text($"Horizontal Rotation Rad:{sceneCameraEx->CurrentHRotation:F2} Deg:{float.RadiansToDegrees(sceneCameraEx->CurrentHRotation):F2}");
+            ImGui.Text($"Vertical Rotation Rad:{sceneCameraEx->CurrentVRotation:F2} Deg:{float.RadiansToDegrees(sceneCameraEx->CurrentVRotation):F2}");
+        }
 
-        ImGui.Text($"Game Camera Address: 0x{Convert.ToString((long)gameCamera, 16)}");
-        ImGui.Text($"DirectionHorizontal: {float.RadiansToDegrees(gameCamera->DirectionHorizontal):F2}°");
-        ImGui.Text($"DirectionVertical: {float.RadiansToDegrees(gameCamera->DirectionVertical):F2}°");
-        ImGui.Text($"CameraMode: {gameCamera->CameraMode}");
+        if (gameCamera != null)
+        {
+            ImGui.Text($"Game Camera Address: 0x{Convert.ToString((long)gameCamera, 16)}");
+            ImGui.Text($"DirectionHorizontal: {float.RadiansToDegrees(gameCamera->DirectionHorizontal):F2}°");
+            ImGui.Text($"DirectionVertical: {float.RadiansToDegrees(gameCamera->DirectionVertical):F2}°");
+            ImGui.Text($"CameraMode: {gameCamera->CameraMode}");
+        }
 
-        ImGui.Text($"Character Extended Address: 0x{Convert.ToString((long)charExt, 16)}");
-        ImGui.Text($"FixHeadPosition: {charExt->FixHeadPosition:F2} == {currentCamera->Position.Y - charOrGpose->Position.Y:F2}");
+        if (charExt != null && charOrGpose != null && currentCamera != null)
+        {
+            ImGui.Text($"Character Extended Address: 0x{Convert.ToString((long)charExt, 16)}");
+            ImGui.Text($"FixHeadPosition: {charExt->FixHeadPosition:F2} == {currentCamera->Position.Y - charOrGpose->Position.Y:F2}");
+        }
 
-        ImGui.Text($"Character Base Address: 0x{Convert.ToString((long)charBase, 16)}");
-        ImGui.Text($"Height: {charBase->Height:F2}");
+        if (charBase != null)
+        {
+            ImGui.Text($"Character Base Address: 0x{Convert.ToString((long)charBase, 16)}");
+            ImGui.Text($"Height: {charBase->Height:F2}");
+        }
     }
 }
 
