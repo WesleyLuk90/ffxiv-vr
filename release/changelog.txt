@@ -1,7 +1,7 @@
-# Fix release
+# Debug logging (#88)
 
-# Update to dalamud api 14 (#85)
+# Fix vr rotation issues #81 #83 (#87)
 
-# Add option to disable shader mod detection #80 (#82)
+# Add a test for version number (#86)
 
-# Update repo version number
+# Bump api verison
