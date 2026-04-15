@@ -6,8 +6,6 @@
     <PackageProjectUrl>https://github.com/WesleyLuk90/ffxiv-vr</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
-  </PropertyGroup>
-  <PropertyGroup>
     <WarningsAsErrors>$(WarningsAsErrors);MSB3245</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
