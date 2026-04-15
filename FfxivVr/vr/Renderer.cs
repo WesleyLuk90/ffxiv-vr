@@ -190,7 +190,10 @@ public unsafe class Renderer(
         resources.SetUIBlendState(context);
         var color = new float[] { 0f, 0f, 0f, 0f };
         context->ClearRenderTargetView(resources.DalamudRenderTarget.RenderTargetView, ref color[0]);
-        dalamudRenderer.Render(resources.DalamudRenderTarget.RenderTargetView);
+        dalamudRenderer.Render(
+            (ID3D11Texture2D*)resources.DalamudRenderTarget.Texture,
+            resources.DalamudRenderTarget.RenderTargetView
+        );
 
         RenderCursor(context, new Vector2D<float>(width, height));
     }
