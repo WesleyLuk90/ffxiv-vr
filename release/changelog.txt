@@ -1,7 +1,19 @@
-# Debug logging (#88)
+# Add nightly build and manual trigger (#96)
 
-# Fix vr rotation issues #81 #83 (#87)
+# Fix packaging (#95)
+* Warn about missing assemblies
+* Update sdk version
+* Fix zip step
+# fix(#91): update to new dalamud RenderDrawDataInternal (#94)
+Updates DalamudRenderer to account for Dalamud's changes to
+RenderDrawDataInternal in Dx11Renderer seen
+[here](https://github.com/goatcorp/Dalamud/blob/5030f6885165df40a43139b3a9a1d1e8b2c321da/Dalamud/Interface/ImGuiBackend/Renderers/Dx11Renderer.cs#L249)
+Looks like this is also present in the [v15
+api](https://github.com/goatcorp/Dalamud/blob/d6db9263441561d1b2552b1621d9345a34ebfd8d/Dalamud/Interface/ImGuiBackend/Renderers/Dx11Renderer.cs#L249)
+branch. Not sure when these changes happened, just barely decided to try
+ffxiv with VR and found this repo.
 
-# Add a test for version number (#86)
+Let me know if I need any more changes, seems to work fine for me.
 
-# Bump api verison
+Closes #91 
+Closes #93
