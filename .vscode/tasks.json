@@ -1,14 +1,15 @@
 {
+  "version": "2.0.0",
   "tasks": [
     {
-      "label": "format",
-      "type": "shell",
-      "command": "dotnet format",
+      "type": "dotnet",
+      "task": "build",
       "group": {
-        "kind": "none",
+        "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "label": "dotnet: build"
     }
   ]
 }
