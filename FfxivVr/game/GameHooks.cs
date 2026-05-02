@@ -55,6 +55,7 @@ public unsafe class GameHooks(
         if (configuration.DisableShaderModCheck)
         {
             ModDetection.DisableCheck();
+            logger.Debug("Shader mod check has been bypassed");
         }
         gameInteropProvider.InitializeFromAttributes(this);
         GamepadPollHook = gameInteropProvider.HookFromAddress<GamepadPollDelegate>((nint)PadDevice.StaticVirtualTablePointer->Poll, GamepadPollDetour);
