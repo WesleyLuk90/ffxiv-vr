@@ -1,3 +1,4 @@
+using Dalamud.Configuration.Internal;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -29,6 +30,7 @@ public unsafe class AppFactory
     [PluginService] public static IFramework Framework { get; set; } = null!;
     [PluginService] public static INamePlateGui NamePlateGui { get; set; } = null!;
     [PluginService] public static IDtrBar DtrBar { get; set; } = null!;
+    [PluginService] public static DalamudConfiguration DalamudConfiguration { get; set; } = null!;
 
     private DxDevice? device = null;
     public AppFactory()
@@ -46,6 +48,7 @@ public unsafe class AppFactory
         builder.Services.AddSingleton(LoadConfiguration());
 
         builder.Services.AddSingleton(PluginInterface);
+        builder.Services.AddSingleton(DalamudConfiguration);
         builder.Services.AddSingleton(SigScanner);
         builder.Services.AddSingleton(Log);
         builder.Services.AddSingleton(ChatGui);

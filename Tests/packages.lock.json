@@ -8,6 +8,12 @@
         "resolved": "6.0.0",
         "contentHash": "tW3lsNS+dAEII6YGUX/VMoJjBS1QvsxqJeqLaJXub08y1FSjasFPtQ4UBUsudE9PNrzLjooClMsPtY2cZLdXpQ=="
       },
+      "IgnoresAccessChecksToGenerator": {
+        "type": "Direct",
+        "requested": "[0.8.0, )",
+        "resolved": "0.8.0",
+        "contentHash": "LvZGHzbfdRkjzVGAcJYdU3+cvld5EHqRkNRreNSolDpRcPPUmbCr6jLfwgku+Y8ugVKUz7hx4lOLzqj9ASc+qg=="
+      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[17.6.0, )",

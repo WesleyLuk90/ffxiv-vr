@@ -1,3 +1,4 @@
+using Dalamud.Configuration.Internal;
 using Silk.NET.Core.Native;
 using Silk.NET.OpenXR;
 using Silk.NET.OpenXR.Extensions.EXT;
@@ -16,7 +17,8 @@ public unsafe class VRSystem(
     DxDevice device,
     Logger logger,
     HookStatus hookStatus,
-    Configuration configuration
+    Configuration configuration,
+    DalamudConfiguration dalamudConfiguration
 ) : IDisposable
 {
     public Session Session = new Session();
@@ -91,15 +93,22 @@ public unsafe class VRSystem(
             logger.Debug("Using OculusRuntimeAdjustments");
             RuntimeAdjustments = new OculusRuntimeAdjustments();
         }
-        if (runtimeName.Contains("SteamVR") && !hookStatus.IsHookAdded())
+        if (runtimeName.Contains("SteamVR"))
         {
-            if (ModDetection.HasShaderMod())
-            {
-                throw new ShaderModDetected();
-            }
-            else
+            if (!dalamudConfiguration.IsResumeGameAfterPluginLoad)
             {
                 throw new MissingDXHook();
+            }
+            if (!hookStatus.IsHookAdded())
+            {
+                if (ModDetection.HasShaderMod())
+                {
+                    throw new ShaderModDetected();
+                }
+                else
+                {
+                    throw new MissingDXHook();
+                }
             }
         }
 
