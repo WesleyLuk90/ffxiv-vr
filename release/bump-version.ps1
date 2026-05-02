@@ -18,11 +18,17 @@ Write-Host $changeLog
 $xml.Project.PropertyGroup.Version = $nextVersion
 $xml.Save(".\FfxivVr\FfxivVR.csproj")
 
+$now = [int](Get-Date -UFormat %s -Millisecond 0)
+
 Remove-TypeData -ErrorAction Ignore System.Array
 $repo = Get-Content 'PluginRepo/pluginmaster.json' -raw | ConvertFrom-Json
 $repo[0].AssemblyVersion = $nextVersion
+$repo[0].LastUpdated = $now
+$repo[0].DownloadLinkInstall = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/$VersionString/FfxivVR.zip"
+$repo[0].DownloadLinkTesting = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/$VersionString/FfxivVR.zip"
+$repo[0].DownloadLinkUpdate = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/$VersionString/FfxivVR.zip"
 ConvertTo-Json $repo -depth 32 | set-content 'PluginRepo/pluginmaster.json'
 
-[IO.File]::WriteAllLines("release/changelog.txt", $changeLog)
+# [IO.File]::WriteAllLines("release/changelog.txt", $changeLog)
 
-echo "VERSION_STRING=$versionString" >> $env:GITHUB_OUTPUT
+# echo "VERSION_STRING=$versionString" >> $env:GITHUB_OUTPUT
