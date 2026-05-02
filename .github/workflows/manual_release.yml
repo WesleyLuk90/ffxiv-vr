@@ -38,10 +38,7 @@ jobs:
 
       - name: Bump Version
         id: bump_version
-        run: |
-          powershell release/bump-version.ps1
-          $ver = (powershell release/bump-version.ps1 -DryRun).Trim()
-          echo "VERSION_STRING=$ver" >> $env:GITHUB_OUTPUT
+        run: powershell release/bump-version.ps1
 
       - name: Download Dalamud
         run: |
