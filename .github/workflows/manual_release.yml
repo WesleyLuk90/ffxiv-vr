@@ -36,6 +36,13 @@ jobs:
         with:
           sdk-version: 22621
 
+      - name: Bump Version
+        id: bump_version
+        run: |
+          powershell release/bump-version.ps1
+          $ver = (powershell release/bump-version.ps1 -DryRun).Trim()
+          echo "VERSION_STRING=$ver" >> $env:GITHUB_OUTPUT
+
       - name: Download Dalamud
         run: |
           Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/stg/latest.zip -OutFile latest.zip
@@ -58,9 +65,10 @@ jobs:
           path: .\FfxivVr\bin\x64\latest.zip
           if-no-files-found: error
 
-      - name: Prepare Release
-        id: prepare_release
-        run: powershell release/Release.ps1
+      - name: Finalize Release
+        id: finalize_release
+        run: |
+          powershell release/finalize-release.ps1 ${{ steps.bump_version.outputs.VERSION_STRING }}
 
       - name: Create Release
         id: create_release
@@ -68,8 +76,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.prepare_release.outputs.VERSION_STRING }}
-          release_name: FFXIV VR ${{ steps.prepare_release.outputs.VERSION_STRING }}
+          tag_name: ${{ steps.bump_version.outputs.VERSION_STRING }}
+          release_name: FFXIV VR ${{ steps.bump_version.outputs.VERSION_STRING }}
           body_path: release/changelog.txt
           draft: false
           prerelease: false
