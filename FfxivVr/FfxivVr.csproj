@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/14.0.1">
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
     <Version>0.0.63</Version>
     <Description>A VR plugin for FFXIV.</Description>
@@ -7,6 +7,18 @@
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
     <WarningsAsErrors>$(WarningsAsErrors);MSB3245</WarningsAsErrors>
+    <Author>Steelgunner90</Author>
+    <Name>FFXIV VR</Name>
+    <Punchline>A VR mod for FFXIV</Punchline>
+    <Description>A VR mod for FFXIV. Run /vr to open settings</Description>
+    <ApplicableVersion>any</ApplicableVersion>
+    <RepoUrl>https://github.com/WesleyLuk90/ffxiv-vr</RepoUrl>
+    <Tags>vr</Tags>
+    <DalamudApiLevel>15</DalamudApiLevel>
+    <LoadRequiredState>2</LoadRequiredState>
+    <LoadSync>true</LoadSync>
+    <CanUnloadAsync>true</CanUnloadAsync>
+    <LoadPriority>69420</LoadPriority>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="$(PkgOpenXR_Loader)\native\x64\release\bin\openxr_loader.dll">

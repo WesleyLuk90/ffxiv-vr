@@ -21,6 +21,7 @@ public class PluginUI(
         WindowSystem.AddWindow(debugWindow);
 
         pluginInterface.UiBuilder.Draw += DrawUI;
+        pluginInterface.UiBuilder.OpenMainUi += ToggleConfigUI;
         pluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
     }
 
