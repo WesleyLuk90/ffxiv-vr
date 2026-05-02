@@ -1,5 +1,6 @@
 namespace FfxivVR.Tests;
 
+using Dalamud.Configuration.Internal;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FfxivVR;
@@ -30,6 +31,7 @@ public unsafe class AppFactoryTests
         AppFactory.Framework = new Mock<IFramework>().Object;
         AppFactory.NamePlateGui = new Mock<INamePlateGui>().Object;
         AppFactory.DtrBar = new Mock<IDtrBar>().Object;
+        AppFactory.DalamudConfiguration = new DalamudConfiguration();
 
         var factory = new AppFactory(device: new DxDevice(null));
 

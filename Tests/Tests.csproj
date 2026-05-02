@@ -32,8 +32,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup>
+    <IgnoresAccessChecksTo Include="Dalamud" />
+  </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.8.0" PrivateAssets="all" />
     <ProjectReference Include="..\FfxivVr\FfxivVR.csproj" />
   </ItemGroup>
   <ItemGroup>
