@@ -29,6 +29,6 @@ $repo[0].DownloadLinkTesting = "https://github.com/WesleyLuk90/ffxiv-vr/releases
 $repo[0].DownloadLinkUpdate = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/$VersionString/FfxivVR.zip"
 ConvertTo-Json $repo -depth 32 | set-content 'PluginRepo/pluginmaster.json'
 
-# [IO.File]::WriteAllLines("release/changelog.txt", $changeLog)
+[IO.File]::WriteAllLines("release/changelog.txt", $changeLog)
 
-# echo "VERSION_STRING=$versionString" >> $env:GITHUB_OUTPUT
+echo "VERSION_STRING=$versionString" >> $env:GITHUB_OUTPUT
