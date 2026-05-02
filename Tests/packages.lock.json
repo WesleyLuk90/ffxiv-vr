@@ -487,6 +487,11 @@
         "resolved": "9.0.0",
         "contentHash": "qd01+AqPhbAG14KtdtIqFk+cxHQFZ/oqRSCoxU1F+Q6Kv0cl726sl7RzU9yLFGd4BUOKdN4XojXF0pQf/R6YeA=="
       },
+      "TerraFX.Interop.Windows": {
+        "type": "Transitive",
+        "resolved": "10.0.26100.5",
+        "contentHash": "xtNbqoZGcc8SoC70ixIPve/2XITl7HuoDgIlCAn2719SwhcquC3SaRIVUMhEodQo1CXeAwxzXGXAgTKMBLhX6Q=="
+      },
       "ffxivvr": {
         "type": "Project",
         "dependencies": {
@@ -498,7 +503,8 @@
           "Silk.NET.OpenXR": "[2.21.0, )",
           "Silk.NET.OpenXR.Extensions.EXT": "[2.21.0, )",
           "Silk.NET.OpenXR.Extensions.FB": "[2.21.0, )",
-          "Silk.NET.OpenXR.Extensions.KHR": "[2.21.0, )"
+          "Silk.NET.OpenXR.Extensions.KHR": "[2.21.0, )",
+          "TerraFX.Interop.Windows": "[10.0.26100.5, )"
         }
       }
     }

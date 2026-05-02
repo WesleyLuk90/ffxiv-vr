@@ -5,48 +5,26 @@ using Dalamud.Interface.ImGuiBackend.Renderers;
 using Dalamud.Interface.Internal;
 using Silk.NET.Direct3D11;
 using System;
-using System.Linq;
-using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace FfxivVR;
 
 public unsafe class DalamudRenderer
 {
     private Dx11Renderer? renderer;
-    private MethodInfo? renderDrawDataInternalMethod;
-
     public void Initialize()
     {
         var interfaceManager = Service<InterfaceManager>.GetNullable() ?? throw new Exception("Failed to get InterfaceManager");
         var backend = interfaceManager.Backend as Dx11Win32Backend ?? throw new Exception("Failed to get Dx11Win32Backend");
         renderer = backend.Renderer as Dx11Renderer ?? throw new Exception("Failed to get Dx11Renderer");
-
-        var assembly = Assembly.GetAssembly(typeof(Dx11Renderer)) ?? throw new Exception("Failed to get Assembly");
-        var type = assembly.GetType("Dalamud.Interface.ImGuiBackend.Renderers.Dx11Renderer") ?? throw new Exception("Failed to get Dx11Renderer type");
-
-        var methods = type.GetRuntimeMethods().Where(m => m.Name == "RenderDrawDataInternal").ToList();
-
-        renderDrawDataInternalMethod = methods.First();
     }
 
     internal void Render(ID3D11Texture2D* renderTargetTexture, ID3D11RenderTargetView* renderTargetView)
     {
-        // Pass the texture down into the internal method
-        RenderDrawDataInternal(renderTargetTexture, renderTargetView, ImGui.GetDrawData(), false);
+        RenderDrawDataInternal(renderer!, (TerraFX.Interop.DirectX.ID3D11Texture2D*)renderTargetTexture, (TerraFX.Interop.DirectX.ID3D11RenderTargetView*)renderTargetView, ImGui.GetDrawData(), false);
     }
 
-    private void RenderDrawDataInternal(
-        ID3D11Texture2D* renderTargetTexture,
-        ID3D11RenderTargetView* renderTargetView,
-        ImDrawDataPtr drawData,
-        bool clearRenderTarget)
-    {
-        renderDrawDataInternalMethod?.Invoke(renderer, [
-            (IntPtr)renderTargetTexture,
-            (IntPtr)renderTargetView,
-            drawData,
-            clearRenderTarget
-        ]);
-    }
-
+    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "RenderDrawDataInternal")]
+    static extern void RenderDrawDataInternal(
+        Dx11Renderer instance, TerraFX.Interop.DirectX.ID3D11Texture2D* renderTargetTexture, TerraFX.Interop.DirectX.ID3D11RenderTargetView* renderTargetView, ImDrawDataPtr drawData, bool clearRenderTarget);
 }
