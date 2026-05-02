@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
-    <Version>0.0.64</Version>
+    <Version>0.0.65</Version>
     <Description>A VR plugin for FFXIV.</Description>
     <PackageProjectUrl>https://github.com/WesleyLuk90/ffxiv-vr</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
@@ -47,7 +47,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="OpenXR.Loader" Version="1.0.10.2" GeneratePathProperty="true" />
-    <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.5" >
+    <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.5">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Silk.NET.Direct3D11" Version="2.21.0" />

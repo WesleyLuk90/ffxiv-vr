@@ -1,3 +1,7 @@
-# Remove json file (#102)
+# Fix again
 
-# Update Dalamud 15 (#101)
+# Fix version handling again (#105)
+
+# Fix release versioning (#104)
+
+# Use UnsafeAccessor (#103)
