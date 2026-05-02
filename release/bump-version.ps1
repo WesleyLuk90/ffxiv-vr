@@ -1,10 +1,11 @@
 $xml = [xml](Get-Content -Path .\FfxivVr\FfxivVR.csproj)
 
-$currentVersion = [version]$xml.Project.PropertyGroup.Version
-$nextVersion = "{0}.{1}.{2}" -f $currentVersion.Major, $currentVersion.Minor, ($currentVersion.Build + 1)
+$projectVersion = [version]$xml.Project.PropertyGroup.Version
+$currentVersion = "{0}.{1}.{2}" -f $projectVersion.Major, $projectVersion.Minor, $projectVersion.Build
+$nextVersion = "{0}.{1}.{2}" -f $projectVersion.Major, $projectVersion.Minor, ($projectVersion.Build + 1)
 $versionString = "v$nextVersion"
 
-$changeLog = git log --pretty=format:"# %s%n%b" "v$currentVersion"..HEAD --invert-grep --grep="Publish Version"
+$changeLog = git log --pretty=format:"# %s%n%b" "v$currentVersion..HEAD" --invert-grep --grep="Publish Version"
 if (!$changeLog) {
     Write-Host "Changelog was empty, exiting"
     Exit 1
