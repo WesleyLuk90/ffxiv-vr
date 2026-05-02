@@ -126,6 +126,12 @@
           "Silk.NET.OpenXR": "2.21.0"
         }
       },
+      "TerraFX.Interop.Windows": {
+        "type": "Direct",
+        "requested": "[10.0.26100.5, )",
+        "resolved": "10.0.26100.5",
+        "contentHash": "xtNbqoZGcc8SoC70ixIPve/2XITl7HuoDgIlCAn2719SwhcquC3SaRIVUMhEodQo1CXeAwxzXGXAgTKMBLhX6Q=="
+      },
       "Microsoft.DotNet.PlatformAbstractions": {
         "type": "Transitive",
         "resolved": "3.1.6",

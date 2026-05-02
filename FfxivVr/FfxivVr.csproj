@@ -47,6 +47,9 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="OpenXR.Loader" Version="1.0.10.2" GeneratePathProperty="true" />
+    <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.5" >
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
     <PackageReference Include="Silk.NET.Direct3D11" Version="2.21.0" />
     <PackageReference Include="Silk.NET.Maths" Version="2.21.0" />
     <PackageReference Include="Silk.NET.OpenXR" Version="2.21.0" />
