@@ -1,7 +1,3 @@
-# Fix again
+# Fix comment
 
-# Fix version handling again (#105)
-
-# Fix release versioning (#104)
-
-# Use UnsafeAccessor (#103)
+# Fix
