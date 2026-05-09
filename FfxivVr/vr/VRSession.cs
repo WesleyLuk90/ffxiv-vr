@@ -283,10 +283,22 @@ public unsafe class VRSession(
         {
             return true;
         }
+        var asChar = gameObject->GetAsCharacter();
+        if (asChar != null)
+        {
+            var parent = asChar->GetParentCharacter();
+            if (parent != null)
+            {
+                if (gameState.getCharacterOrGpose() == parent)
+                {
+                    return true;
+                }
+            }
+        }
         var radius = Math.Max(gameObject->GetRadius() + 1, 2);
         var cameraDistance = (gameObject->Position.ToVector3D() - cameraPosition).Length;
         var targetDistance = (gameObject->Position.ToVector3D() - lookAtPosition).Length;
-        return cameraDistance < radius || cameraDistance < radius;
+        return cameraDistance < radius || targetDistance < radius;
     }
 
     internal bool ShouldDisableCameraVerticalFly()
