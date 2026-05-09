@@ -66,6 +66,8 @@ public class ConfigWindow : Window
     {
         Checkbox("Fixed camera height", ref config.MatchFloorPosition);
         Slider("Height offset", ref config.FloorHeightOffset, defaultValue: 0, min: -3, max: 3);
+        Slider("Side offset", ref config.ThirdPersonCameraSideOffset, defaultValue: 0, min: -3, max: 3);
+        Slider("Forward offset", ref config.ThirdPersonCameraForwardOffset, defaultValue: 0, min: -3, max: 3);
         Checkbox("Keep the camera level", ref config.KeepCameraHorizontal);
         Checkbox("Keep the cutscene camera level", ref config.KeepCutsceneCameraHorizontal, "Disable to ensure camera looks at the original cutscene direction.");
         Checkbox("Prevent camera from changing flying height", ref config.DisableCameraDirectionFlyingThirdPerson);

@@ -95,7 +95,9 @@ FirstPersonManager firstPersonManager
                 groundPosition: characterBase->Position.Y,
                 height: height + configuration.FloorHeightOffset,
                 distance: d,
-                worldScale: configuration.WorldScale);
+                worldScale: configuration.WorldScale,
+                sideOffset: configuration.ThirdPersonCameraSideOffset,
+                forwardOffset: configuration.ThirdPersonCameraForwardOffset);
         }
         else if (!configuration.KeepCameraHorizontal)
         {

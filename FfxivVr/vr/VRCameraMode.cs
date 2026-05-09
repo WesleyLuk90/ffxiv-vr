@@ -87,21 +87,30 @@ class BodyTrackingCamera : FollowingFirstPersonCamera
 
 class LockedFloorCamera : VRCameraMode
 {
-    public LockedFloorCamera(float groundPosition, float height, float distance, float worldScale)
+    public LockedFloorCamera(float groundPosition, float height, float distance, float worldScale, float sideOffset, float forwardOffset)
     {
         GroundPosition = groundPosition;
         Height = height;
         Distance = distance;
         WorldScale = worldScale;
+        SideOffset = sideOffset;
+        ForwardOffset = forwardOffset;
     }
     public float GroundPosition { get; }
     public float Height { get; }
     public float Distance { get; }
     public float WorldScale { get; }
+    public float SideOffset { get; }
+    public float ForwardOffset { get; }
 
     public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
     {
-        var pos = gameCamera.LookAt - Vector3D.Transform(-Vector3D<float>.UnitZ * Distance, MathFactory.YRotation(gameCamera.GetYRotation()));
+        var forward = -Vector3D<float>.UnitZ;
+        var right = Vector3D.Cross(forward, Vector3D<float>.UnitY);
+        var rotation = MathFactory.YRotation(gameCamera.GetYRotation());
+        var basePos = gameCamera.LookAt - Vector3D.Transform(forward * Distance, rotation);
+        var offset = Vector3D.Transform(right * SideOffset + forward * ForwardOffset, rotation);
+        var pos = basePos + offset;
         pos.Y = GroundPosition + Height / WorldScale;
         return pos;
     }

@@ -33,6 +33,8 @@ public class Configuration : IPluginConfiguration
 
     public bool MatchFloorPosition = false;
     public float FloorHeightOffset = 0;
+    public float ThirdPersonCameraSideOffset = 0;
+    public float ThirdPersonCameraForwardOffset = 0;
     public bool DisableCameraDirectionFlying = false;
     public bool DisableCameraDirectionFlyingThirdPerson = false;
 
