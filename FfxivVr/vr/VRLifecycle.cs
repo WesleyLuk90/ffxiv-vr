@@ -160,7 +160,16 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            vrSession?.PrepareVRRender();
+            try
+            {
+                vrSession?.PrepareVRRender();
+            }
+            catch (FatalVRException e)
+            {
+                logger.Info($"Encountered a fatal VR error ${e}");
+                DisableVR();
+                throw;
+            }
         }
     }
     internal Point? ComputeMousePosition(Point point)

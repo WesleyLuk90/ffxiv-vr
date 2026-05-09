@@ -7,6 +7,10 @@ namespace FfxivVR
     {
         internal static void CheckResult(this Result result, string action)
         {
+            if (result == Result.ErrorInstanceLost)
+            {
+                throw new FatalVRException($"Failed to {action} got result {result}, stopping VR");
+            }
             if (result != Result.Success)
             {
                 throw new Exception($"Failed to {action} got result {result}");

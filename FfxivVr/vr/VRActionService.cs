@@ -94,7 +94,6 @@ public unsafe partial class VRActionService(
     }
     public (VRActionsState, PalmPose, AimPose) PollActions(long predictedTime)
     {
-        var input = new VRActionsState();
         var activeActionSet = new ActiveActionSet(
             actionSet: actionSet,
             subactionPath: null
@@ -118,6 +117,17 @@ public unsafe partial class VRActionService(
             rightAim: GetActionPose(rightSpace, predictedTime, aimPose, rightHandPath),
             headAim: GetHeadAim(predictedTime)
         );
+        VRActionsState input = GetVRActionState();
+        return (input, currentPalmPose, currentAimPose);
+    }
+
+    private VRActionsState GetVRActionState()
+    {
+        var input = new VRActionsState();
+        if (config.DisableVRControllers)
+        {
+            return input;
+        }
         GetActionBool(aButton, input, VRButton.A);
         GetActionBool(bButton, input, VRButton.B);
         GetActionBool(xButton, input, VRButton.X);
@@ -142,7 +152,8 @@ public unsafe partial class VRActionService(
         {
             input.RightStick = right;
         }
-        return (input, currentPalmPose, currentAimPose);
+
+        return input;
     }
 
     private Posef? GetHeadAim(long predictedTime)

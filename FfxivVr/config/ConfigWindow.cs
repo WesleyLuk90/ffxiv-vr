@@ -24,9 +24,9 @@ public class ConfigWindow : Window
         GameConfigManager gameConfigManager
         ) : base("FFXIV VR Settings")
     {
-        Flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize;
+        Flags = ImGuiWindowFlags.NoCollapse;
 
-        Size = new Vector2(500, 500);
+        Size = new Vector2(600, 450);
 
         this.config = configuration;
         this.vrLifecycle = vrLifecycle;
@@ -40,6 +40,7 @@ public class ConfigWindow : Window
             Tuple.Create("First Person", FirstPersonTab),
             Tuple.Create("Third Person", ThirdPersonTab),
             Tuple.Create("Game Config", RenderGameConfig),
+            Tuple.Create("Advanced", AdvancedTab),
         ];
     }
 
@@ -114,7 +115,6 @@ public class ConfigWindow : Window
         }
         Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
         Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);
-        Checkbox("Disable shader mod check", ref config.DisableShaderModCheck, "Disable the check for ReShade/GShade dlls (Requires Game Restart).");
     }
 
     private void RenderGameConfig()
@@ -330,6 +330,12 @@ public class ConfigWindow : Window
             config.Save();
         }
         Tooltip(help);
+    }
+
+    private void AdvancedTab()
+    {
+        Checkbox("Disable shader mod check", ref config.DisableShaderModCheck, "Disable the check for ReShade/GShade dlls (Requires Game Restart).");
+        Checkbox("Disable VR controllers", ref config.DisableVRControllers, "Completely disables VR controller input. Can workaround controller-related errors.");
     }
 
     private string EmptyLabel(string label)
