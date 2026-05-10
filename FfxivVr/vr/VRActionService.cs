@@ -124,7 +124,7 @@ public unsafe partial class VRActionService(
     private VRActionsState GetVRActionState()
     {
         var input = new VRActionsState();
-        if (config.DisableVRControllers)
+        if (!ControllersActive || config.DisableVRControllers)
         {
             return input;
         }
@@ -323,64 +323,17 @@ public unsafe partial class VRActionService(
         return Native.ReadCString(buffer);
     }
 
-    class CurrentController
-    {
-        public bool IsPhysicalController = false;
-    }
-    private CurrentController? currentController = null;
+    private bool ControllersActive = false;
     internal void InteractionProfileChanged()
     {
         var leftProfile = new InteractionProfileState(next: null);
         xr.GetCurrentInteractionProfile(system.Session, leftHandPath, ref leftProfile).CheckResult("GetCurrentInteractionProfile");
         var rightProfile = new InteractionProfileState(next: null);
-        xr.GetCurrentInteractionProfile(system.Session, leftHandPath, ref rightProfile).CheckResult("GetCurrentInteractionProfile");
+        xr.GetCurrentInteractionProfile(system.Session, rightHandPath, ref rightProfile).CheckResult("GetCurrentInteractionProfile");
 
-        logger.Debug($"Interaction profile changed left:{GetPath(leftProfile.InteractionProfile)} right:{GetPath(leftProfile.InteractionProfile)}");
+        logger.Debug($"Interaction profile changed left:{GetPath(leftProfile.InteractionProfile) ?? "None"} right:{GetPath(rightProfile.InteractionProfile) ?? "None"}");
 
-        if (leftProfile.InteractionProfile != 0 || rightProfile.InteractionProfile != 0)
-        {
-            currentController = new CurrentController();
-        }
+        ControllersActive = leftProfile.InteractionProfile != 0 || rightProfile.InteractionProfile != 0;
     }
 
-    // public virtual VRActionsState? GetVRActionsState()
-    // {
-    //     if (PollActions(system.Now()) is VRActionsState input && currentController is CurrentController controller)
-    //     {
-    //         // Virtual Desktop tries to emulate a controller with hand tracking but we want to ignore those inputs so detect that by waiting for a non emulated input
-    //         if (!controller.IsPhysicalController && input.IsPhysicalController())
-    //         {
-    //             if (input.LeftStick.LengthSquared == 0 && input.RightStick.LengthSquared == 0)
-    //             {
-    //                 logger.Debug($"Physical controller detected {string.Join(", ", input.Pressed)}");
-    //             }
-    //             controller.IsPhysicalController = true;
-    //         }
-    //         if (controller.IsPhysicalController)
-    //         {
-    //             return input;
-    //         }
-    //     }
-    //     return null;
-    // }
-
-    // public Line? GetAimLine(AimType aimType)
-    // {
-    //     var ray = GetAimRay(aimType);
-    //     if (ray == null)
-    //     {
-    //         return null;
-    //     }
-    //     return vrUI.Intersect(ray);
-    // }
-    // public Vector2D<float>? GetViewportPosition(AimType aimType)
-    // {
-    //     var ray = GetAimRay(aimType);
-    //     if (ray == null)
-    //     {
-    //         return null;
-    //     }
-    //     var line = vrUI.Intersect(ray);
-    //     return vrUI.GetViewportPosition(line);
-    // }
 }
