@@ -79,15 +79,15 @@ FirstPersonManager firstPersonManager
         }
         else if (firstPersonManager.IsFirstPerson && (hasBodyData || configuration.LockToHead))
         {
-            return new BodyTrackingCamera();
+            return new BodyTrackingCamera(configuration.FirstPersonHeightOffset);
         }
         else if (firstPersonManager.IsFirstPerson && configuration.FollowCharacter)
         {
-            return new FollowingFirstPersonCamera();
+            return new FollowingFirstPersonCamera(configuration.FirstPersonHeightOffset);
         }
         else if (firstPersonManager.IsFirstPerson)
         {
-            return new FirstPersonCamera();
+            return new FirstPersonCamera(configuration.FirstPersonHeightOffset);
         }
         else if (localSpaceHeight is float height && characterBase != null && distance is float d)
         {

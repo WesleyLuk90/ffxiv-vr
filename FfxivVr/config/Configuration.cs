@@ -30,6 +30,7 @@ public class Configuration : IPluginConfiguration
     public bool DisableMotionTrackingInCombat = false;
 
     public bool HideBodyInFirstPerson = false;
+    public float FirstPersonHeightOffset = 0;
 
     public bool MatchFloorPosition = false;
     public float FloorHeightOffset = 0;

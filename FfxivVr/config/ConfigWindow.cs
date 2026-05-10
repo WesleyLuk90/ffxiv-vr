@@ -77,6 +77,7 @@ public class ConfigWindow : Window
     {
         Checkbox("Disable Auto Face Target", ref config.DisableAutoFaceTargetInFirstPerson);
         Checkbox("Use Standard Movement", ref config.EnableStandardMovementInFirstPerson);
+        Slider("Height offset", ref config.FirstPersonHeightOffset, defaultValue: 0, min: -1, max: 1);
         Checkbox("Head Relative Movement", ref config.EnableHeadRelativeMovement, "Movement is relative to your head facing direction.");
         Checkbox("Camera follows Head", ref config.FollowCharacter, "Centers the camera on your characters head.");
         Checkbox("Camera is locked to Head", ref config.LockToHead, "Locks the camera to your characters head.");

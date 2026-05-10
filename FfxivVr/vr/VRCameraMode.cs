@@ -60,28 +60,42 @@ class LevelOrbitCamera() : VRCameraMode
 }
 
 
-class FirstPersonCamera : LevelOrbitCamera
+class FirstPersonCamera : VRCameraMode
 {
-    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera) { return gameCamera.FixedHeadPosition; }
+    private readonly float heightOffset;
+
+    public FirstPersonCamera(float heightOffset)
+    {
+        this.heightOffset = heightOffset;
+    }
+
+    public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
+    {
+        var pos = gameCamera.FixedHeadPosition;
+        pos.Y += heightOffset;
+        return pos;
+    }
 }
 
 class FollowingFirstPersonCamera : VRCameraMode
 {
+    private readonly float heightOffset;
+
+    public FollowingFirstPersonCamera(float heightOffset)
+    {
+        this.heightOffset = heightOffset;
+    }
 
     public override Vector3D<float> GetCameraPosition(GameCamera gameCamera)
     {
-        if (gameCamera.HeadPosition is Vector3D<float> headPosition)
-        {
-            return headPosition;
-        }
-        else
-        {
-            return gameCamera.FixedHeadPosition;
-        }
+        Vector3D<float> pos = gameCamera.HeadPosition is Vector3D<float> headPosition ? headPosition : gameCamera.FixedHeadPosition;
+        pos.Y += heightOffset;
+        return pos;
     }
 }
 class BodyTrackingCamera : FollowingFirstPersonCamera
 {
+    public BodyTrackingCamera(float heightOffset) : base(heightOffset) { }
     public override bool UseHeadMovement { get; } = false;
 }
 
