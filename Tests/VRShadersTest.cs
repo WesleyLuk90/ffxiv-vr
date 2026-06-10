@@ -3,7 +3,7 @@
 public class VRShadersTest
 {
     [Test()]
-    public unsafe void LoadShaders()
+    public void LoadShaders()
     {
         VRShaders.LoadPixelShader();
         VRShaders.LoadVertexShader();

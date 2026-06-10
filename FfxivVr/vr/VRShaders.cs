@@ -17,7 +17,7 @@ public unsafe class VRShaders
 
     public static byte[] LoadVertexShader()
     {
-        using (var stream = typeof(VRShaders).Assembly.GetManifestResourceStream("FfxivVR.shaders.VertexShader.cso"))
+        using (var stream = typeof(VRShaders).Assembly.GetManifestResourceStream("FfxivVr.shaders.VertexShader.cso"))
         {
             if (stream == null)
             {
@@ -32,7 +32,7 @@ public unsafe class VRShaders
     }
     public static byte[] LoadPixelShader()
     {
-        using (var stream = typeof(VRShaders).Assembly.GetManifestResourceStream("FfxivVR.shaders.PixelShader.cso"))
+        using (var stream = typeof(VRShaders).Assembly.GetManifestResourceStream("FfxivVr.shaders.PixelShader.cso"))
         {
             if (stream == null)
             {

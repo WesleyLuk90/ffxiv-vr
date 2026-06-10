@@ -38,10 +38,10 @@
 
   <ItemGroup>
     <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.8.0" PrivateAssets="all" />
-    <ProjectReference Include="..\FfxivVr\FfxivVR.csproj" />
+    <ProjectReference Include="..\FfxivVr\FfxivVr.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\FfxivVr\FfxivVR.csproj">
+    <Content Include="..\FfxivVr\FfxivVr.csproj">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\PluginRepo\pluginmaster.json">

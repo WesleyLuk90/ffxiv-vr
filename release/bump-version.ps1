@@ -1,4 +1,4 @@
-$xml = [xml](Get-Content -Path .\FfxivVr\FfxivVR.csproj)
+$xml = [xml](Get-Content -Path .\FfxivVr\FfxivVr.csproj)
 
 $projectVersion = [version]$xml.Project.PropertyGroup.Version
 $currentVersion = "{0}.{1}.{2}" -f $projectVersion.Major, $projectVersion.Minor, $projectVersion.Build
@@ -16,7 +16,7 @@ Write-Host "=== Change Log ==="
 Write-Host $changeLog
 
 $xml.Project.PropertyGroup.Version = $nextVersion
-$xml.Save(".\FfxivVr\FfxivVR.csproj")
+$xml.Save(".\FfxivVr\FfxivVr.csproj")
 
 $now = [int](Get-Date -UFormat %s -Millisecond 0)
 
