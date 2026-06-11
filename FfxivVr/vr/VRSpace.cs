@@ -7,7 +7,8 @@ public unsafe class VRSpace(
     XR xr,
     Logger logger,
     VRSystem system,
-    VRUI vrUI)
+    VRUI vrUI,
+    FramePrediction framePrediction)
 {
 
     public Space LocalSpace = new Space();
@@ -87,7 +88,13 @@ public unsafe class VRSpace(
     {
         logger.Info($"Recentering camera");
         var spaceLocation = new SpaceLocation(next: null);
-        xr.LocateSpace(ViewSpace, LocalSpace, system.Now(), ref spaceLocation).CheckResult("LocateSpace");
+        var now = framePrediction.GetAltPredictedFrameTime();
+        if (now is null)
+        {
+            logger.Error("Failed to recenter, failed to get time");
+            return;
+        }
+        xr.LocateSpace(ViewSpace, LocalSpace, now.Value, ref spaceLocation).CheckResult("LocateSpace");
         var oldSpace = LocalSpace;
         var pose = spaceLocation.Pose;
         var positionMatrix = Matrix4X4.CreateTranslation(pose.Position.ToVector3D());

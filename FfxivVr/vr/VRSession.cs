@@ -192,15 +192,23 @@ public unsafe class VRSession(
         if (State.SessionRunning)
         {
             logger.Trace("Starting cycle");
-            var predictedTime = framePrediction.GetPredictedFrameTime();
-
-            var views = vrSpace.LocateView(predictedTime);
-            var localSpaceHeight = configuration.MatchFloorPosition ? vrSpace.GetLocalSpaceHeight(predictedTime) : null;
             Task<FrameState> waitFrameTask = Task.Run(() =>
             {
                 var frameState = waitFrameService.WaitFrame();
                 return frameState;
             });
+            long predictedTime;
+            if (!configuration.AltFramePrediction)
+            {
+                predictedTime = framePrediction.GetPredictedFrameTime();
+            }
+            else
+            {
+                predictedTime = framePrediction.GetAltPredictedFrameTime() ?? waitFrameTask.Result.PredictedDisplayTime;
+            }
+
+            var views = vrSpace.LocateView(predictedTime);
+            var localSpaceHeight = configuration.MatchFloorPosition ? vrSpace.GetLocalSpaceHeight(predictedTime) : null;
             var inputData = vrInputService.PollInput(predictedTime);
             VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight, configuration.BodyTracking && inputData.HasBodyData());
             vrUI.Update(views[0], ticks);

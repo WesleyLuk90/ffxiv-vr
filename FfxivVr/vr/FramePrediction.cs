@@ -7,6 +7,7 @@ public class FramePrediction(
 
 
     private long? lastStart = null;
+    private long? lastLastPrediction = null;
     private long? lastPrediction = null;
     public long GetPredictedFrameTime()
     {
@@ -17,11 +18,21 @@ public class FramePrediction(
             estimatedDelay = prediction - start;
         }
         lastStart = now;
-        return vrSystem.Now() + estimatedDelay;
+        return now + estimatedDelay;
+    }
+
+    public long? GetAltPredictedFrameTime()
+    {
+        if (lastPrediction is long last && lastLastPrediction is long lastLast)
+        {
+            return last + (last - lastLast);
+        }
+        return null;
     }
 
     public void MarkPredictedFrameTime(long predictedTime)
     {
+        lastLastPrediction = lastPrediction;
         lastPrediction = predictedTime;
     }
 

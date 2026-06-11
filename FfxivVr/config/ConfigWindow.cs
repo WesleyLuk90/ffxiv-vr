@@ -339,6 +339,7 @@ public class ConfigWindow : Window
     {
         Checkbox("Disable shader mod check", ref config.DisableShaderModCheck, "Disable the check for ReShade/GShade dlls (Requires Game Restart).");
         Checkbox("Disable VR controllers", ref config.DisableVRControllers, "Completely disables VR controller input. Can workaround controller-related errors.");
+        Checkbox("Use alternative frame prediction", ref config.AltFramePrediction, "Enable on linux to workaround errors with ConvertWin32PerformanceCounterToTime.");
     }
 
     private string EmptyLabel(string label)

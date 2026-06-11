@@ -6,7 +6,6 @@ public class VRInputService(
     VRSpace vrSpace
 )
 {
-
     public VRInputData PollInput(long predictedTime)
     {
         var (actionState, palmPose, aimPose) = vrActionService.PollActions(predictedTime);
