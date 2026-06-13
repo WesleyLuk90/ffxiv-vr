@@ -8,8 +8,7 @@ public class PluginVersionValidationTest
     private const string PluginMasterPath = "pluginmaster.json";
     private const string ProjectFilePath = "FfxivVr.csproj";
 
-    [Test]
-    public void DalamudSdkVersionMatchesApiLevel()
+    private JsonElement ReadRepoJson()
     {
         var pluginMasterJson = File.ReadAllText(PluginMasterPath);
         var pluginData = JsonSerializer.Deserialize<JsonElement[]>(pluginMasterJson);
@@ -17,7 +16,13 @@ public class PluginVersionValidationTest
         {
             throw new Exception("Missing plugin");
         }
-        var plugin = pluginData[0];
+        return pluginData[0];
+    }
+
+    [Test]
+    public void DalamudSdkVersionMatchesApiLevel()
+    {
+        var plugin = ReadRepoJson();
 
         var apiLevel = plugin.GetProperty("DalamudApiLevel").GetInt32();
 
@@ -31,5 +36,14 @@ public class PluginVersionValidationTest
         var sdkVersion = sdkMatch.Groups[1].Value;
 
         Assert.That(sdkVersion, Does.StartWith(apiLevel.ToString()));
+    }
+
+    [Test]
+    public void AssemblyName()
+    {
+        Assert.That(typeof(FfxivVR.Plugin).Assembly.GetName().Name, Is.EqualTo("FfxivVR"));
+
+        var plugin = ReadRepoJson();
+        Assert.That(plugin.GetProperty("InternalName").GetString(), Is.EqualTo("FfxivVR"));
     }
 }

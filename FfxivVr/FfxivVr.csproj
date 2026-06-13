@@ -9,6 +9,7 @@
     <WarningsAsErrors>$(WarningsAsErrors);MSB3245</WarningsAsErrors>
     <Author>Steelgunner90</Author>
     <Name>FFXIV VR</Name>
+    <AssemblyName>FfxivVR</AssemblyName>
     <Punchline>A VR mod for FFXIV</Punchline>
     <Description>A VR mod for FFXIV. Run /vr to open settings</Description>
     <ApplicableVersion>any</ApplicableVersion>
