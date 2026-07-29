@@ -20,6 +20,7 @@
     <PackageReference Include="NUnit.Analyzers" Version="3.6.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="OpenXR.Loader" Version="1.0.10.2" GeneratePathProperty="true" />
+    <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.5" />
     <Reference Include="Dalamud">
       <HintPath>$(appdata)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
     </Reference>
@@ -35,7 +36,9 @@
   <ItemGroup>
     <IgnoresAccessChecksTo Include="Dalamud" />
   </ItemGroup>
-
+  <ItemGroup>
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.8.0" PrivateAssets="all" />
     <ProjectReference Include="..\FfxivVr\FfxivVr.csproj" />

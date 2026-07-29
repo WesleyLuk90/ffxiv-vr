@@ -1,4 +1,3 @@
-﻿using Dalamud;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.ImGuiBackend;
 using Dalamud.Interface.ImGuiBackend.Renderers;
@@ -9,13 +8,31 @@ using System.Runtime.CompilerServices;
 
 namespace FfxivVR;
 
-public unsafe class DalamudRenderer
+public interface IInterfaceManager
 {
+    InterfaceManager InterfaceManager { get; }
+}
+
+public class DalamudInterfaceManager : IInterfaceManager
+{
+    private readonly InterfaceManager _interfaceManager;
+
+    public DalamudInterfaceManager(InterfaceManager interfaceManager)
+    {
+        _interfaceManager = interfaceManager;
+    }
+
+    public InterfaceManager InterfaceManager => _interfaceManager;
+}
+
+public unsafe class DalamudRenderer(IInterfaceManager interfaceManager)
+{
+    private readonly IInterfaceManager _interfaceManager = interfaceManager;
     private Dx11Renderer? renderer;
+
     public void Initialize()
     {
-        var interfaceManager = Service<InterfaceManager>.GetNullable() ?? throw new Exception("Failed to get InterfaceManager");
-        var backend = interfaceManager.Backend as Dx11Win32Backend ?? throw new Exception("Failed to get Dx11Win32Backend");
+        var backend = _interfaceManager.InterfaceManager.Backend as Dx11Win32Backend ?? throw new Exception("Failed to get Dx11Win32Backend");
         renderer = backend.Renderer as Dx11Renderer ?? throw new Exception("Failed to get Dx11Renderer");
     }
 
