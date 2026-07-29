@@ -7,7 +7,6 @@ using FfxivVR;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System.IO;
-
 public unsafe class AppFactoryTests
 {
     [Test, Timeout(10000)]
