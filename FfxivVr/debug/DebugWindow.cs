@@ -11,21 +11,27 @@ using System.Numerics;
 
 namespace FfxivVR;
 
-public class DebugWindow : Window
+public unsafe class DebugWindow : Window
 {
     private readonly Debugging debugging;
     private readonly GameState gameState;
+    private readonly Logger logger;
+    private readonly DXHooks dxHooks;
+    private readonly RunOnce runOnce;
 
-    public DebugWindow(Debugging debugging, GameState gameState) : base("FFXIV VR Debug")
+    public DebugWindow(Debugging debugging, GameState gameState, Logger logger, DXHooks dxHooks, RunOnce runOnce) : base("FFXIV VR Debug")
     {
         Flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoResize;
         Size = new Vector2(450, 700);
         this.debugging = debugging;
         this.gameState = gameState;
+        this.logger = logger;
+        this.dxHooks = dxHooks;
+        this.runOnce = runOnce;
     }
 
-    public override void Draw()
+    public override unsafe void Draw()
     {
         using (ImRaii.TabBar("tabs"))
         {
@@ -63,12 +69,21 @@ public class DebugWindow : Window
                     ImGui.Checkbox("Enable tracking in 3rd person", ref debugging.ForceTracking);
                     ImGui.InputInt("Index", ref debugging.Index);
                     ImGui.SliderFloat("Float", ref debugging.Float, -1, 1);
+                    if (ImGui.Button("Run Frame Actions"))
+                    {
+                        runOnce.StartFrameAction();
+                    }
                 }
             }
             using (var tab = ImRaii.TabItem("Custom Data"))
             {
                 if (tab)
                 {
+                    // var srv = dXHooks.Texture?.ShaderResourceView;
+                    // if (srv != null)
+                    // {
+                    //     ImGui.Image(new ImTextureID(srv), new Vector2(400, 400));
+                    // }
                     renderCustomData();
                 }
             }
@@ -151,7 +166,6 @@ public class Debugging(
     {
         return Quaternion<float>.CreateFromYawPitchRoll(YRotation, XRotation, ZRotation);
     }
-
     public void DrawLocation()
     {
         if (Location is not Vector3D<float> loc)

@@ -77,6 +77,8 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<GameConfigManager>();
         builder.Services.AddSingleton<GameEvents>();
         builder.Services.AddSingleton<GameHooks>();
+        builder.Services.AddSingleton<DXHooks>();
+        builder.Services.AddSingleton<SinglePassRenderer>();
         builder.Services.AddSingleton<GameState>();
         builder.Services.AddSingleton<HookStatus>();
         builder.Services.AddSingleton<NameplateModifier>();
@@ -88,6 +90,7 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<Transitions>();
         builder.Services.AddSingleton<VRLifecycle>();
         builder.Services.AddSingleton<VRStartStop>();
+        builder.Services.AddSingleton<RunOnce>();
 
         builder.Services.AddScoped(x => GetDevice());
         builder.Services.AddScoped<DalamudRenderer>();
@@ -109,6 +112,7 @@ public unsafe class AppFactory
         builder.Services.AddScoped<VRUI>();
         builder.Services.AddScoped<WaitFrameService>();
         builder.Services.AddScoped<RenderManager>();
+        builder.Services.AddScoped<RenderTargetLookup>();
         builder.Services.AddScoped<VRInputService>();
         builder.Services.AddScoped<InverseKinematics>();
         builder.Services.AddScoped<BodySkeletonModifier>();

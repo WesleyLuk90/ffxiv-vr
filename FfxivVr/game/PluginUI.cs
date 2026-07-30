@@ -11,7 +11,8 @@ public class PluginUI(
     ExceptionHandler exceptionHandler,
     Configuration configuration,
     VRStartStop vrStartStop,
-    Logger logger
+    Logger logger,
+    DXHooks dxHooks
 )
 {
     private readonly WindowSystem WindowSystem = new("FFXIV VR");
@@ -21,6 +22,7 @@ public class PluginUI(
         WindowSystem.AddWindow(debugWindow);
 
         pluginInterface.UiBuilder.Draw += DrawUI;
+        debugWindow.IsOpen = true;
         pluginInterface.UiBuilder.OpenMainUi += ToggleConfigUI;
         pluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
     }
@@ -42,6 +44,7 @@ public class PluginUI(
     private bool LaunchAtStartChecked = false;
     private void MaybeOnBootStartVR()
     {
+        dxHooks.Initialize();
         var shouldLaunchOnStart = !LaunchAtStartChecked &&
             configuration.StartVRAtBoot &&
             pluginInterface.Reason == PluginLoadReason.Boot;

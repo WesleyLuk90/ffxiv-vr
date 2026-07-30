@@ -25,6 +25,7 @@ public unsafe class GameHooks(
     HookStatus hookStatus,
     IGameInteropProvider gameInteropProvider,
     GameState gameState,
+    RunOnce runOnce,
     Configuration configuration
 ) : IDisposable
 {
@@ -44,7 +45,6 @@ public unsafe class GameHooks(
         DisposeActions.ForEach(dispose => dispose());
         DisposeActions.Clear();
     }
-
     private void DisposeHook<T>(Hook<T>? hook) where T : Delegate
     {
         hook?.Disable();
@@ -123,6 +123,7 @@ public unsafe class GameHooks(
     {
         logger.Trace("DXGIPresentDetour");
         var shouldPresent = true;
+        runOnce.EndFrame();
         exceptionHandler.FaultBarrier(() =>
         {
             shouldPresent = vrLifecycle.PrePresent();
@@ -132,8 +133,6 @@ public unsafe class GameHooks(
             DXGIPresentHook!.Original(a, b);
         }
     }
-
-
     private delegate void SetMatricesDelegate(FFXIVClientStructs.FFXIV.Client.Game.Camera* camera, IntPtr ptr);
     [Signature("E8 ?? ?? ?? ?? 0F 10 43 ?? C6 83", DetourName = nameof(SetMatricesDetour))]
     private Hook<SetMatricesDelegate>? SetMatricesHook = null;
@@ -194,9 +193,12 @@ public unsafe class GameHooks(
     // Component::GUI::AtkServer.ProcessUICommandsAlt
     private void ProcessUICommandsAltDetour(AtkServer* atkServer, bool a2)
     {
-
         exceptionHandler.FaultBarrier(() =>
         {
+            runOnce.Run("hooks", "ProcessUICommandsAltDetour", () =>
+            {
+                logger.Debug("ProcessUICommandsAltDetour");
+            });
             vrLifecycle.PreUIRender();
         });
         ProcessUICommandsAltHook!.Original(atkServer, a2);
