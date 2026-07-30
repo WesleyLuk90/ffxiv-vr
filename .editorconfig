@@ -12,7 +12,7 @@ indent_style = space
 tab_width = 4
 
 # New line preferences
-end_of_line = crlf
+end_of_line = lf
 insert_final_newline = false
 
 #### .NET Coding Conventions ####
@@ -235,3 +235,6 @@ dotnet_diagnostic.IDE0036.severity = error
 
 [*.{cs,vb}]
 dotnet_diagnostic.CS0436.severity = none
+
+[*.csproj]
+end_of_line = lf
