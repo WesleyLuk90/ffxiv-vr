@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
     <Version>0.0.74</Version>
@@ -27,8 +27,10 @@
     </Content>
   </ItemGroup>
   <Target Name="CompileShaders" Inputs="shaders\VertexShader.hlsl;shaders\PixelShader.hlsl" BeforeTargets="BeforeResGen" Outputs="shaders\VertexShader.cso;shaders\PixelShader.cso">
-    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo shaders\VertexShader.cso /T vs_5_0 .\shaders\VertexShader.hlsl" />
-    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo shaders\PixelShader.cso /T ps_5_0 .\shaders\PixelShader.hlsl" />
+    <Exec Command="docker run --rm -v $(MSBuildThisFileDirectory)shaders:/fxc/shaders -w /fxc gwihlidal/fxc /Fo shaders/VertexShader.cso /T vs_5_0 shaders/VertexShader.hlsl" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+    <Exec Command="docker run --rm -v $(MSBuildThisFileDirectory)shaders:/fxc/shaders -w /fxc gwihlidal/fxc /Fo shaders/PixelShader.cso /T ps_5_0 shaders/PixelShader.hlsl" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo shaders\VertexShader.cso /T vs_5_0 .\shaders\VertexShader.hlsl" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <Exec Command="&quot;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\fxc.exe&quot; /Fo shaders\PixelShader.cso /T ps_5_0 .\shaders\PixelShader.hlsl" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   </Target>
   <ItemGroup>
     <EmbeddedResource Include=".\shaders\VertexShader.cso" WithCulture="false" Type="Non-Resx" />
