@@ -4,9 +4,11 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Common.Math;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Silk.NET.DXGI;
 using Silk.NET.Maths;
 using System;
@@ -64,7 +66,7 @@ public unsafe class GameHooks(
         InitializeHook(SetMatricesHook, nameof(SetMatricesHook));
         InitializeHook(RenderThreadSetRenderTargetHook, nameof(RenderThreadSetRenderTargetHook));
         InitializeHook(RenderSkeletonListHook, nameof(RenderSkeletonListHook));
-        InitializeHook(PushbackUIHook, nameof(PushbackUIHook));
+        InitializeHook(ProcessUICommandsAltHook, nameof(ProcessUICommandsAltHook));
         if (!ModDetection.HasShaderMod())
         {
             InitializeHook(CreateDXGIFactoryHook, nameof(CreateDXGIFactoryHook));
@@ -187,18 +189,18 @@ public unsafe class GameHooks(
         });
     }
 
-    private delegate void PushbackUIDelegate(ulong a, long b);
-    [Signature("E8 ?? ?? ?? ?? EB ?? E8 ?? ?? ?? ?? 4C 8D 5C 24 50", DetourName = nameof(PushbackUIDetour))]
-    private Hook<PushbackUIDelegate>? PushbackUIHook = null;
-
-    private void PushbackUIDetour(ulong a, long b)
+    private delegate void ProcessUICommandsAltDelegate(AtkServer* atkServer, bool a2);
+    [Signature("E8 ?? ?? ?? ?? EB ?? E8 ?? ?? ?? ?? 4C 8D 5C 24 50", DetourName = nameof(ProcessUICommandsAltDetour))]
+    private Hook<ProcessUICommandsAltDelegate>? ProcessUICommandsAltHook = null;
+    // Component::GUI::AtkServer.ProcessUICommandsAlt
+    private void ProcessUICommandsAltDetour(AtkServer* atkServer, bool a2)
     {
 
         exceptionHandler.FaultBarrier(() =>
         {
             vrLifecycle.PreUIRender();
         });
-        PushbackUIHook!.Original(a, b);
+        ProcessUICommandsAltHook!.Original(atkServer, a2);
     }
 
     //    1403c5694 c7 44 24        MOV        dword ptr [RSP + local_3ac],0xb000
