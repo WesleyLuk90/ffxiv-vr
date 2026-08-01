@@ -1,4 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
@@ -24,11 +25,11 @@ public static unsafe class GameTextures
 {
     public static Texture* GetGameRenderTexture()
     {
-        return RenderTargetManagerExtended.Instance()->DrawTexture;
+        return RenderTargetManager.Instance()->ToneAdjustSource;
     }
     public static Texture* GetGameDepthTexture()
     {
-        return RenderTargetManagerExtended.Instance()->DepthStencilTexture;
+        return RenderTargetManager.Instance()->DepthStencil;
     }
 
     internal static Cursor? GetCursorTexture()
