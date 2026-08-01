@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.Havok.Animation.Rig;
+using FFXIVClientStructs.Havok.Animation.Rig;
 using FFXIVClientStructs.Havok.Common.Base.Math.QsTransform;
 using System;
 using System.Collections.Generic;

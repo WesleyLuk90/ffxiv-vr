@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Gui.NamePlate;
+using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Arrays;
 using FFXIVClientStructs.FFXIV.Component.GUI;

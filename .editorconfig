@@ -5,7 +5,7 @@ root = true
 [*.cs]
 
 #### Core EditorConfig Options ####
-
+charset = utf-8
 # Indentation and spacing
 indent_size = 4
 indent_style = space

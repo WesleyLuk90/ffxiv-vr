@@ -1,4 +1,4 @@
-﻿using Silk.NET.OpenXR;
+using Silk.NET.OpenXR;
 using System;
 using System.Threading;
 
