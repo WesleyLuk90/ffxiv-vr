@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Gui.NamePlate;
+using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Silk.NET.Maths;
 using System.Collections.Generic;

@@ -1,4 +1,4 @@
-﻿using Silk.NET.Maths;
+using Silk.NET.Maths;
 using System;
 
 namespace FfxivVR;

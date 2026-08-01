@@ -1,4 +1,4 @@
-﻿using Silk.NET.Direct3D11;
+using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
