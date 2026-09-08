@@ -36,6 +36,18 @@ public class ConfigManager(Configuration configuration, Logger logger)
                 logger.Error("Error, expected true or false");
             }
         }
+        else if (field.FieldType == typeof(int))
+        {
+            if (int.TryParse(value, out int intValue))
+            {
+                field.SetValue(configuration, intValue);
+                logger.Info($"Setting {field.Name} to {intValue}");
+            }
+            else
+            {
+                logger.Error("Error, expected an integer");
+            }
+        }
         else if (field.FieldType == typeof(int?))
         {
             if (isNull)
