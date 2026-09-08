@@ -34,6 +34,8 @@ public unsafe class VRSystem(
     public class MissingDXHook() : Exception("DX Hook was not configured");
     public class ShaderModDetected() : Exception("Shader mod detected");
 
+    private const long NanosecondsPerSecond = 1_000_000_000L;
+
     private List<string> wantedExtensions = [
         KhrD3D11Enable.ExtensionName,
         KhrWin32ConvertPerformanceCounterTime.ExtensionName,
@@ -125,7 +127,12 @@ public unsafe class VRSystem(
         d3d11Ext.GetD3D11GraphicsRequirements(Instance, SystemId, &requirements).CheckResult("GetD3D11GraphicsRequirements");
         logger.Debug($"Requirements Adapter {requirements.AdapterLuid} Feature level {requirements.MinFeatureLevel}");
 
-        perfCounterExt = GetExtension<KhrWin32ConvertPerformanceCounterTime>() ?? throw new Exception("Failed to load KhrWin32ConvertPerformanceCounterTime extension"); ;
+        perfCounterExt = GetExtension<KhrWin32ConvertPerformanceCounterTime>();
+        if (perfCounterExt == null)
+        {
+            usePerformanceCounterConversion = false;
+            logger.Info("XR_KHR_win32_convert_performance_counter_time is unavailable; using Stopwatch-based timestamps");
+        }
 
         var binding = new GraphicsBindingD3D11KHR(device: device.Device);
         var sessionInfo = new SessionCreateInfo(systemId: SystemId, createFlags: 0, next: &binding);
@@ -200,7 +207,9 @@ public unsafe class VRSystem(
         xr.DestroyInstance(Instance).LogResult("DestroyInstance", logger);
     }
 
-    private KhrWin32ConvertPerformanceCounterTime perfCounterExt = null!;
+    private KhrWin32ConvertPerformanceCounterTime? perfCounterExt = null;
+    private bool usePerformanceCounterConversion = true;
+    private bool warnedAboutTimeFallback = false;
     public HandTracking? HandTracker { get; private set; } = null;
 
     public BodyTracking? BodyTracker { get; private set; } = null;
@@ -208,9 +217,31 @@ public unsafe class VRSystem(
     public long Now()
     {
         var timestamp = Stopwatch.GetTimestamp();
-        long time;
-        perfCounterExt.ConvertWin32PerformanceCounterToTime(Instance, &timestamp, &time).CheckResult("ConvertTimeToWin32PerformanceCounter");
-        return time;
+        if (!usePerformanceCounterConversion || perfCounterExt == null)
+        {
+            return StopwatchTimestampToXrTime(timestamp);
+        }
 
+        try
+        {
+            long time;
+            perfCounterExt.ConvertWin32PerformanceCounterToTime(Instance, &timestamp, &time).CheckResult("ConvertWin32PerformanceCounterToTime");
+            return time;
+        }
+        catch (Exception e)
+        {
+            usePerformanceCounterConversion = false;
+            if (!warnedAboutTimeFallback)
+            {
+                logger.Info($"Falling back to Stopwatch-based timestamps because XR_KHR_win32_convert_performance_counter_time failed: {e.Message}");
+                warnedAboutTimeFallback = true;
+            }
+            return StopwatchTimestampToXrTime(timestamp);
+        }
+    }
+
+    private static long StopwatchTimestampToXrTime(long timestamp)
+    {
+        return (long)((decimal)timestamp * NanosecondsPerSecond / Stopwatch.Frequency);
     }
 }
