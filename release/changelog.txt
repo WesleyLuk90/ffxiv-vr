@@ -1,1 +1,7 @@
-# Rebuild
+# Support int fields (#124)
+
+# Fix hook (#121)
+
+# Enable build on linux (#120)
+
+# Get interface manager using plugin injection (#119)
