@@ -16,7 +16,6 @@ public unsafe class Renderer(
     VRShaders shaders,
     VRSpace vrSpace,
     Configuration configuration,
-    DalamudRenderer dalamudRenderer,
     VRCamera vrCamera,
     ResolutionManager resolutionManager,
     GameState gameState,
@@ -188,13 +187,6 @@ public unsafe class Renderer(
         context->CopySubresourceRegion((ID3D11Resource*)resources.UIRenderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D, 0, ref box);
 
         resources.SetUIBlendState(context);
-        var color = new float[] { 0f, 0f, 0f, 0f };
-        context->ClearRenderTargetView(resources.DalamudRenderTarget.RenderTargetView, ref color[0]);
-        dalamudRenderer.Render(
-            (ID3D11Texture2D*)resources.DalamudRenderTarget.Texture,
-            resources.DalamudRenderTarget.RenderTargetView
-        );
-
         RenderCursor(context, new Vector2D<float>(width, height));
     }
 
