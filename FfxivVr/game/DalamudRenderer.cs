@@ -2,7 +2,6 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.ImGuiBackend;
 using Dalamud.Interface.ImGuiBackend.Renderers;
 using Dalamud.Interface.Internal;
-using Silk.NET.Direct3D11;
 using System;
 using System.Runtime.CompilerServices;
 
@@ -25,20 +24,42 @@ public class DalamudInterfaceManager : IInterfaceManager
     public InterfaceManager InterfaceManager => _interfaceManager;
 }
 
-public unsafe class DalamudRenderer(IInterfaceManager interfaceManager)
+public unsafe class DalamudRenderer(IInterfaceManager interfaceManager, Resources resources) : IDisposable
 {
     private readonly IInterfaceManager _interfaceManager = interfaceManager;
     private Dx11Renderer? renderer;
+    private bool disposed = false;
 
     public void Initialize()
     {
         var backend = _interfaceManager.InterfaceManager.Backend as Dx11Win32Backend ?? throw new Exception("Failed to get Dx11Win32Backend");
         renderer = backend.Renderer as Dx11Renderer ?? throw new Exception("Failed to get Dx11Renderer");
+        _interfaceManager.InterfaceManager.Draw += OnDraw;
     }
 
-    internal void Render(ID3D11Texture2D* renderTargetTexture, ID3D11RenderTargetView* renderTargetView)
+    private void OnDraw()
     {
-        RenderDrawDataInternal(renderer!, (TerraFX.Interop.DirectX.ID3D11Texture2D*)renderTargetTexture, (TerraFX.Interop.DirectX.ID3D11RenderTargetView*)renderTargetView, ImGui.GetDrawData(), false);
+        // Render before Dalamud disposes textures, otherwise the draw data may reference disposed textures
+        _interfaceManager.InterfaceManager.RunAfterImGuiRender(Render);
+    }
+
+    private void Render()
+    {
+        var renderTarget = resources.DalamudRenderTarget;
+        if (disposed || renderTarget == null)
+        {
+            return;
+        }
+        RenderDrawDataInternal(renderer!, (TerraFX.Interop.DirectX.ID3D11Texture2D*)renderTarget.Texture, (TerraFX.Interop.DirectX.ID3D11RenderTargetView*)renderTarget.RenderTargetView, ImGui.GetDrawData(), true);
+    }
+
+    public void Dispose()
+    {
+        disposed = true;
+        if (renderer != null)
+        {
+            _interfaceManager.InterfaceManager.Draw -= OnDraw;
+        }
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "RenderDrawDataInternal")]

@@ -59,7 +59,7 @@ public unsafe class GameHooks(
             logger.Debug("Shader mod check has been bypassed");
         }
         gameInteropProvider.InitializeFromAttributes(this);
-        GamepadPollHook = gameInteropProvider.HookFromAddress<GamepadPollDelegate>((nint)PadDevice.StaticVirtualTablePointer->Poll, GamepadPollDetour);
+        GamepadPollHook = gameInteropProvider.HookFromAddress<GamepadPollDelegate>((nint)PadDevice.StaticVirtualTablePointer->Update, GamepadPollDetour);
         InitializeHook(FrameworkTickHook, nameof(FrameworkTickHook));
         InitializeHook(DXGIPresentHook, nameof(DXGIPresentHook));
         InitializeHook(SetMatricesHook, nameof(SetMatricesHook));
@@ -282,17 +282,16 @@ public unsafe class GameHooks(
     }
 
     // https://github.com/goatcorp/Dalamud/blob/4c9b2a1577f8cd8c8b99e828d174b7122730e808/Dalamud/Game/ClientState/ClientStateAddressResolver.cs#L47
-    private delegate int GamepadPollDelegate(PadDevice* thisptr);
+    private delegate void GamepadPollDelegate(PadDevice* thisptr);
     private Hook<GamepadPollDelegate>? GamepadPollHook = null;
-    private int GamepadPollDetour(PadDevice* gamepadInput)
+    private void GamepadPollDetour(PadDevice* gamepadInput)
     {
         logger.Trace("GamepadPollDetour");
-        var returnVaue = GamepadPollHook!.Original(gamepadInput);
+        GamepadPollHook!.Original(gamepadInput);
         exceptionHandler.FaultBarrier(() =>
         {
             vrLifecycle.UpdateGamepad(gamepadInput);
         });
-        return returnVaue;
     }
 
 
