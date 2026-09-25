@@ -65,7 +65,7 @@ public class EventHandler(
                     }
                 default:
                     {
-                        logger.Error($"Unhandled event {eventDataBuffer.Type}");
+                        logger.Debug($"Unhandled event {eventDataBuffer.Type}");
                         break;
                     }
             }
