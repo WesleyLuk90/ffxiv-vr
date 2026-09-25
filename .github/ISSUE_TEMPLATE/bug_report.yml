@@ -1,0 +1,91 @@
+name: Bug Report
+description: Report a bug or crash in the FFXIV VR plugin
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out as much as you can, logs make it much easier to track down the problem.
+
+        For general support and questions, please ask in the [Discord](https://discord.gg/flat2vr) instead.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: What happened, and what did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: How can the bug be reproduced?
+      placeholder: |
+        1. Start VR
+        2. Open the ... menu
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Found in the Dalamud plugin installer.
+      placeholder: e.g. 0.0.74
+    validations:
+      required: true
+
+  - type: input
+    id: headset
+    attributes:
+      label: Headset
+      description: Which headset are you using?
+      placeholder: e.g. Quest 3
+    validations:
+      required: true
+
+  - type: input
+    id: runtime
+    attributes:
+      label: OpenXR runtime
+      description: Which OpenXR runtime are you using (SteamVR, Oculus/Meta, Virtual Desktop, WMR, etc.)?
+      placeholder: e.g. Virtual Desktop (VDXR)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: other-plugins
+    attributes:
+      label: Have you tried disabling all other plugins?
+      description: Other plugins can conflict with the VR plugin. Please try reproducing the bug with only FFXIV VR enabled.
+      options:
+        - Yes, the bug still happens with only FFXIV VR enabled
+        - Yes, and the bug goes away (please name the conflicting plugin in the bug description)
+        - No
+    validations:
+      required: true
+
+  - type: textarea
+    id: dalamud-log
+    attributes:
+      label: Dalamud logs
+      description: |
+        Please attach your `dalamud.log`, located at `%AppData%\XIVLauncher\dalamud.log`.
+        Reproduce the bug first so it's included in the log, then drag and drop the file here.
+
+  - type: textarea
+    id: crash-report
+    attributes:
+      label: Crash report
+      description: |
+        If the game crashed, please attach the crash report. When the Dalamud crash handler window appears, use it to save the crash info and drag the saved file here.
+        Leave blank if the game did not crash.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, videos, or anything else that might help.
