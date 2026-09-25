@@ -1,7 +1,10 @@
-# Support int fields (#124)
+# Render Dalamud UI before Dalamud disposes textures (#129)
+* Fix for #97
+* Fix warning
+# Exclude binary shaders (#128)
 
-# Fix hook (#121)
+# Compile shaders via CompileShaders scripts instead of inline fxc/dock… (#127)
+…er commands
+# Change log level (#126)
 
-# Enable build on linux (#120)
-
-# Get interface manager using plugin injection (#119)
+# Add issue template (#125)
