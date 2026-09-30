@@ -246,6 +246,14 @@ public class ConfigWindow : Window
         VRActionDropdown($"Right Stick", ref config.Controls[layer].RightStick, layer);
         VRActionDropdown($"Start", ref config.Controls[layer].Start, layer);
         VRActionDropdown($"Select", ref config.Controls[layer].Select, layer);
+        ImGui.Separator();
+        ImGui.TextDisabled("Steam Frame");
+        VRActionDropdown($"Left Bumper", ref config.Controls[layer].LeftBumper, layer);
+        VRActionDropdown($"Right Bumper", ref config.Controls[layer].RightBumper, layer);
+        VRActionDropdown($"D-Pad Up", ref config.Controls[layer].DPadUp, layer);
+        VRActionDropdown($"D-Pad Down", ref config.Controls[layer].DPadDown, layer);
+        VRActionDropdown($"D-Pad Left", ref config.Controls[layer].DPadLeft, layer);
+        VRActionDropdown($"D-Pad Right", ref config.Controls[layer].DPadRight, layer);
     }
 
     private void VRActionDropdown(string label, ref VRAction button, int layer)

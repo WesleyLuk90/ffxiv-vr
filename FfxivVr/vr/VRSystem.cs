@@ -41,7 +41,14 @@ public unsafe class VRSystem(
         "XR_EXT_palm_pose",
         FBBodyTracking.ExtensionName,
         "XR_EXT_hand_tracking_data_source",
+        FrameControllerExtensionName,
     ];
+
+    public const string FrameControllerExtensionName = "XR_VALVE_frame_controller_interaction";
+
+    private HashSet<string> enabledExtensions = new();
+    public bool IsExtensionEnabled(string extensionName) => enabledExtensions.Contains(extensionName);
+
     public void Initialize()
     {
         ApplicationInfo appInfo = new ApplicationInfo(applicationVersion: 1, engineVersion: 1, apiVersion: 1UL << 48);
@@ -64,6 +71,7 @@ public unsafe class VRSystem(
             });
         });
         logger.Debug($"Enabling extensions {string.Join(", ", foundExtensions.Select(e => e.GetExtensionName()))}");
+        enabledExtensions = foundExtensions.Select(e => e.GetExtensionName()).ToHashSet();
 
         byte*[] extensionsToEnable = new byte*[foundExtensions.Count()];
         for (var i = 0; i < foundExtensions.Count(); i++)

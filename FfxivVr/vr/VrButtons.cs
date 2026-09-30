@@ -14,4 +14,10 @@ public enum VRButton
     RightGrip,
     LeftStick,
     RightStick,
+    LeftBumper,
+    RightBumper,
+    DPadUp,
+    DPadDown,
+    DPadLeft,
+    DPadRight,
 }
