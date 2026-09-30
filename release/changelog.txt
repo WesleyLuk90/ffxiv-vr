@@ -1,10 +1,2 @@
-# Render Dalamud UI before Dalamud disposes textures (#129)
-* Fix for #97
-* Fix warning
-# Exclude binary shaders (#128)
-
-# Compile shaders via CompileShaders scripts instead of inline fxc/dock… (#127)
-…er commands
-# Change log level (#126)
-
-# Add issue template (#125)
+# Add support for steam frame (#131)
+#130
