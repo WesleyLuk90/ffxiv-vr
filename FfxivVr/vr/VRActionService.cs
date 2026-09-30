@@ -264,7 +264,6 @@ public unsafe partial class VRActionService(
     }
 
     // https://partner.steamgames.com/doc/steamhardware/steamframe/input
-    // ABXY and Menu are all on the right controller, the D-pad and View button are on the left.
     private void SuggestFrameControllerBindings()
     {
         ActionSuggestedBinding[] FrameBindings(string palmPosePath) => [
@@ -300,7 +299,6 @@ public unsafe partial class VRActionService(
         ];
 
         const string profile = "/interaction_profiles/valve/frame_controller_valve";
-        // palm_ext/pose is not listed for the Frame profile, fall back to the grip pose if the runtime rejects it
         if (SuggestBindings(profile, FrameBindings("palm_ext/pose")) != Result.Success)
         {
             SuggestBindings(profile, FrameBindings("grip/pose"));

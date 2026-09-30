@@ -116,10 +116,10 @@ public unsafe class GameHooks(
         return returnValue;
     }
 
-    private delegate void DXGIPresentDelegate(long a, long b);
+    private delegate void DXGIPresentDelegate(SwapChain* swapChain);
     [Signature("E8 ?? ?? ?? ?? C6 43 79 00", DetourName = nameof(DXGIPresentDetour))]
     private Hook<DXGIPresentDelegate>? DXGIPresentHook = null;
-    private void DXGIPresentDetour(long a, long b)
+    private void DXGIPresentDetour(SwapChain* swapChain)
     {
         logger.Trace("DXGIPresentDetour");
         var shouldPresent = true;
@@ -129,7 +129,7 @@ public unsafe class GameHooks(
         });
         if (shouldPresent)
         {
-            DXGIPresentHook!.Original(a, b);
+            DXGIPresentHook!.Original(swapChain);
         }
     }
 
