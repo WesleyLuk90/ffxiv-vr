@@ -31,6 +31,12 @@ public unsafe partial class VRActionService(
     private Silk.NET.OpenXR.Action rightStickPush;
     private Silk.NET.OpenXR.Action leftAnalog;
     private Silk.NET.OpenXR.Action rightAnalog;
+    private Silk.NET.OpenXR.Action leftFrameBumper;
+    private Silk.NET.OpenXR.Action rightFrameBumper;
+    private Silk.NET.OpenXR.Action dpadUp;
+    private Silk.NET.OpenXR.Action dpadDown;
+    private Silk.NET.OpenXR.Action dpadLeft;
+    private Silk.NET.OpenXR.Action dpadRight;
     private Space leftSpace = new Space();
     private Space rightSpace = new Space();
 
@@ -64,7 +70,14 @@ public unsafe partial class VRActionService(
         leftAnalog = CreateAction(actionType: ActionType.Vector2fInput, "left-analog");
         rightAnalog = CreateAction(actionType: ActionType.Vector2fInput, "right-analog");
 
-        SuggestBindings([
+        leftFrameBumper = CreateAction(actionType: ActionType.BooleanInput, "left-frame-bumper");
+        rightFrameBumper = CreateAction(actionType: ActionType.BooleanInput, "right-frame-bumper");
+        dpadUp = CreateAction(actionType: ActionType.BooleanInput, "dpad-up");
+        dpadDown = CreateAction(actionType: ActionType.BooleanInput, "dpad-down");
+        dpadLeft = CreateAction(actionType: ActionType.BooleanInput, "dpad-left");
+        dpadRight = CreateAction(actionType: ActionType.BooleanInput, "dpad-right");
+
+        SuggestBindings("/interaction_profiles/oculus/touch_controller", [
             CreateSuggestedBinding(palmPose, "/user/hand/left/input/palm_ext/pose"),
             CreateSuggestedBinding(palmPose, "/user/hand/right/input/palm_ext/pose"),
 
@@ -88,6 +101,11 @@ public unsafe partial class VRActionService(
             CreateSuggestedBinding(selectButton, "/user/hand/left/input/menu/click"),
             CreateSuggestedBinding(startButton, "/user/hand/right/input/system/click"),
         ]);
+
+        if (system.IsExtensionEnabled(VRSystem.FrameControllerExtensionName))
+        {
+            SuggestFrameControllerBindings();
+        }
 
         CreateActionPoses();
         AttachActionSet();
@@ -140,6 +158,12 @@ public unsafe partial class VRActionService(
         GetActionBool(rightBumper, input, VRButton.RightGrip);
         GetActionBool(leftStickPush, input, VRButton.LeftStick);
         GetActionBool(rightStickPush, input, VRButton.RightStick);
+        GetActionBool(leftFrameBumper, input, VRButton.LeftBumper);
+        GetActionBool(rightFrameBumper, input, VRButton.RightBumper);
+        GetActionBool(dpadUp, input, VRButton.DPadUp);
+        GetActionBool(dpadDown, input, VRButton.DPadDown);
+        GetActionBool(dpadLeft, input, VRButton.DPadLeft);
+        GetActionBool(dpadRight, input, VRButton.DPadRight);
 
         var left = GetActionVector2f(leftAnalog);
         var right = GetActionVector2f(rightAnalog);
@@ -239,6 +263,50 @@ public unsafe partial class VRActionService(
         xr.CreateActionSpace(system.Session, ref rightCreateInfo, ref rightSpace).CheckResult("CreateActionSpace");
     }
 
+    // https://partner.steamgames.com/doc/steamhardware/steamframe/input
+    // ABXY and Menu are all on the right controller, the D-pad and View button are on the left.
+    private void SuggestFrameControllerBindings()
+    {
+        ActionSuggestedBinding[] FrameBindings(string palmPosePath) => [
+            CreateSuggestedBinding(palmPose, $"/user/hand/left/input/{palmPosePath}"),
+            CreateSuggestedBinding(palmPose, $"/user/hand/right/input/{palmPosePath}"),
+
+            CreateSuggestedBinding(aimPose, "/user/hand/left/input/aim/pose"),
+            CreateSuggestedBinding(aimPose, "/user/hand/right/input/aim/pose"),
+
+            CreateSuggestedBinding(leftAnalog, "/user/hand/left/input/thumbstick"),
+            CreateSuggestedBinding(rightAnalog, "/user/hand/right/input/thumbstick"),
+
+            CreateSuggestedBinding(aButton, "/user/hand/right/input/a/click"),
+            CreateSuggestedBinding(bButton, "/user/hand/right/input/b/click"),
+            CreateSuggestedBinding(xButton, "/user/hand/right/input/x/click"),
+            CreateSuggestedBinding(yButton, "/user/hand/right/input/y/click"),
+
+            CreateSuggestedBinding(dpadUp, "/user/hand/left/input/dpad_up/click"),
+            CreateSuggestedBinding(dpadDown, "/user/hand/left/input/dpad_down/click"),
+            CreateSuggestedBinding(dpadLeft, "/user/hand/left/input/dpad_left/click"),
+            CreateSuggestedBinding(dpadRight, "/user/hand/left/input/dpad_right/click"),
+
+            CreateSuggestedBinding(leftTrigger, "/user/hand/left/input/trigger/value"),
+            CreateSuggestedBinding(rightTrigger, "/user/hand/right/input/trigger/value"),
+            CreateSuggestedBinding(leftBumper, "/user/hand/left/input/squeeze/value"),
+            CreateSuggestedBinding(rightBumper, "/user/hand/right/input/squeeze/value"),
+            CreateSuggestedBinding(leftFrameBumper, "/user/hand/left/input/bumper/click"),
+            CreateSuggestedBinding(rightFrameBumper, "/user/hand/right/input/bumper/click"),
+            CreateSuggestedBinding(leftStickPush, "/user/hand/left/input/thumbstick/click"),
+            CreateSuggestedBinding(rightStickPush, "/user/hand/right/input/thumbstick/click"),
+            CreateSuggestedBinding(selectButton, "/user/hand/left/input/view/click"),
+            CreateSuggestedBinding(startButton, "/user/hand/right/input/menu/click"),
+        ];
+
+        const string profile = "/interaction_profiles/valve/frame_controller_valve";
+        // palm_ext/pose is not listed for the Frame profile, fall back to the grip pose if the runtime rejects it
+        if (SuggestBindings(profile, FrameBindings("palm_ext/pose")) != Result.Success)
+        {
+            SuggestBindings(profile, FrameBindings("grip/pose"));
+        }
+    }
+
     private ActionSuggestedBinding CreateSuggestedBinding(Silk.NET.OpenXR.Action action, string actionPath)
     {
         return new ActionSuggestedBinding(
@@ -247,21 +315,22 @@ public unsafe partial class VRActionService(
         );
     }
 
-    private void SuggestBindings(ActionSuggestedBinding[] bindings)
+    private Result SuggestBindings(string interactionProfile, ActionSuggestedBinding[] bindings)
     {
         var span = new Span<ActionSuggestedBinding>(bindings);
         fixed (ActionSuggestedBinding* ptr = span)
         {
             var suggestedBinding = new InteractionProfileSuggestedBinding(
-                interactionProfile: CreatePath("/interaction_profiles/oculus/touch_controller"),
+                interactionProfile: CreatePath(interactionProfile),
                 countSuggestedBindings: (uint?)bindings.Length,
                 suggestedBindings: ptr
             );
             var result = xr.SuggestInteractionProfileBinding(system.Instance, ref suggestedBinding);
             if (result != Result.Success)
             {
-                logger.Debug($"Failed to suggest bindings {result}");
+                logger.Debug($"Failed to suggest bindings for {interactionProfile} {result}");
             }
+            return result;
         }
     }
 

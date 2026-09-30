@@ -118,6 +118,13 @@ public class Configuration : IPluginConfiguration
         public VRAction YButton = VRAction.Y;
         public VRAction Start = VRAction.Start;
         public VRAction Select = VRAction.Select;
+        // Steam Frame only
+        public VRAction LeftBumper = VRAction.L1;
+        public VRAction RightBumper = VRAction.R1;
+        public VRAction DPadUp = VRAction.Up;
+        public VRAction DPadDown = VRAction.Down;
+        public VRAction DPadLeft = VRAction.Left;
+        public VRAction DPadRight = VRAction.Right;
 
         internal VRAction GetAction(VRButton button)
         {
@@ -135,6 +142,12 @@ public class Configuration : IPluginConfiguration
                 case VRButton.RightGrip: return RightGrip;
                 case VRButton.LeftStick: return LeftStick;
                 case VRButton.RightStick: return RightStick;
+                case VRButton.LeftBumper: return LeftBumper;
+                case VRButton.RightBumper: return RightBumper;
+                case VRButton.DPadUp: return DPadUp;
+                case VRButton.DPadDown: return DPadDown;
+                case VRButton.DPadLeft: return DPadLeft;
+                case VRButton.DPadRight: return DPadRight;
                 default: return VRAction.None;
             }
         }
