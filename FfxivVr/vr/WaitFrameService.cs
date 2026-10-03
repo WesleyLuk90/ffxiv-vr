@@ -1,6 +1,7 @@
 using Silk.NET.OpenXR;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace FfxivVR;
 
@@ -37,5 +38,9 @@ public unsafe class WaitFrameService(
         }
         finally { mutex.ReleaseMutex(); }
         return frameState;
+    }
+    public Task<FrameState> WaitFrameTask()
+    {
+        return Task.Run(() => WaitFrame());
     }
 }

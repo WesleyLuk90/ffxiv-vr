@@ -32,7 +32,7 @@ public unsafe class AppFactoryTests
         AppFactory.DtrBar = new Mock<IDtrBar>().Object;
         AppFactory.DalamudConfiguration = new DalamudConfiguration();
 
-        var factory = new AppFactory(device: new DxDevice(null));
+        var factory = new AppFactory(device: new DxDevice(null), deviceContext: new DxDeviceContext(null));
 
         var host = factory.CreateSession();
 

@@ -29,6 +29,70 @@ FirstPersonManager firstPersonManager
         proj.M43 = near;
         return proj.ToMatrix4x4();
     }
+    internal View ComputeCenterView(View left, View right)
+    {
+        var leftPosition = left.Pose.Position.ToVector3D();
+        var rightPosition = right.Pose.Position.ToVector3D();
+        var orientation = Quaternion<float>.Slerp(left.Pose.Orientation.ToQuaternion(), right.Pose.Orientation.ToQuaternion(), 0.5f);
+        var fov = new Fovf(
+            angleLeft: MathF.Min(left.Fov.AngleLeft, right.Fov.AngleLeft),
+            angleRight: MathF.Max(left.Fov.AngleRight, right.Fov.AngleRight),
+            angleUp: MathF.Max(left.Fov.AngleUp, right.Fov.AngleUp),
+            angleDown: MathF.Min(left.Fov.AngleDown, right.Fov.AngleDown)
+        );
+        var halfSeparation = Vector3D.Distance(leftPosition, rightPosition) / 2;
+        var pullBack = MathF.Max(halfSeparation / MathF.Tan(-fov.AngleLeft), halfSeparation / MathF.Tan(fov.AngleRight));
+        var position = (leftPosition + rightPosition) / 2 + Vector3D.Transform(new Vector3D<float>(0, 0, pullBack), orientation);
+        return new View
+        {
+            Type = StructureType.View,
+            Pose = new Posef(orientation.ToQuaternionf(), position.ToVector3f()),
+            Fov = fov,
+        };
+    }
+
+    internal static Fovf WidenFovToAspect(Fovf fov, float aspect)
+    {
+        var left = MathF.Tan(fov.AngleLeft);
+        var right = MathF.Tan(fov.AngleRight);
+        var down = MathF.Tan(fov.AngleDown);
+        var up = MathF.Tan(fov.AngleUp);
+        var width = right - left;
+        var height = up - down;
+        if (width < height * aspect)
+        {
+            var grow = (height * aspect - width) / 2;
+            left -= grow;
+            right += grow;
+        }
+        else
+        {
+            var grow = (width / aspect - height) / 2;
+            down -= grow;
+            up += grow;
+        }
+        return new Fovf(
+            angleLeft: MathF.Atan(left),
+            angleRight: MathF.Atan(right),
+            angleUp: MathF.Atan(up),
+            angleDown: MathF.Atan(down)
+        );
+    }
+
+    internal Matrix4x4 ComputeEyeDeltaView(View centerView, View eyeView)
+    {
+        var centerToWorld = ComputeEyeToWorld(centerView);
+        Matrix4X4.Invert(ComputeEyeToWorld(eyeView), out var worldToEye);
+        var deltaView = Matrix4X4.Multiply(centerToWorld, worldToEye);
+        return Matrix4x4.Transpose(deltaView.ToMatrix4x4());
+    }
+
+    private Matrix4X4<float> ComputeEyeToWorld(View view)
+    {
+        var position = view.Pose.Position.ToVector3D() / configuration.WorldScale;
+        return Matrix4X4.CreateFromQuaternion(view.Pose.Orientation.ToQuaternion()) * Matrix4X4.CreateTranslation(position);
+    }
+
     internal Matrix4X4<float> ComputeGameViewMatrix(View view, VRCameraMode cameraMode, GameCamera gameCamera)
     {
         var cameraPosition = cameraMode.GetCameraPosition(gameCamera);

@@ -14,13 +14,16 @@ public unsafe class VRLifecycle(
         IServiceScopeFactory scopeFactory,
         Logger logger,
         Configuration configuration,
-        Debugging debugging
+        Debugging debugging,
+        ExceptionHandler exceptionHandler
 ) : IDisposable
 {
     private IServiceScope? scope;
     public VRSession? vrSession;
+
     public void EnableVR()
     {
+        exceptionHandler.ClearExceptions();
         if (vrSession != null)
         {
             logger.Error("VR is already running");
@@ -63,7 +66,7 @@ public unsafe class VRLifecycle(
     {
         return vrSession != null;
     }
-    public void DisableVR()
+    public void RequestStop()
     {
         if (vrSession is VRSession session)
         {
@@ -72,7 +75,8 @@ public unsafe class VRLifecycle(
         }
     }
 
-    private void RealDisableVR()
+    // Try and only call this in the PresetFrame call, so that all threads are synchronized and not executing concurrently otherwise it can crash
+    private void StopVR()
     {
         if (vrSession != null)
         {
@@ -86,30 +90,39 @@ public unsafe class VRLifecycle(
         }
     }
 
-    public bool ShouldSecondRender()
+    public bool ShouldRerunGameLoop()
     {
         lock (this)
         {
-            return vrSession?.ShouldSecondRender() ?? false;
+            return vrSession?.ShouldRerunGameLoop() ?? false;
+        }
+    }
+
+    internal bool IsRenderStrategyActive<T>() where T : IRenderStrategy
+    {
+        lock (this)
+        {
+            return vrSession?.IsRenderStrategyActive<T>() ?? false;
         }
     }
 
     // Returns whether we should call the original present function
-    public bool PrePresent()
+    // This point is synchronized between the render and game thread
+    public bool OnPresentFrame()
     {
         lock (this)
         {
-            if (vrSession?.State?.Exiting == true)
+            if (vrSession?.State?.Exiting == true || exceptionHandler.HasException())
             {
-                RealDisableVR();
+                StopVR();
             }
-            return vrSession?.PrePresent() ?? true;
+            return vrSession?.OnPresentFrame() ?? true;
         }
     }
 
     public void Dispose()
     {
-        RealDisableVR();
+        StopVR();
     }
 
     internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
@@ -140,34 +153,34 @@ public unsafe class VRLifecycle(
         }
     }
 
-    internal void PreUIRender()
+    internal void OnStartUI()
     {
         lock (this)
         {
-            vrSession?.PreUIRender();
+            vrSession?.OnStartUI();
         }
     }
 
-    internal void DoCopyRenderTexture(Eye eye)
+    internal void OnStartUIRender(Eye? eye)
     {
         lock (this)
         {
-            vrSession?.DoCopyRenderTexture(eye);
+            vrSession?.OnStartUIRender(eye);
         }
     }
 
-    internal void PrepareVRRender()
+    internal void OnStartGameLoop()
     {
         lock (this)
         {
             try
             {
-                vrSession?.PrepareVRRender();
+                vrSession?.OnStartGameLoop();
             }
             catch (FatalVRException e)
             {
                 logger.Info($"Encountered a fatal VR error ${e}");
-                DisableVR();
+                RequestStop();
                 throw;
             }
         }

@@ -1,0 +1,8 @@
+- Tick
+  - Load Camera
+  - Start Left Render
+  - Synthetic Tick
+  - Load Camera
+  - Start Right Render
+- Tick 2
+  - End Right Render, Start Left Render

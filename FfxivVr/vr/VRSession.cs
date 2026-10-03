@@ -4,11 +4,9 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using Silk.NET.Maths;
-using Silk.NET.OpenXR;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Threading.Tasks;
 using CSRay = FFXIVClientStructs.FFXIV.Client.Graphics.Ray;
 
 namespace FfxivVR;
@@ -17,7 +15,6 @@ public unsafe class VRSession(
     Logger logger,
     Configuration configuration,
     GameState gameState,
-    RenderPipelineInjector renderPipelineInjector,
     GameModifier gameModifier,
     VRSystem vrSystem,
     VRState State,
@@ -27,8 +24,7 @@ public unsafe class VRSession(
     VRSpace vrSpace,
     VRCamera vrCamera,
     ResolutionManager resolutionManager,
-    RenderManager renderManager,
-    WaitFrameService waitFrameService,
+    IRenderStrategy renderStrategy,
     VRActionService vrInput,
     EventHandler eventHandler,
     FramePrediction framePrediction,
@@ -42,7 +38,7 @@ public unsafe class VRSession(
     ITargetManager targetManager
 )
 {
-    public VRState State = State;
+    public VRState State { get; } = State;
     public void Initialize()
     {
         dalamudRenderer.Initialize();
@@ -53,74 +49,44 @@ public unsafe class VRSession(
         resources.Initialize(size);
         vrSpace.Initialize();
         vrInput.Initialize();
+        renderStrategy.Initialize(size);
     }
 
-
-    private CameraPhase? cameraPhase;
-    public bool PrePresent()
+    public bool OnPresentFrame()
     {
         eventHandler.PollEvents(() =>
         {
-            renderManager.OnSessionEnd();
+            renderStrategy.OnSessionEnd();
         });
-        if (!State.SessionRunning)
-        {
-            if (cameraPhase != null)
-            {
-                logger.Debug("Session not running, discarding phases");
-                cameraPhase = null;
-            }
-            renderManager.OnSessionEnd();
-        }
-        var shouldPresent = renderManager.RunRenderPhase();
-        if (cameraPhase is CameraPhase phase)
-        {
-            switch (phase.Eye)
-            {
-                case Eye.Left:
-                    {
-                        logger.Trace("Switching camera phase to right eye");
-                        phase.SwitchToRightEye();
-                        renderManager.StartRender(phase);
-                        break;
-                    }
-                case Eye.Right:
-                    {
-                        cameraPhase = null;
-                        break;
-                    }
-                default: break;
-            }
-        }
+        var shouldPresent = renderStrategy.OnPresentFrame();
         return shouldPresent;
     }
 
-    internal bool ShouldSecondRender()
+    public bool ShouldRerunGameLoop()
     {
-        return cameraPhase?.Eye == Eye.Right;
+        return renderStrategy.ShouldSecondRender();
+    }
+
+    public bool IsRenderStrategyActive<T>() where T : IRenderStrategy
+    {
+        return State.SessionRunning && renderStrategy is T;
     }
 
     // Test Cases
     // * Dungeon start cutscene
     // * Inn login/logout
 
-    internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
+    public void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
-        if (State.SessionRunning && cameraPhase is CameraPhase phase)
-        {
-            logger.Trace($"Set {phase.Eye} camera matrix");
-            var view = phase.CurrentView(phase.CameraMode.UseHeadMovement);
-            firstPersonManager.UpdateRotation(MathFactory.GetYaw(view.Pose.Orientation.ToQuaternion()));
-            vrCamera.UpdateCamera(camera, phase.GetGameCamera(vrCamera.CreateGameCamera), phase.CameraMode, view);
-        }
+        renderStrategy.UpdateCamera(camera);
     }
 
-    internal void RecenterCamera()
+    public void RecenterCamera()
     {
         vrSpace.RecenterCamera();
     }
 
-    internal void UpdateVisibility()
+    public void UpdateVisibility()
     {
         if (Conditions.Instance()->OccupiedInCutSceneEvent)
         {
@@ -133,7 +99,7 @@ public unsafe class VRSession(
                 gameModifier.HideHeadMesh();
             }
 
-            if (cameraPhase is CameraPhase phase && EnableMotionTracking())
+            if (renderStrategy.VRSessionData is VRSessionData phase && EnableMotionTracking())
             {
                 var camera = gameState.GetCurrentCamera();
                 var position = camera->Position.ToVector3D();
@@ -161,42 +127,30 @@ public unsafe class VRSession(
         return firstPersonManager.IsFirstPerson && (!configuration.DisableMotionTrackingInCombat || !Conditions.Instance()->InCombat);
     }
 
-    internal void PreUIRender()
-    {
-        if (State.SessionRunning && cameraPhase is CameraPhase phase)
-        {
-            logger.Trace($"Queue {phase.Eye} render");
-            renderPipelineInjector.QueueRenderTargetCommand(phase.Eye);
-            // Only clear the left view to get a clean render for copying
-            // The right view we skip clearing which lets it display the VR view
-            if (phase.Eye == Eye.Left)
-            {
-                renderPipelineInjector.QueueClearCommand();
-            }
-        }
-    }
-
-    internal void DoCopyRenderTexture(Eye eye)
+    public void OnStartUI()
     {
         if (State.SessionRunning)
         {
-            renderManager.CopyGameRenderTexture(eye);
+            renderStrategy.OnStartUI();
+        }
+    }
+
+    public void OnStartUIRender(Eye? eye)
+    {
+        if (State.SessionRunning)
+        {
+            renderStrategy.OnStartUIRender(eye);
         }
     }
 
 
-    internal void PrepareVRRender()
+    public void OnStartGameLoop()
     {
         var ticks = gameClock.MarkFrame();
         firstPersonManager.Update();
         if (State.SessionRunning)
         {
             logger.Trace("Starting cycle");
-            Task<FrameState> waitFrameTask = Task.Run(() =>
-            {
-                var frameState = waitFrameService.WaitFrame();
-                return frameState;
-            });
             long predictedTime;
             if (!configuration.AltFramePrediction)
             {
@@ -204,7 +158,7 @@ public unsafe class VRSession(
             }
             else
             {
-                predictedTime = framePrediction.GetAltPredictedFrameTime() ?? waitFrameTask.Result.PredictedDisplayTime;
+                predictedTime = framePrediction.GetAltPredictedFrameTime() ?? framePrediction.GetPredictedFrameTime();
             }
 
             var views = vrSpace.LocateView(predictedTime);
@@ -212,7 +166,8 @@ public unsafe class VRSession(
             var inputData = vrInputService.PollInput(predictedTime);
             VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight, configuration.BodyTracking && inputData.HasBodyData());
             vrUI.Update(views[0], ticks);
-            cameraPhase = new CameraPhase(Eye.Left, views, waitFrameTask, inputData, cameraType);
+
+            renderStrategy.PrepareCameraPhase(views, inputData, cameraType);
 
             if (cameraType.ShouldLockCameraVerticalRotation)
             {
@@ -222,29 +177,29 @@ public unsafe class VRSession(
     }
 
 
-    internal Point? ComputeMousePosition(Point point)
+    public Point? ComputeMousePosition(Point point)
     {
         return resolutionManager.ComputeMousePosition(point);
     }
 
-    internal void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
+    public void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
         gameModifier.OnNamePlateUpdate(context, handlers);
     }
 
-    internal void UpdateGamepad(PadDevice* padDevice)
+    public void UpdateGamepad(PadDevice* padDevice)
     {
-        if (cameraPhase is CameraPhase phase)
+        if (renderStrategy.VRSessionData is VRSessionData phase)
         {
             var padDeviceExtended = PadDeviceExtended.FromPadDevice(padDevice);
             inputManager.UpdateGamepad(&padDevice->GamepadInputData, phase.VRInputData, padDeviceExtended->IsActive);
         }
     }
 
-    internal CSRay? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* sceneCamera)
+    public CSRay? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* sceneCamera)
     {
         logger.Trace("GetTargetRay");
-        if (cameraPhase is CameraPhase phase)
+        if (renderStrategy.VRSessionData is VRSessionData phase)
         {
             var camera = gameState.GetCurrentCamera();
             if (camera == null || camera != sceneCamera)
@@ -270,7 +225,7 @@ public unsafe class VRSession(
         }
     }
 
-    internal bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Vector3D<float> cameraPosition, Vector3D<float> lookAtPosition)
+    public bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Vector3D<float> cameraPosition, Vector3D<float> lookAtPosition)
     {
         if (gameState.IsInCutscene() || gameState.IsBetweenAreas())
         {
@@ -309,7 +264,7 @@ public unsafe class VRSession(
         return cameraDistance < radius || targetDistance < radius;
     }
 
-    internal bool ShouldDisableCameraVerticalFly()
+    public bool ShouldDisableCameraVerticalFly()
     {
         if (firstPersonManager.IsFirstPerson)
         {

@@ -23,13 +23,18 @@ public unsafe class Cursor(
 }
 public static unsafe class GameTextures
 {
-    public static Texture* GetGameRenderTexture()
+    public static Texture* GetCompositingTexture()
     {
         return RenderTargetManager.Instance()->ToneAdjustSource;
     }
     public static Texture* GetGameDepthTexture()
     {
         return RenderTargetManager.Instance()->DepthStencil;
+    }
+
+    public static Texture* GetGeometryTexture()
+    {
+        return RenderTargetManager.Instance()->Unk68;
     }
 
     internal static Cursor? GetCursorTexture()
