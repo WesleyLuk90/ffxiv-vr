@@ -1,6 +1,13 @@
-$xml = [xml](Get-Content -Path .\FfxivVr\FfxivVr.csproj)
+$ErrorActionPreference = "Stop"
+$PSNativeCommandUseErrorActionPreference = $true
 
-$projectVersion = [version]$xml.Project.PropertyGroup.Version
+$projectPath = Join-Path $PWD "FfxivVr/FfxivVr.csproj"
+$xml = [xml]::new()
+$xml.PreserveWhitespace = $true
+$xml.Load($projectPath)
+$versionNode = $xml.SelectSingleNode("/Project/PropertyGroup/Version")
+
+$projectVersion = [version]$versionNode.InnerText
 $currentVersion = "{0}.{1}.{2}" -f $projectVersion.Major, $projectVersion.Minor, $projectVersion.Build
 $nextVersion = "{0}.{1}.{2}" -f $projectVersion.Major, $projectVersion.Minor, ($projectVersion.Build + 1)
 $versionString = "v$nextVersion"
@@ -13,22 +20,13 @@ if (!$changeLog) {
 
 Write-Host "Bumping version from $currentVersion to $nextVersion"
 Write-Host "=== Change Log ==="
-Write-Host $changeLog
+Write-Host ($changeLog -join "`n")
 
-$xml.Project.PropertyGroup.Version = $nextVersion
-$xml.Save(".\FfxivVr\FfxivVr.csproj")
+$versionNode.InnerText = $nextVersion
+$xml.Save($projectPath)
 
-$now = [int](Get-Date -UFormat %s -Millisecond 0)
+Set-Content -Path "release/changelog.txt" -Value $changeLog
 
-Remove-TypeData -ErrorAction Ignore System.Array
-$repo = Get-Content 'PluginRepo/pluginmaster.json' -raw | ConvertFrom-Json
-$repo[0].AssemblyVersion = "$nextVersion.0"
-$repo[0].LastUpdated = $now
-$repo[0].DownloadLinkInstall = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/$VersionString/FfxivVR.zip"
-$repo[0].DownloadLinkTesting = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/$VersionString/FfxivVR.zip"
-$repo[0].DownloadLinkUpdate = "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/$VersionString/FfxivVR.zip"
-ConvertTo-Json $repo -depth 32 | set-content 'PluginRepo/pluginmaster.json'
-
-[IO.File]::WriteAllLines("release/changelog.txt", $changeLog)
-
-echo "VERSION_STRING=$versionString" >> $env:GITHUB_OUTPUT
+if ($env:GITHUB_OUTPUT) {
+    "VERSION_STRING=$versionString" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+}

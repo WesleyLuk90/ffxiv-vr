@@ -8,63 +8,91 @@ on:
   schedule:
     - cron: "23 4 * * *"
   workflow_dispatch:
+    inputs:
+      release:
+        description: Publish a release
+        type: boolean
+        default: false
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ inputs.release && 'release' || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !inputs.release }}
+
+permissions:
+  contents: write
 
 jobs:
   build:
-    strategy:
-      matrix:
-        configuration: [Release]
-
-    runs-on:
-      windows-latest # For a list of available runner types, refer to
-      # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
-
-    env:
-      Solution_Name: ffxiv-vr # Replace with your solution name, i.e. MyWpfApp.sln.
+    runs-on: windows-latest
 
     steps:
+      - name: Check Release Branch
+        if: inputs.release && github.ref != 'refs/heads/master'
+        run: throw "Releases must be run from master"
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      # Install the .NET Core workload
       - name: Install .NET Core
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.101
-
-      # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
-      - name: Setup MSBuild.exe
-        uses: microsoft/setup-msbuild@v2
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
 
       - name: Setup windows sdk
-        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2.4
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2.5
         with:
           sdk-version: 22621
+
+      - name: Bump Version
+        id: bump_version
+        if: inputs.release
+        run: ./release/bump-version.ps1
 
       - name: Download Dalamud
         run: |
           Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/stg/latest.zip -OutFile latest.zip
           Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev\"
 
+      - name: Restore
+        run: dotnet restore --locked-mode
+
       - name: Format Check
-        run: |
-          dotnet format --verify-no-changes
+        run: dotnet format --verify-no-changes --no-restore
+
       - name: Build
-        run: |
-          dotnet build --configuration Release --nologo
+        run: dotnet build --configuration Release --no-restore --nologo
 
       - name: Test
-        run: dotnet test
+        run: dotnet test --configuration Release --no-build
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: latest
-          path: .\FfxivVr\bin\x64\latest.zip
+          path: .\FfxivVr\bin\x64\Release\FfxivVR\latest.zip
           if-no-files-found: error
+
+      - name: Finalize Release
+        if: inputs.release
+        run: ./release/finalize-release.ps1 ${{ steps.bump_version.outputs.VERSION_STRING }}
+
+      - name: Push Release Tag
+        if: inputs.release
+        run: git push origin ${{ steps.bump_version.outputs.VERSION_STRING }}
+
+      - name: Create Release
+        if: inputs.release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_STRING: ${{ steps.bump_version.outputs.VERSION_STRING }}
+        run: |
+          Copy-Item .\FfxivVr\bin\x64\Release\FfxivVR\latest.zip FfxivVR.zip
+          gh release create $env:VERSION_STRING FfxivVR.zip --verify-tag --title "FFXIV VR $env:VERSION_STRING" --notes-file release/changelog.txt
+
+      - name: Push Release to Master
+        if: inputs.release
+        run: git push origin master
