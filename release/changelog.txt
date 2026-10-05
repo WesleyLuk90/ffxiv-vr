@@ -1,2 +1,3 @@
-# Add support for steam frame (#131)
-#130
+# Add single pass renderer (#133)
+
+# Combine build and release workflows, fix release ordering and packaging (#132)

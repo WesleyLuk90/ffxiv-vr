@@ -1,25 +1,26 @@
 [
-    {
-        "Author":  "Steelgunner90",
-        "Name":  "FFXIV VR",
-        "Punchline":  "A VR plugin for FFXIV.",
-        "Description":  "A VR plugin for FFXIV.",
-        "Changelog":  "",
-        "InternalName":  "FfxivVR",
-        "AssemblyVersion":  "0.0.77.0",
-        "RepoUrl":  "https://github.com/WesleyLuk90/ffxiv-vr",
-        "ApplicableVersion":  "any",
-        "DalamudApiLevel":  15,
-        "LoadPriority":  69420,
-        "LoadRequiredState":  2,
-        "LoadSync":  true,
-        "IconUrl":  "",
-        "DownloadLinkInstall":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.77/FfxivVR.zip",
-        "IsHide":  false,
-        "IsTestingExclusive":  false,
-        "DownloadLinkTesting":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.77/FfxivVR.zip",
-        "DownloadLinkUpdate":  "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.77/FfxivVR.zip",
-        "DownloadCount":  0,
-        "LastUpdated":  1790793130
-    }
+  {
+    "Author": "Steelgunner90",
+    "Name": "FFXIV VR",
+    "InternalName": "FfxivVR",
+    "AssemblyVersion": "0.0.78.0",
+    "Description": "A VR mod for FFXIV. Run /vr to open settings",
+    "ApplicableVersion": "any",
+    "RepoUrl": "https://github.com/WesleyLuk90/ffxiv-vr",
+    "Tags": [
+      "vr"
+    ],
+    "DalamudApiLevel": 15,
+    "LoadRequiredState": 2,
+    "LoadSync": true,
+    "CanUnloadAsync": true,
+    "LoadPriority": 69420,
+    "Punchline": "A VR mod for FFXIV",
+    "AcceptsFeedback": true,
+    "Changelog": "# Add single pass renderer (#133)\r\n\r\n# Combine build and release workflows, fix release ordering and packaging (#132)",
+    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.78/FfxivVR.zip",
+    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.78/FfxivVR.zip",
+    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.78/FfxivVR.zip",
+    "LastUpdated": 1791177539
+  }
 ]
