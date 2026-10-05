@@ -47,6 +47,16 @@ jobs:
         with:
           sdk-version: 22621
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: FfxivVrNative
+
       - name: Bump Version
         id: bump_version
         if: inputs.release
@@ -63,11 +73,19 @@ jobs:
       - name: Format Check
         run: dotnet format --verify-no-changes --no-restore
 
+      - name: Rust Format Check
+        working-directory: FfxivVrNative
+        run: cargo fmt --check
+
       - name: Build
         run: dotnet build --configuration Release --no-restore --nologo
 
       - name: Test
         run: dotnet test --configuration Release --no-build
+
+      - name: Rust Test
+        working-directory: FfxivVrNative
+        run: cargo test --release
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v7

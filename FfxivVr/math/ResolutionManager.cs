@@ -17,12 +17,14 @@ class ResizeState
     public Rectangle<int> OriginalWindow;
     public Rectangle<int> ClientArea;
     public Vector2D<uint> RenderResolution;
+    public Vector2D<uint> OriginalRenderResolution;
 
-    public ResizeState(Rectangle<int> originalWindow, Rectangle<int> clientRectangle, Vector2D<uint> renderResolution)
+    public ResizeState(Rectangle<int> originalWindow, Rectangle<int> clientRectangle, Vector2D<uint> renderResolution, Vector2D<uint> originalRenderResolution)
     {
         OriginalWindow = originalWindow;
         ClientArea = clientRectangle;
         RenderResolution = renderResolution;
+        OriginalRenderResolution = originalRenderResolution;
     }
 
     public nint? OriginalWindowStyle { get; }
@@ -137,6 +139,7 @@ public unsafe class ResolutionManager : IDisposable
 
             // This needs to happen after the window resize
             var dx11DeviceInstance = Device.Instance();
+            var originalRenderResolution = new Vector2D<uint>(dx11DeviceInstance->Width, dx11DeviceInstance->Height);
 
             dx11DeviceInstance->NewWidth = resolution.X;
             dx11DeviceInstance->NewHeight = resolution.Y;
@@ -147,7 +150,8 @@ public unsafe class ResolutionManager : IDisposable
             resizeState = new ResizeState(
                 originalWindow: windowRect,
                 clientRectangle: clientRect,
-                renderResolution: resolution
+                renderResolution: resolution,
+                originalRenderResolution: originalRenderResolution
             );
         }
         else
@@ -220,7 +224,14 @@ public unsafe class ResolutionManager : IDisposable
             {
                 PInvoke.SetWindowPos(handle, NOTOPMOST, state.OriginalWindow.Origin.X, state.OriginalWindow.Origin.Y, state.OriginalWindow.Size.X, state.OriginalWindow.Size.Y, 0);
             }
+
+            var dx11DeviceInstance = Device.Instance();
+            dx11DeviceInstance->NewWidth = state.OriginalRenderResolution.X;
+            dx11DeviceInstance->NewHeight = state.OriginalRenderResolution.Y;
+            dx11DeviceInstance->RequestResolutionChange = 1;
+
             EnableSetCursor();
+            resizeState = null;
         }
     }
 

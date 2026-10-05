@@ -11,4 +11,6 @@ Dalamud
 FFXIVClientStructs
 ffxiv-vr.wiki
 ws
+data
 *.cso
+workspace*

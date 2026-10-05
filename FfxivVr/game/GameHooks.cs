@@ -8,7 +8,6 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Silk.NET.DXGI;
 using Silk.NET.Maths;
 using System;
 using System.Collections.Generic;
@@ -25,7 +24,9 @@ public unsafe class GameHooks(
     HookStatus hookStatus,
     IGameInteropProvider gameInteropProvider,
     GameState gameState,
-    Configuration configuration
+    Configuration configuration,
+    EndFrameDispatcher endFrameDispatcher,
+    FfxivVrNative ffxivVrNative
 ) : IDisposable
 {
     /**
@@ -44,7 +45,6 @@ public unsafe class GameHooks(
         DisposeActions.ForEach(dispose => dispose());
         DisposeActions.Clear();
     }
-
     private void DisposeHook<T>(Hook<T>? hook) where T : Delegate
     {
         hook?.Disable();
@@ -64,6 +64,7 @@ public unsafe class GameHooks(
         InitializeHook(DXGIPresentHook, nameof(DXGIPresentHook));
         InitializeHook(SetMatricesHook, nameof(SetMatricesHook));
         InitializeHook(RenderThreadSetRenderTargetHook, nameof(RenderThreadSetRenderTargetHook));
+        InitializeHook(ExecuteCommandsHook, nameof(ExecuteCommandsHook));
         InitializeHook(RenderSkeletonListHook, nameof(RenderSkeletonListHook));
         InitializeHook(ProcessUICommandsAltHook, nameof(ProcessUICommandsAltHook));
         if (!ModDetection.HasShaderMod())
@@ -99,15 +100,15 @@ public unsafe class GameHooks(
         logger.Trace("FrameworkTickDetour start");
         exceptionHandler.FaultBarrier(() =>
         {
-            vrLifecycle.PrepareVRRender();
+            vrLifecycle.OnStartGameLoop();
         });
         var returnValue = FrameworkTickHook!.Original(FrameworkInstance);
-        var shouldSecondRender = false;
+        var rerunGameLoop = false;
         exceptionHandler.FaultBarrier(() =>
         {
-            shouldSecondRender = vrLifecycle.ShouldSecondRender();
+            rerunGameLoop = vrLifecycle.ShouldRerunGameLoop();
         });
-        if (shouldSecondRender)
+        if (rerunGameLoop)
         {
             // This can cause crashes if the plugin is unloaded during while running the second tick
             returnValue = FrameworkTickHook!.Original(FrameworkInstance);
@@ -125,15 +126,14 @@ public unsafe class GameHooks(
         var shouldPresent = true;
         exceptionHandler.FaultBarrier(() =>
         {
-            shouldPresent = vrLifecycle.PrePresent();
+            endFrameDispatcher.EndFrame();
+            shouldPresent = vrLifecycle.OnPresentFrame();
         });
         if (shouldPresent)
         {
             DXGIPresentHook!.Original(swapChain);
         }
     }
-
-
     private delegate void SetMatricesDelegate(FFXIVClientStructs.FFXIV.Client.Game.Camera* camera, IntPtr ptr);
     [Signature("E8 ?? ?? ?? ?? 0F 10 43 ?? C6 83", DetourName = nameof(SetMatricesDetour))]
     private Hook<SetMatricesDelegate>? SetMatricesHook = null;
@@ -162,16 +162,58 @@ public unsafe class GameHooks(
     private void RenderThreadSetRenderTargetDetour(Device* deviceInstance, SetRenderTargetCommand* command)
     {
         var renderTargets = command->numRenderTargets;
-        if (renderTargets == LeftEyeRenderTargetNumber || renderTargets == RightEyeRenderTargetNumber)
+        exceptionHandler.FaultBarrier(() =>
         {
-            exceptionHandler.FaultBarrier(() =>
+            Eye? eye = null;
+            if (renderTargets == LeftEyeRenderTargetNumber)
             {
-                vrLifecycle.DoCopyRenderTexture(renderTargets == LeftEyeRenderTargetNumber ? Eye.Left : Eye.Right);
-            });
+                eye = Eye.Left;
+            }
+            else if (renderTargets == RightEyeRenderTargetNumber)
+            {
+                eye = Eye.Right;
+            }
+            vrLifecycle.OnStartUIRender(eye);
+        });
+        if (renderTargets != LeftEyeRenderTargetNumber && renderTargets != RightEyeRenderTargetNumber)
+        {
+            RenderThreadSetRenderTargetHook!.Original(deviceInstance, command);
+        }
+    }
+
+    private delegate void ExecuteCommandsDelegate(ImmediateContext* context, int commandListId, uint* commandsExecutedCounter, RenderCommandBufferGroup* renderCommands, uint renderCommandCount);
+    [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 0F B6 83 ?? ?? ?? ?? 3C 01 73 70", DetourName = nameof(ExecuteCommandsDetour))]
+    private Hook<ExecuteCommandsDelegate>? ExecuteCommandsHook = null;
+
+    private const int RootCommandListId = 30;
+
+    private bool ShouldReplayCommandsTwice(int commandListId)
+    {
+        return commandListId == RootCommandListId
+            && vrLifecycle.IsRenderStrategyActive<SinglePassRenderStrategy>();
+    }
+
+    private void ExecuteCommandsDetour(ImmediateContext* context, int commandListId, uint* commandsExecutedCounter, RenderCommandBufferGroup* renderCommands, uint renderCommandCount)
+    {
+        logger.Trace($"ExecuteCommandsDetour count={renderCommandCount} commandListId={commandListId}");
+        if (!ShouldReplayCommandsTwice(commandListId))
+        {
+            ExecuteCommandsHook!.Original(context, commandListId, commandsExecutedCounter, renderCommands, renderCommandCount);
         }
         else
         {
-            RenderThreadSetRenderTargetHook!.Original(deviceInstance, command);
+            ffxivVrNative.SetActiveEye(Eye.Left);
+            ExecuteCommandsHook!.Original(context, commandListId, commandsExecutedCounter, renderCommands, renderCommandCount);
+            ffxivVrNative.SetActiveEye(null);
+            // Replay the same frame's commands a second time for the right eye. Both passes have
+            // the native side reproject the center camera to the active eye for every real draw
+            // they trigger (see FfxivVrNative.SetActiveEye) - not a single swap around this whole
+            // call, since the game's own per-draw state setup would just clobber that before the
+            // first draw.
+            logger.Trace("ExecuteCommandsDetour replaying top-level call a second time");
+            ffxivVrNative.SetActiveEye(Eye.Right);
+            ExecuteCommandsHook!.Original(context, commandListId, commandsExecutedCounter, renderCommands, renderCommandCount);
+            ffxivVrNative.SetActiveEye(null);
         }
     }
 
@@ -194,10 +236,9 @@ public unsafe class GameHooks(
     // Component::GUI::AtkServer.ProcessUICommandsAlt
     private void ProcessUICommandsAltDetour(AtkServer* atkServer, bool a2)
     {
-
         exceptionHandler.FaultBarrier(() =>
         {
-            vrLifecycle.PreUIRender();
+            vrLifecycle.OnStartUI();
         });
         ProcessUICommandsAltHook!.Original(atkServer, a2);
     }
@@ -225,8 +266,8 @@ public unsafe class GameHooks(
         hookStatus.MarkHookAdded();
         // SteamVR requires using CreateDXGIFactory1
         logger.Debug("Redirecting to CreateDXGIFactory1");
-        var api = DXGI.GetApi(null);
-        fixed (Guid* guidPtr = &IDXGIFactory1.Guid)
+        var api = Silk.NET.DXGI.DXGI.GetApi(null);
+        fixed (Guid* guidPtr = &Silk.NET.DXGI.IDXGIFactory1.Guid)
         {
             return api.CreateDXGIFactory1(guidPtr, ppFactory);
         }

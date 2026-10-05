@@ -34,7 +34,7 @@ public class VRStartStop(
     }
     public void StopVR()
     {
-        vrLifecycle.DisableVR();
+        vrLifecycle.RequestStop();
         transitions.PostStopVR();
     }
 }

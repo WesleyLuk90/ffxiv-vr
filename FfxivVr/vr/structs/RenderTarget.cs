@@ -1,10 +1,9 @@
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
-using System;
 
 namespace FfxivVR;
 
-public unsafe class RenderTarget : IDisposable
+public unsafe class RenderTarget : IShaderResource
 {
     public RenderTarget(
         ID3D11Texture2D* texture,

@@ -19,35 +19,43 @@ public unsafe class Renderer(
     VRCamera vrCamera,
     ResolutionManager resolutionManager,
     GameState gameState,
-    VRUI vrUI)
+    VRUI vrUI,
+    DxDeviceContext dxDeviceContext)
 {
-    private void RenderGame(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, float fade = 0)
+    private ID3D11DeviceContext* Context => dxDeviceContext.Context;
+
+    private IShaderResource GetSourceRenderTarget(Eye eye)
     {
-        resources.UpdateCamera(context, new CameraConstants(
+        return resources.SceneRenderTargets[eye.ToIndex()];
+    }
+
+    private void RenderGame(ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, float fade = 0)
+    {
+        resources.UpdateCamera(Context, new CameraConstants(
             modelViewProjection: modelViewProjection,
             deform: Matrix4X4<float>.Identity,
             curvature: 0
         ));
-        resources.SetPixelShaderConstants(context, new PixelShaderConstants(
+        resources.SetPixelShaderConstants(Context, new PixelShaderConstants(
             mode: ShaderMode.Texture,
             gamma: configuration.Gamma,
             color: new Vector4D<float>(1 - fade, 1 - fade, 1 - fade, 1)));
-        resources.SetSampler(context, shaderResourceView);
-        resources.DrawSquare(context);
+        resources.SetSampler(Context, shaderResourceView);
+        resources.DrawSquare(Context);
     }
-    private void RenderUILayer(ID3D11DeviceContext* context, ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, Matrix4X4<float> deform, float fade = 0)
+    private void RenderUILayer(ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, Matrix4X4<float> deform, float fade = 0)
     {
-        resources.UpdateCamera(context, new CameraConstants(
+        resources.UpdateCamera(Context, new CameraConstants(
             modelViewProjection: modelViewProjection,
             deform: deform,
             curvature: configuration.UICurvature
         ));
-        resources.SetPixelShaderConstants(context, new PixelShaderConstants(
+        resources.SetPixelShaderConstants(Context, new PixelShaderConstants(
             mode: ShaderMode.Texture,
             gamma: configuration.Gamma,
             color: new Vector4D<float>(1 - fade, 1 - fade, 1 - fade, 1)));
-        resources.SetSampler(context, shaderResourceView);
-        resources.DrawUI(context);
+        resources.SetSampler(Context, shaderResourceView);
+        resources.DrawUI(Context);
     }
 
     internal void SkipFrame(FrameState frameState)
@@ -61,8 +69,10 @@ public unsafe class Renderer(
         xr.EndFrame(system.Session, ref endFrameInfo).CheckResult("EndFrame");
     }
 
-    internal CompositionLayerProjectionView RenderEye(ID3D11DeviceContext* context, EyeRender vrView, Line? aim)
+    internal CompositionLayerProjectionView RenderEye(
+        EyeRender vrView, Line? aim)
     {
+        var context = Context;
         var swapchainView = swapchains.Views[vrView.Eye.ToIndex()];
         CheckResolution(swapchainView);
         var view = vrView.View;
@@ -124,7 +134,7 @@ public unsafe class Renderer(
         if (vrView.Eye == Eye.Left)
         {
             logger.Trace("Rendering UI");
-            RenderUITexture(context, width, height);
+            RenderUITexture(width, height);
         }
 
         logger.Trace("Rendering Game");
@@ -132,18 +142,18 @@ public unsafe class Renderer(
         var depthTarget = resources.SceneDepthTargets[vrView.Eye.ToIndex()];
         context->OMSetRenderTargets(1, ref currentColorSwapchainImage, depthTarget.DepthStencilView);
 
-        var currentEyeRenderTarget = resources.SceneRenderTargets[vrView.Eye.ToIndex()];
-        RenderGame(context, currentEyeRenderTarget.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
+        var target = GetSourceRenderTarget(vrView.Eye);
+        RenderGame(target.ShaderResourceView, Matrix4X4<float>.Identity, fade: gameState.GetFade());
         resources.SetCompositingBlendState(context);
         if (ShouldUseDepthTexture())
         {
             resources.EnableDepthStencil(context);
         }
 
-        RenderUI(context, vrViewProjectionMatrix);
+        RenderUI(vrViewProjectionMatrix);
         if (aim != null)
         {
-            RenderRay(context, 0.001f, aim.Start, aim.End, vrViewProjectionMatrix);
+            RenderRay(0.001f, aim.Start, aim.End, vrViewProjectionMatrix);
         }
 
         xr.ReleaseSwapchainImage(swapchainView.ColorSwapchainInfo.Swapchain, null).CheckResult("ReleaseSwapchainImage");
@@ -161,7 +171,7 @@ public unsafe class Renderer(
         var width = swapchainView.ViewConfigurationView.RecommendedImageRectWidth;
         var height = swapchainView.ViewConfigurationView.RecommendedImageRectHeight;
 
-        var render = GameTextures.GetGameRenderTexture();
+        var render = GameTextures.GetCompositingTexture();
         if (render->ActualWidth != width || render->ActualHeight != height)
         {
             logger.Error($"Unexpected window size, expected {width}x{height} but got {render->ActualWidth}x{render->ActualHeight}");
@@ -169,25 +179,27 @@ public unsafe class Renderer(
             resolutionErrorChecked = true;
         }
     }
-    private void RenderUI(ID3D11DeviceContext* context, Matrix4X4<float> viewProj)
+    private void RenderUI(Matrix4X4<float> viewProj)
     {
+        var context = Context;
         var matrix = vrUI.GetModelMatrix() * viewProj;
         var deformMatrix = vrUI.GetDeformMatrix();
         resources.SetCompositingBlendState(context);
-        RenderUILayer(context, resources.UIRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix);
-        RenderUILayer(context, resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: resolutionManager.GetDalamudScale() * deformMatrix);
-        RenderUILayer(context, resources.CursorRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix);
+        RenderUILayer(resources.UIRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix);
+        RenderUILayer(resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: resolutionManager.GetDalamudScale() * deformMatrix);
+        RenderUILayer(resources.CursorRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix);
     }
 
-    private void RenderUITexture(ID3D11DeviceContext* context, int width, int height)
+    private void RenderUITexture(int width, int height)
     {
+        var context = Context;
         // The render texture only has the UI at this point so make a copy
-        var gameRenderTexture = GameTextures.GetGameRenderTexture();
+        var gameRenderTexture = GameTextures.GetCompositingTexture();
         Box box = ComputeCopyBox(gameRenderTexture, resources.UIRenderTarget);
         context->CopySubresourceRegion((ID3D11Resource*)resources.UIRenderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)gameRenderTexture->D3D11Texture2D, 0, ref box);
 
         resources.SetUIBlendState(context);
-        RenderCursor(context, new Vector2D<float>(width, height));
+        RenderCursor(new Vector2D<float>(width, height));
     }
 
     private Box ComputeCopyBox(FFXIVClientStructs.FFXIV.Client.Graphics.Kernel.Texture* gameRenderTexture, RenderTarget renderTarget)
@@ -195,8 +207,9 @@ public unsafe class Renderer(
         return new Box(0, 0, 0, Math.Min(gameRenderTexture->ActualWidth, renderTarget.Size.X), Math.Min(gameRenderTexture->ActualHeight, renderTarget.Size.Y), 1);
     }
 
-    private void RenderCursor(ID3D11DeviceContext* context, Vector2D<float> windowSize)
+    private void RenderCursor(Vector2D<float> windowSize)
     {
+        var context = Context;
         var target = resources.CursorRenderTarget.RenderTargetView;
         var color = new float[] { 0f, 0f, 0f, 0f };
         context->ClearRenderTargetView(target, ref color[0]);
@@ -233,8 +246,9 @@ public unsafe class Renderer(
         }
     }
 
-    private void RenderPoint(ID3D11DeviceContext* context, float size, Vector3D<float> position, Matrix4X4<float> viewProjectionMatrix)
+    private void RenderPoint(float size, Vector3D<float> position, Matrix4X4<float> viewProjectionMatrix)
     {
+        var context = Context;
         var scale = Matrix4X4.CreateScale(size) * Matrix4X4.CreateTranslation(position) * viewProjectionMatrix;
         resources.UpdateCamera(context, new CameraConstants(
             modelViewProjection: scale,
@@ -247,8 +261,9 @@ public unsafe class Renderer(
             color: new Vector4D<float>(0, 1, 0, 1f)));
         resources.DrawSquare(context);
     }
-    private void RenderRay(ID3D11DeviceContext* context, float size, Vector3D<float> start, Vector3D<float> end, Matrix4X4<float> viewProjectionMatrix)
+    private void RenderRay(float size, Vector3D<float> start, Vector3D<float> end, Matrix4X4<float> viewProjectionMatrix)
     {
+        var context = Context;
         var rotation = MathFactory.RotateOnto(
             Vector3D<float>.UnitY,
             end - start
@@ -271,7 +286,7 @@ public unsafe class Renderer(
     }
 
 
-    internal void EndFrame(ID3D11DeviceContext* context, FrameState frameState, View[] views, CompositionLayerProjectionView[] compositionLayerProjectionViews)
+    internal void EndFrame(FrameState frameState, View[] views, CompositionLayerProjectionView[] compositionLayerProjectionViews)
     {
         var compositionLayerSpan = new Span<CompositionLayerProjectionView>(compositionLayerProjectionViews);
         fixed (CompositionLayerProjectionView* ptr = compositionLayerSpan)
@@ -307,22 +322,21 @@ public unsafe class Renderer(
         }
     }
 
-    internal void CopyTexture(ID3D11DeviceContext* context, Eye eye)
+    // `color`/`depth` are always plain, single (non-array) textures: both SinglePassRenderStrategy
+    // and AltEyeRenderStrategy pass the game's own real compositing/depth textures for each eye,
+    // copied out right after that eye's pass has rendered into them.
+    internal void CopyTexture(Eye eye, ID3D11Texture2D* color, ID3D11Texture2D* depth)
     {
-        var renderTexture = GameTextures.GetGameRenderTexture();
-
+        var context = Context;
         logger.Trace($"Copy resource {eye} render target");
         var renderTarget = resources.SceneRenderTargets[eye.ToIndex()];
-        var box = ComputeCopyBox(renderTexture, renderTarget);
-        context->CopySubresourceRegion((ID3D11Resource*)renderTarget.Texture, 0, 0, 0, 0, (ID3D11Resource*)renderTexture->D3D11Texture2D, 0, ref box);
+        context->CopyResource((ID3D11Resource*)renderTarget.Texture, (ID3D11Resource*)color);
 
         if (ShouldUseDepthTexture())
         {
-            var depthTexture = GameTextures.GetGameDepthTexture();
             var depthTarget = resources.SceneDepthTargets[eye.ToIndex()];
-            context->CopyResource((ID3D11Resource*)depthTarget.Texture, (ID3D11Resource*)depthTexture->D3D11Texture2D);
+            context->CopyResource((ID3D11Resource*)depthTarget.Texture, (ID3D11Resource*)depth);
         }
-
     }
 
     private bool ShouldUseDepthTexture()

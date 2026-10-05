@@ -3,24 +3,44 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfxivVR", "FfxivVr\FfxivVr.csproj", "{13C812E9-0D42-4B95-8646-40EEBF30636F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfxivVr", "FfxivVr\FfxivVr.csproj", "{13C812E9-0D42-4B95-8646-40EEBF30636F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Debug|x64.ActiveCfg = Debug|x64
 		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Debug|x64.Build.0 = Debug|x64
+		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Debug|Any CPU.Build.0 = Debug|x64
+		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Debug|x86.ActiveCfg = Debug|x64
+		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Debug|x86.Build.0 = Debug|x64
 		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Release|x64.ActiveCfg = Release|x64
 		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Release|x64.Build.0 = Release|x64
+		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Release|Any CPU.ActiveCfg = Release|x64
+		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Release|Any CPU.Build.0 = Release|x64
+		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Release|x86.ActiveCfg = Release|x64
+		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Release|x86.Build.0 = Release|x64
 		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|x64.ActiveCfg = Debug|x64
 		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|x64.Build.0 = Debug|x64
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|Any CPU.Build.0 = Debug|x64
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|x86.ActiveCfg = Debug|x64
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Debug|x86.Build.0 = Debug|x64
 		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|x64.ActiveCfg = Release|x64
 		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|x64.Build.0 = Release|x64
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|Any CPU.ActiveCfg = Release|x64
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|Any CPU.Build.0 = Release|x64
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|x86.ActiveCfg = Release|x64
+		{4E7632F4-6FF6-4BD1-BCB9-343F3D50F845}.Release|x86.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

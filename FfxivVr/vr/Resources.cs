@@ -1,19 +1,17 @@
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace FfxivVR;
 
-public unsafe partial class Resources(
-    DxDevice device
+public unsafe class Resources(
+    ResourceFactory resourceFactory
 ) : IDisposable
 {
 
     private D3DBuffer? cameraBuffer;
     private D3DBuffer? pixelShaderConstantsBuffer;
-
     private VertexBuffer? squareBuffer;
     private VertexBuffer? cylinderBuffer;
     private VertexBuffer? uiBuffer;
@@ -33,299 +31,35 @@ public unsafe partial class Resources(
 
     public void Initialize(Vector2D<uint> size)
     {
-        CreateBuffers();
-        CreateSampler();
-        CreateStencilState();
-        CreateBlendState();
-        CreateRasterizerState();
-        UIRenderTarget = CreateRenderTarget(size);
-        DalamudRenderTarget = CreateRenderTarget(size);
-        CursorRenderTarget = CreateRenderTarget(size);
-        SceneRenderTargets = [CreateRenderTarget(size), CreateRenderTarget(size)];
-        SceneDepthTargets = [CreateDepthTarget(size), CreateDepthTarget(size)];
-    }
+        cameraBuffer = resourceFactory.CreateCameraBuffer();
+        pixelShaderConstantsBuffer = resourceFactory.CreatePixelShaderConstantsBuffer();
+        squareBuffer = resourceFactory.CreateSquareBuffer();
+        cylinderBuffer = resourceFactory.CreateCylinderBuffer();
+        uiBuffer = resourceFactory.CreateUIBuffer();
 
-    private DepthTarget CreateDepthTarget(Vector2D<uint> size)
-    {
-        var textureDescription = new Texture2DDesc(
-            format: Silk.NET.DXGI.Format.FormatR24G8Typeless,
-            width: size.X,
-            height: size.Y,
-            mipLevels: 1,
-            sampleDesc: new Silk.NET.DXGI.SampleDesc(count: 1, quality: 0),
-            usage: Usage.Default,
-            cPUAccessFlags: 0,
-            arraySize: 1,
-            bindFlags: (uint)(BindFlag.DepthStencil | BindFlag.ShaderResource),
-            miscFlags: (uint)ResourceMiscFlag.Shared
-        );
-        ID3D11Texture2D* texture = null;
-        device.Device->CreateTexture2D(ref textureDescription, null, ref texture).D3D11Check("CreateTexture2D");
-        var depthStencilViewDesc = new DepthStencilViewDesc(
-            format: Silk.NET.DXGI.Format.FormatD24UnormS8Uint,
-            viewDimension: DsvDimension.Texture2D,
-            texture2D: new Tex2DDsv(
-                mipSlice: 0
-            )
-        );
-        ID3D11DepthStencilView* depthStencilView = null;
-        device.Device->CreateDepthStencilView((ID3D11Resource*)texture, ref depthStencilViewDesc, ref depthStencilView).D3D11Check("CreateDepthStencilView");
+        samplerState = resourceFactory.CreateSampler();
 
-        return new DepthTarget(
-            texture,
-            depthStencilView,
-            size
-        );
-    }
+        depthStencilStateOn = resourceFactory.CreateDepthStencilStateOn();
+        depthStencilStateOff = resourceFactory.CreateDepthStencilStateOff();
 
-    private RenderTarget CreateRenderTarget(Vector2D<uint> size)
-    {
-        var format = Silk.NET.DXGI.Format.FormatB8G8R8A8Unorm;
-        var textureDescription = new Texture2DDesc(
-            format: format,
-            width: size.X,
-            height: size.Y,
-            mipLevels: 1,
-            sampleDesc: new Silk.NET.DXGI.SampleDesc(count: 1, quality: 0),
-            usage: Usage.Default,
-            cPUAccessFlags: 0,
-            arraySize: 1,
-            bindFlags: (uint)(BindFlag.ShaderResource | BindFlag.RenderTarget),
-            miscFlags: (uint)ResourceMiscFlag.Shared
-        );
-        ID3D11Texture2D* texture = null;
-        device.Device->CreateTexture2D(ref textureDescription, null, ref texture).D3D11Check("CreateTexture2D");
-        var renderTargetViewDescription = new RenderTargetViewDesc(
-            format: format,
-            viewDimension: RtvDimension.Texture2D,
-            texture2D: new Tex2DRtv(
-                mipSlice: 0
-            )
-        );
-        ID3D11RenderTargetView* renderTargetView = null;
-        device.Device->CreateRenderTargetView((ID3D11Resource*)texture, ref renderTargetViewDescription, ref renderTargetView).D3D11Check("CreateRenderTargetView");
-        var shaderResourceViewDescription = new ShaderResourceViewDesc(
-            format: format,
-            viewDimension: Silk.NET.Core.Native.D3DSrvDimension.D3DSrvDimensionTexture2D,
-            texture2D: new Tex2DSrv(
-                mostDetailedMip: 0,
-                mipLevels: 1
-            )
-        );
-        ID3D11ShaderResourceView* shaderResourceView = null;
-        device.Device->CreateShaderResourceView((ID3D11Resource*)texture, ref shaderResourceViewDescription, ref shaderResourceView).D3D11Check("CreateShaderResourceView");
-        return new RenderTarget(
-            texture,
-            renderTargetView,
-            shaderResourceView,
-            size
-        );
-    }
+        uiBlendState = resourceFactory.CreateUIBlendState();
+        sceneBlendState = resourceFactory.CreateSceneBlendState();
+        compositingBlendState = resourceFactory.CreateCompositingBlendState();
+        standardBlendState = resourceFactory.CreateStandardBlendState();
 
-    private void CreateSampler()
-    {
-        var samplerDesc = new SamplerDesc(
-            filter: Filter.MinMagMipLinear,
-            addressU: TextureAddressMode.Wrap,
-            addressV: TextureAddressMode.Wrap,
-            addressW: TextureAddressMode.Wrap,
-            comparisonFunc: ComparisonFunc.Never,
-            minLOD: 0,
-            maxLOD: float.MaxValue
-        );
+        rasterizerState = resourceFactory.CreateRasterizerState();
 
-        device.Device->CreateSamplerState(ref samplerDesc, ref samplerState).D3D11Check("CreateSamplerState"); ;
-    }
-
-    private void CreateBuffers()
-    {
-        cameraBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(CameraConstants)]), BindFlag.ConstantBuffer);
-        pixelShaderConstantsBuffer = CreateBuffer(new Span<byte>(new byte[sizeof(PixelShaderConstants)]), BindFlag.ConstantBuffer);
-        squareBuffer = CreateVertexBuffer(GeometryFactory.Plane());
-        cylinderBuffer = CreateVertexBuffer(GeometryFactory.Cylinder(sides: 16));
-        uiBuffer = CreateVertexBuffer(GeometryFactory.SegmentedPlane(segments: 32));
-    }
-
-    private void CreateStencilState()
-    {
-        var depthStencilOn = new DepthStencilDesc(
-            depthEnable: true,
-            depthWriteMask: DepthWriteMask.Zero,
-            depthFunc: ComparisonFunc.GreaterEqual,
-            stencilEnable: false,
-            stencilReadMask: 0xff,
-            stencilWriteMask: 0xff,
-            frontFace: new DepthStencilopDesc(
-                stencilFailOp: StencilOp.Keep,
-                stencilDepthFailOp: StencilOp.Incr,
-                stencilPassOp: StencilOp.Keep,
-                stencilFunc: ComparisonFunc.Always
-                ),
-            backFace: new DepthStencilopDesc(
-                stencilFailOp: StencilOp.Keep,
-                stencilDepthFailOp: StencilOp.Decr,
-                stencilPassOp: StencilOp.Keep,
-                stencilFunc: ComparisonFunc.Always
-                )
-            );
-        fixed (ID3D11DepthStencilState** ptr = &depthStencilStateOn)
-        {
-            device.Device->CreateDepthStencilState(ref depthStencilOn, ptr).D3D11Check("CreateDepthStencilState");
-        }
-        var depthStencilOff = new DepthStencilDesc(
-            depthEnable: false,
-            depthWriteMask: DepthWriteMask.All,
-            depthFunc: ComparisonFunc.LessEqual,
-            stencilEnable: true,
-            stencilReadMask: 0xff,
-            stencilWriteMask: 0xff,
-            frontFace: new DepthStencilopDesc(
-                stencilFailOp: StencilOp.Keep,
-                stencilDepthFailOp: StencilOp.Keep,
-                stencilPassOp: StencilOp.Keep,
-                stencilFunc: ComparisonFunc.Always
-                ),
-            backFace: new DepthStencilopDesc(
-                stencilFailOp: StencilOp.Keep,
-                stencilDepthFailOp: StencilOp.Keep,
-                stencilPassOp: StencilOp.Keep,
-                stencilFunc: ComparisonFunc.Always
-                )
-            );
-        fixed (ID3D11DepthStencilState** ptr = &depthStencilStateOff)
-        {
-            device.Device->CreateDepthStencilState(ref depthStencilOff, ptr).D3D11Check("CreateDepthStencilState");
-        }
-    }
-
-    private void CreateRasterizerState()
-    {
-        var rasterizerDesc = new RasterizerDesc(
-            fillMode: FillMode.Solid,
-            cullMode: CullMode.None,
-            frontCounterClockwise: true,
-            depthBias: 0,
-            depthBiasClamp: 100,
-            slopeScaledDepthBias: 0,
-            depthClipEnable: false,
-            scissorEnable: false,
-            multisampleEnable: false,
-            antialiasedLineEnable: false
-        );
-        fixed (ID3D11RasterizerState** ptr = &rasterizerState)
-        {
-            device.Device->CreateRasterizerState(ref rasterizerDesc, ptr).D3D11Check("CreateRasterizerState");
-        }
-    }
-
-    private ID3D11BlendState* CreateBlendState(RenderTargetBlendDesc renderTargetBlendDesc)
-    {
-        var description = new BlendDesc(
-            alphaToCoverageEnable: false,
-            independentBlendEnable: false
-        );
-        description.RenderTarget[0] = renderTargetBlendDesc;
-        ID3D11BlendState* state = null;
-        device.Device->CreateBlendState(ref description, &state).D3D11Check("CreateBlendState");
-        return state;
-    }
-    private void CreateBlendState()
-    {
-        uiBlendState = CreateBlendState(new RenderTargetBlendDesc(
-            blendEnable: true,
-            srcBlend: Blend.One,
-            destBlend: Blend.InvSrcAlpha,
-            blendOp: BlendOp.Add,
-            srcBlendAlpha: Blend.One,
-            destBlendAlpha: Blend.One,
-            blendOpAlpha: BlendOp.Max,
-            renderTargetWriteMask: (byte)ColorWriteEnable.All
-        ));
-        sceneBlendState = CreateBlendState(new RenderTargetBlendDesc(
-            blendEnable: true,
-            srcBlend: Blend.One,
-            destBlend: Blend.One,
-            blendOp: BlendOp.Add,
-            srcBlendAlpha: Blend.One,
-            destBlendAlpha: Blend.One,
-            blendOpAlpha: BlendOp.Add,
-            renderTargetWriteMask: (byte)ColorWriteEnable.All
-        ));
-        compositingBlendState = CreateBlendState(new RenderTargetBlendDesc(
-            blendEnable: true,
-            srcBlend: Blend.One,
-            destBlend: Blend.InvSrcAlpha,
-            blendOp: BlendOp.Add,
-            srcBlendAlpha: Blend.One,
-            destBlendAlpha: Blend.One,
-            blendOpAlpha: BlendOp.Add,
-            renderTargetWriteMask: (byte)ColorWriteEnable.All
-        ));
-        standardBlendState = CreateBlendState(new RenderTargetBlendDesc(
-            blendEnable: true,
-            srcBlend: Blend.SrcAlpha,
-            destBlend: Blend.One,
-            blendOp: BlendOp.Add,
-            srcBlendAlpha: Blend.One,
-            destBlendAlpha: Blend.One,
-            blendOpAlpha: BlendOp.Add,
-            renderTargetWriteMask: (byte)ColorWriteEnable.All
-        ));
-    }
-
-    private D3DBuffer CreateBuffer(Span<byte> bytes, BindFlag bindFlag)
-    {
-        fixed (byte* p = bytes)
-        {
-            if (p == null)
-            {
-                throw new ArgumentNullException(nameof(bytes));
-            }
-            SubresourceData subresourceData = new SubresourceData(
-                pSysMem: p,
-                sysMemPitch: 0,
-                sysMemSlicePitch: 0
-            );
-            BufferDesc description = new BufferDesc(
-                byteWidth: (uint)bytes.Length,
-                usage: Usage.Dynamic,
-                bindFlags: (uint)bindFlag,
-                cPUAccessFlags: (uint)CpuAccessFlag.Write,
-                miscFlags: 0,
-                structureByteStride: 0
-            );
-            ID3D11Buffer* buffer = null;
-            device.Device->CreateBuffer(ref description, ref subresourceData, ref buffer).D3D11Check("CreateBuffer");
-            return new D3DBuffer(buffer, (uint)bytes.Length);
-        }
-    }
-
-    private VertexBuffer CreateVertexBuffer(List<Vertex> vertices)
-    {
-        var array = vertices.ToArray();
-        var buffer = CreateBuffer(MemoryMarshal.AsBytes(new Span<Vertex>(array)), BindFlag.VertexBuffer);
-        return new VertexBuffer(array, buffer);
-    }
-
-    private void SetBufferData(ID3D11DeviceContext* context, Span<byte> bytes, D3DBuffer buffer)
-    {
-        if (bytes.Length != buffer.Length)
-        {
-            throw new Exception($"Invalid buffer data {bytes.Length}, expected {buffer.Length}");
-        }
-        MappedSubresource mappedSubresource = new MappedSubresource();
-        context->Map((ID3D11Resource*)buffer.Handle, 0, Map.WriteDiscard, 0, ref mappedSubresource).D3D11Check("Map");
-        fixed (byte* p = bytes)
-        {
-            Buffer.MemoryCopy(source: p, destination: mappedSubresource.PData, buffer.Length, bytes.Length);
-        }
-        context->Unmap((ID3D11Resource*)buffer.Handle, 0);
+        UIRenderTarget = resourceFactory.CreateRenderTarget(size);
+        DalamudRenderTarget = resourceFactory.CreateRenderTarget(size);
+        CursorRenderTarget = resourceFactory.CreateRenderTarget(size);
+        SceneRenderTargets = [resourceFactory.CreateRenderTarget(size), resourceFactory.CreateRenderTarget(size)];
+        SceneDepthTargets = [resourceFactory.CreateDepthTarget(size), resourceFactory.CreateDepthTarget(size)];
     }
 
     public void UpdateCamera(ID3D11DeviceContext* context, CameraConstants camera)
     {
         var cameraSpan = new Span<CameraConstants>(ref camera);
-        SetBufferData(context, MemoryMarshal.AsBytes(cameraSpan), this.cameraBuffer!);
+        cameraBuffer!.SetData(context, MemoryMarshal.AsBytes(cameraSpan));
 
         context->VSSetConstantBuffers(0, 1, ref cameraBuffer!.Handle);
 
@@ -335,7 +69,7 @@ public unsafe partial class Resources(
     public void SetPixelShaderConstants(ID3D11DeviceContext* context, PixelShaderConstants pixelShaderConstants)
     {
         var cameraSpan = new Span<PixelShaderConstants>(ref pixelShaderConstants);
-        SetBufferData(context, MemoryMarshal.AsBytes(cameraSpan), this.pixelShaderConstantsBuffer!);
+        pixelShaderConstantsBuffer!.SetData(context, MemoryMarshal.AsBytes(cameraSpan));
 
         context->PSSetConstantBuffers(0, 1, ref pixelShaderConstantsBuffer!.Handle);
     }
@@ -385,14 +119,20 @@ public unsafe partial class Resources(
     public void Dispose()
     {
         cameraBuffer?.Dispose();
+        pixelShaderConstantsBuffer?.Dispose();
         cylinderBuffer?.Dispose();
         squareBuffer?.Dispose();
+        uiBuffer?.Dispose();
         UIRenderTarget?.Dispose();
         DalamudRenderTarget?.Dispose();
         CursorRenderTarget?.Dispose();
         foreach (var rt in SceneRenderTargets)
         {
             rt.Dispose();
+        }
+        foreach (var dt in SceneDepthTargets)
+        {
+            dt.Dispose();
         }
         if (sceneBlendState != null)
         {
@@ -406,12 +146,25 @@ public unsafe partial class Resources(
         {
             compositingBlendState->Release();
         }
-        if (SceneRenderTargets != null)
+        if (standardBlendState != null)
         {
-            foreach (var target in SceneRenderTargets)
-            {
-                target.Dispose();
-            }
+            standardBlendState->Release();
+        }
+        if (depthStencilStateOn != null)
+        {
+            depthStencilStateOn->Release();
+        }
+        if (depthStencilStateOff != null)
+        {
+            depthStencilStateOff->Release();
+        }
+        if (rasterizerState != null)
+        {
+            rasterizerState->Release();
+        }
+        if (samplerState != null)
+        {
+            samplerState->Release();
         }
     }
 

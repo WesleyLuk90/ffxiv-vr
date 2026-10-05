@@ -25,7 +25,14 @@
     <Content Include="$(PkgOpenXR_Loader)\native\x64\release\bin\openxr_loader.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\FfxivVrNative\target\release\ffxiv_vr_native.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>ffxiv_vr_native.dll</Link>
+    </Content>
   </ItemGroup>
+  <Target Name="BuildFfxivVrNative" BeforeTargets="BeforeBuild">
+    <Exec Command="cargo build --release" WorkingDirectory="$(MSBuildThisFileDirectory)..\FfxivVrNative" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+  </Target>
   <Target Name="CompileShaders" Inputs="shaders\VertexShader.hlsl;shaders\PixelShader.hlsl" BeforeTargets="BeforeResGen" Outputs="shaders\VertexShader.cso;shaders\PixelShader.cso">
     <Exec Command="bash &quot;$(MSBuildThisFileDirectory)shaders/CompileShaders.sh&quot;" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)shaders\CompileShaders.ps1&quot;" WorkingDirectory="$(MSBuildThisFileDirectory)" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
@@ -36,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <IgnoresAccessChecksTo Include="Dalamud" />
+    <IgnoresAccessChecksTo Include="FFXIVClientStructs" />
     <IgnoresAccessChecksToExcludeTypeName Include="Dalamud" />
     <IgnoresAccessChecksToExcludeTypeName Include="Dalamud.Injector" />
     <IgnoresAccessChecksToExcludeTypeName Include="Dalamud.Game.Framework" />

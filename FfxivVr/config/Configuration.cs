@@ -77,6 +77,9 @@ public class Configuration : IPluginConfiguration
     public bool DisableShaderModCheck = false;
     public bool DisableVRControllers = false;
     public bool AltFramePrediction = false;
+    public bool UseSinglePassRender = false;
+
+    public string? DumpDirectory = null;
 
     public uint? GetVRGameSetting(string id)
     {

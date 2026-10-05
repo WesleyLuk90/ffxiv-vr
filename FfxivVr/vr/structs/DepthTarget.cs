@@ -1,19 +1,20 @@
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
-using System;
 
 namespace FfxivVR;
 
-public unsafe class DepthTarget : IDisposable
+public unsafe class DepthTarget : IShaderResource
 {
     public DepthTarget(
         ID3D11Texture2D* texture,
         ID3D11DepthStencilView* depthStencilView,
+        ID3D11ShaderResourceView* shaderResourceView,
         Vector2D<uint> size
     )
     {
         Texture = texture;
         DepthStencilView = depthStencilView;
+        ShaderResourceView = shaderResourceView;
         Size = size;
     }
 
@@ -30,5 +31,6 @@ public unsafe class DepthTarget : IDisposable
     {
         Texture->Release();
         DepthStencilView->Release();
+        ShaderResourceView->Release();
     }
 }

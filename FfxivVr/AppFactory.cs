@@ -36,6 +36,7 @@ public unsafe class AppFactory
     [PluginService] public static InterfaceManager InterfaceManager { get; set; } = null!;
 
     private DxDevice? device = null;
+    private DxDeviceContext? deviceContext = null;
     public AppFactory()
     {
     }
@@ -43,12 +44,19 @@ public unsafe class AppFactory
     {
         this.device = device;
     }
+    public AppFactory(DxDevice device, DxDeviceContext deviceContext)
+    {
+        this.device = device;
+        this.deviceContext = deviceContext;
+    }
     public IHost CreateSession()
     {
         var builder = Host.CreateApplicationBuilder();
+        builder.ConfigureContainer(new DefaultServiceProviderFactory(new ServiceProviderOptions { ValidateScopes = true }));
 
+        var configuration = LoadConfiguration();
         builder.Services.AddSingleton(CreateXR());
-        builder.Services.AddSingleton(LoadConfiguration());
+        builder.Services.AddSingleton(configuration);
 
         builder.Services.AddSingleton(PluginInterface);
         builder.Services.AddSingleton(DalamudConfiguration);
@@ -73,7 +81,9 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<ConfigWindow>();
         builder.Services.AddSingleton<Debugging>();
         builder.Services.AddSingleton<DebugWindow>();
+        builder.Services.AddSingleton<EndFrameDispatcher>();
         builder.Services.AddSingleton<ExceptionHandler>();
+        builder.Services.AddSingleton(provider => CreateFfxivVrNative(provider.GetRequiredService<EndFrameDispatcher>()));
         builder.Services.AddSingleton<GameConfigManager>();
         builder.Services.AddSingleton<GameEvents>();
         builder.Services.AddSingleton<GameHooks>();
@@ -88,8 +98,10 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<Transitions>();
         builder.Services.AddSingleton<VRLifecycle>();
         builder.Services.AddSingleton<VRStartStop>();
+        builder.Services.AddSingleton<InverseKinematics>();
 
         builder.Services.AddScoped(x => GetDevice());
+        builder.Services.AddScoped(x => GetDeviceContext());
         builder.Services.AddScoped<DalamudRenderer>();
         builder.Services.AddScoped<EventHandler>();
         builder.Services.AddScoped<FramePrediction>();
@@ -98,6 +110,7 @@ public unsafe class AppFactory
         builder.Services.AddScoped<Renderer>();
         builder.Services.AddScoped<ResolutionManager>();
         builder.Services.AddScoped<Resources>();
+        builder.Services.AddScoped<ResourceFactory>();
         builder.Services.AddScoped<VRCamera>();
         builder.Services.AddScoped<VRActionService>();
         builder.Services.AddScoped<VRSession>();
@@ -108,9 +121,12 @@ public unsafe class AppFactory
         builder.Services.AddScoped<VRSystem>();
         builder.Services.AddScoped<VRUI>();
         builder.Services.AddScoped<WaitFrameService>();
-        builder.Services.AddScoped<RenderManager>();
+        builder.Services.AddScoped<AltEyeRenderStrategy>();
+        builder.Services.AddScoped<SinglePassRenderStrategy>();
+        builder.Services.AddScoped<IRenderStrategy>(provider => configuration.UseSinglePassRender
+            ? provider.GetRequiredService<SinglePassRenderStrategy>()
+            : provider.GetRequiredService<AltEyeRenderStrategy>());
         builder.Services.AddScoped<VRInputService>();
-        builder.Services.AddScoped<InverseKinematics>();
         builder.Services.AddScoped<BodySkeletonModifier>();
         builder.Services.AddScoped<HandTrackingSkeletonModifier>();
         builder.Services.AddScoped<ControllerTrackingSkeletonModifier>();
@@ -128,6 +144,15 @@ public unsafe class AppFactory
         return new DxDevice((ID3D11Device*)Device.Instance()->D3D11Forwarder);
     }
 
+    private DxDeviceContext GetDeviceContext()
+    {
+        if (deviceContext != null)
+        {
+            return deviceContext;
+        }
+        return new DxDeviceContext((ID3D11DeviceContext*)Device.Instance()->D3D11DeviceContext);
+    }
+
     private Configuration LoadConfiguration()
     {
         return PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
@@ -138,5 +163,12 @@ public unsafe class AppFactory
         var dir = PluginInterface.AssemblyLocation.Directory ?? throw new NullReferenceException("Assembly Location missing");
         var dllPath = Path.Combine(dir.ToString(), "openxr_loader.dll");
         return new XR(XR.CreateDefaultContext([dllPath]));
+    }
+
+    private FfxivVrNative CreateFfxivVrNative(EndFrameDispatcher endFrameDispatcher)
+    {
+        var dir = PluginInterface.AssemblyLocation.Directory ?? throw new NullReferenceException("Assembly Location missing");
+        var dllPath = Path.Combine(dir.ToString(), "ffxiv_vr_native.dll");
+        return new FfxivVrNative(dllPath, endFrameDispatcher);
     }
 }
