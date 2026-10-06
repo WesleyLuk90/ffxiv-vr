@@ -2,7 +2,6 @@ using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
 using System;
 using System.Linq;
-using Windows.Win32.Foundation;
 
 namespace FfxivVR;
 
@@ -69,12 +68,4 @@ public class CommandHander(
     {
         commandManager.RemoveHandler(CommandName);
     }
-}
-internal static class Ext
-{
-    internal static string Display(this RECT rect)
-    {
-        return $"l:{rect.left}  r:{rect.right} t:{rect.top} b:{rect.bottom}";
-    }
-
 }

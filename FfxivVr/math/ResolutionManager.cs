@@ -26,8 +26,6 @@ class ResizeState
         RenderResolution = renderResolution;
         OriginalRenderResolution = originalRenderResolution;
     }
-
-    public nint? OriginalWindowStyle { get; }
 }
 public unsafe class ResolutionManager : IDisposable
 {

@@ -48,35 +48,6 @@ public class GameOption
     }
 
     public UIntConfigProperties Properties;
-    public uint GetCurrentValue()
-    {
-        if (systemConfigOption is SystemConfigOption sys)
-        {
-            if (gameConfig.TryGet(sys, out uint val))
-            {
-                return val;
-            }
-            throw new Exception($"Failed to get config {sys}");
-        }
-        if (uiControlOption is UiControlOption control)
-        {
-            if (gameConfig.TryGet(control, out uint val))
-            {
-                return val;
-            }
-            throw new Exception($"Failed to get config {control}");
-        }
-        if (uiConfigOption is UiConfigOption uiConfig)
-        {
-            if (gameConfig.TryGet(uiConfig, out uint val))
-            {
-                return val;
-            }
-            throw new Exception($"Failed to get config {uiConfig}");
-        }
-        throw new Exception("Missing option");
-    }
-
     public string? Label = null;
     public List<string>? Options;
     public GameOption Initialize(string label, List<string>? options = null)

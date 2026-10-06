@@ -6,7 +6,6 @@ namespace FfxivVR;
 
 unsafe class VertexBuffer(Vertex[] vertices, D3DBuffer buffer) : IDisposable
 {
-    public Vertex[] Vertices { get; } = vertices;
     public D3DBuffer Buffer { get; } = buffer;
 
     public ID3D11Buffer* Handle = buffer.Handle;
