@@ -23,6 +23,7 @@ public unsafe class GameHooks(
     Logger logger,
     HookStatus hookStatus,
     IGameInteropProvider gameInteropProvider,
+    ISigScanner sigScanner,
     GameState gameState,
     Configuration configuration,
     EndFrameDispatcher endFrameDispatcher,
@@ -59,6 +60,7 @@ public unsafe class GameHooks(
             logger.Debug("Shader mod check has been bypassed");
         }
         gameInteropProvider.InitializeFromAttributes(this);
+        ConstantBufferCache.Initialize(sigScanner);
         GamepadPollHook = gameInteropProvider.HookFromAddress<GamepadPollDelegate>((nint)PadDevice.StaticVirtualTablePointer->Update, GamepadPollDetour);
         InitializeHook(FrameworkTickHook, nameof(FrameworkTickHook));
         InitializeHook(DXGIPresentHook, nameof(DXGIPresentHook));
@@ -203,6 +205,7 @@ public unsafe class GameHooks(
         else
         {
             ffxivVrNative.SetActiveEye(Eye.Left);
+            ImmediateContextExtended.FromImmediateContext(context)->InvalidateConstantBuffers();
             ExecuteCommandsHook!.Original(context, commandListId, commandsExecutedCounter, renderCommands, renderCommandCount);
             ffxivVrNative.SetActiveEye(null);
             // Replay the same frame's commands a second time for the right eye. Both passes have
@@ -212,6 +215,7 @@ public unsafe class GameHooks(
             // first draw.
             logger.Trace("ExecuteCommandsDetour replaying top-level call a second time");
             ffxivVrNative.SetActiveEye(Eye.Right);
+            ImmediateContextExtended.FromImmediateContext(context)->InvalidateConstantBuffers();
             ExecuteCommandsHook!.Original(context, commandListId, commandsExecutedCounter, renderCommands, renderCommandCount);
             ffxivVrNative.SetActiveEye(null);
         }
