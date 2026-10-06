@@ -12,7 +12,6 @@ use windows::core::Interface;
 use crate::AppState;
 use crate::eye_resources::{Access, MIRRORED_EYE, ViewKind};
 use crate::hooks;
-use crate::last_camera_buffers::{CameraUpload, LastCameraBuffer};
 use crate::modifiers::Pass;
 use crate::modifiers::camera_parameters::{CameraParameters, modify_camera_parameters};
 use crate::modifiers::light_param::{LightParamBuffer, modify_light_param};
@@ -66,100 +65,6 @@ fn is_camera_buffer_size(app: &AppState, byte_width: u32) -> bool {
         || byte_width == LIGHT_PARAM_BUFFER_SIZE
         || byte_width == SKY_QUAD_PARAM_SIZE
         || byte_width == SUN_PARAM_SIZE
-}
-
-fn is_replayed_size(byte_width: u32) -> bool {
-    byte_width == CAMERA_PARAMETERS_SIZE || byte_width == SUN_PARAM_SIZE
-}
-
-fn should_replay(app: &AppState, byte_width: u32, modified: bool, original: &[u8]) -> bool {
-    match byte_width {
-        CAMERA_PARAMETERS_SIZE => modified,
-        SUN_PARAM_SIZE => {
-            let sun = unsafe { std::ptr::read_unaligned(original.as_ptr() as *const SunParam) };
-            sun.is_sun(&app.camera)
-        }
-        _ => false,
-    }
-}
-
-fn remember_camera_buffer(
-    app: &mut AppState,
-    resource: *mut c_void,
-    subresource: u32,
-    upload: CameraUpload,
-    byte_width: u32,
-    original: Vec<u8>,
-) {
-    let Some(resource) = (unsafe { ID3D11Resource::from_raw_borrowed(&resource) }).cloned() else {
-        return;
-    };
-    let last = Some(LastCameraBuffer {
-        resource,
-        subresource,
-        upload,
-        byte_width,
-        original,
-    });
-    match byte_width {
-        CAMERA_PARAMETERS_SIZE => app.last_camera_buffers.camera_parameters = last,
-        SUN_PARAM_SIZE => app.last_camera_buffers.sun_param = last,
-        _ => {}
-    }
-}
-
-pub(crate) fn replay_camera_buffers(app: &mut AppState) {
-    if !app.hooks_enabled || !app.camera.has_active_eye() {
-        return;
-    }
-    if let Some(last) = app.last_camera_buffers.camera_parameters.take() {
-        replay_camera_buffer(app, &last);
-        app.last_camera_buffers.camera_parameters = Some(last);
-    }
-    if let Some(last) = app.last_camera_buffers.sun_param.take() {
-        replay_camera_buffer(app, &last);
-        app.last_camera_buffers.sun_param = Some(last);
-    }
-}
-
-fn replay_camera_buffer(app: &mut AppState, last: &LastCameraBuffer) -> bool {
-    let resource = last.resource.as_raw();
-    let context = app.device_context;
-    match last.upload {
-        CameraUpload::Map => {
-            let modified = app
-                .shadow_buffers
-                .load_shadow(resource, &last.original)
-                .is_some_and(|data| unsafe {
-                    try_modify_camera_buffer(app, last.byte_width, data)
-                });
-            if modified {
-                flush_shadow_to_gpu(app, context, resource, last.subresource);
-            }
-            modified
-        }
-        CameraUpload::UpdateSubresource => {
-            let data = app
-                .shadow_buffers
-                .load_update_subresource_scratch(&last.original);
-            let modified = unsafe { try_modify_camera_buffer(app, last.byte_width, data) };
-            if modified {
-                let src = app.shadow_buffers.update_subresource_scratch().as_ptr() as *const c_void;
-                hooks::call_original(&hooks::update_subresource::DETOUR, |hook| unsafe {
-                    hook.call(
-                        context,
-                        resource,
-                        last.subresource,
-                        std::ptr::null(),
-                        src,
-                        0,
-                        0,
-                    )
-                });
-            }
-            modified
-        }
-    }
 }
 
 pub(crate) fn om_set_render_targets(
@@ -308,24 +213,8 @@ pub(crate) fn unmap(
         unhooked();
         return;
     };
-    app.last_camera_buffers.forget(resource);
     if app.camera.has_active_eye() {
-        let original = is_replayed_size(byte_width)
-            .then(|| app.shadow_buffers.data(resource).map(<[u8]>::to_vec))
-            .flatten();
-        let modified = unsafe { try_modify_camera_buffer(app, byte_width, data) };
-        if let Some(original) = original {
-            if should_replay(app, byte_width, modified, &original) {
-                remember_camera_buffer(
-                    app,
-                    resource,
-                    subresource,
-                    CameraUpload::Map,
-                    byte_width,
-                    original,
-                );
-            }
-        }
+        unsafe { try_modify_camera_buffer(app, byte_width, data) };
     }
     flush_shadow_to_gpu(app, context, resource, subresource);
 }
@@ -368,7 +257,6 @@ pub(crate) fn compute_camera_update_subresource(
     dst_box: *const c_void,
     src_data: *const c_void,
 ) -> Option<&[u8]> {
-    app.last_camera_buffers.forget(dst_resource);
     if !app.camera.has_active_eye() || !dst_box.is_null() || src_data.is_null() {
         return None;
     }
@@ -379,16 +267,6 @@ pub(crate) fn compute_camera_update_subresource(
     let src = unsafe { std::slice::from_raw_parts(src_data as *const u8, byte_width as usize) };
     let ptr = app.shadow_buffers.load_update_subresource_scratch(src);
     let modified = unsafe { try_modify_camera_buffer(app, byte_width, ptr) };
-    if is_replayed_size(byte_width) && should_replay(app, byte_width, modified, src) {
-        remember_camera_buffer(
-            app,
-            dst_resource,
-            0,
-            CameraUpload::UpdateSubresource,
-            byte_width,
-            src.to_vec(),
-        );
-    }
     modified.then_some(app.shadow_buffers.update_subresource_scratch())
 }
 

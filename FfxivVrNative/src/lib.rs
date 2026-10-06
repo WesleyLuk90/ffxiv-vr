@@ -12,14 +12,12 @@ mod camera_state;
 mod eye_resources;
 mod hook_bodies;
 mod hooks;
-mod last_camera_buffers;
 mod math;
 mod modifiers;
 mod shadow_buffers;
 
 use camera_state::CameraState;
 use eye_resources::EyeResources;
-use last_camera_buffers::LastCameraBuffers;
 use math::Mat4;
 use modifiers::Pass;
 use modifiers::sun_modifier::SunModifier;
@@ -38,8 +36,6 @@ struct AppState {
     geometry_texture: *mut c_void,
     composition_texture: *mut c_void,
     current_pass: Option<Pass>,
-
-    last_camera_buffers: LastCameraBuffers,
 }
 
 unsafe impl Send for AppState {}
@@ -68,7 +64,6 @@ impl AppState {
             geometry_texture,
             composition_texture,
             current_pass: None,
-            last_camera_buffers: LastCameraBuffers::default(),
         })
     }
 }
@@ -268,7 +263,6 @@ pub extern "system" fn ffxiv_vr_native_set_active_eye(eye: i32) -> bool {
     app.sun_modifier.reset();
     app.eye_resources.begin_pass();
     hook_bodies::sync_bound_views(app);
-    hook_bodies::replay_camera_buffers(app);
     accepted
 }
 
@@ -295,6 +289,5 @@ pub extern "system" fn ffxiv_vr_native_on_frame_end() -> bool {
         );
     }
     app.eye_resources.end_frame();
-    app.last_camera_buffers = LastCameraBuffers::default();
     true
 }

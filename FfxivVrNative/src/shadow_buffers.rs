@@ -70,19 +70,6 @@ impl ShadowBuffers {
             .map(|shadow| shadow.data.as_slice())
     }
 
-    pub(crate) fn load_shadow(
-        &mut self,
-        resource: *mut c_void,
-        data: &[u8],
-    ) -> Option<*mut c_void> {
-        let shadow = self.buffers.get_mut(&resource)?;
-        if shadow.data.len() != data.len() {
-            return None;
-        }
-        shadow.data.copy_from_slice(data);
-        Some(shadow.data.as_mut_ptr() as *mut c_void)
-    }
-
     pub(crate) fn load_update_subresource_scratch(&mut self, data: &[u8]) -> *mut c_void {
         self.update_subresource_scratch.clear();
         self.update_subresource_scratch.extend_from_slice(data);
