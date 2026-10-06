@@ -145,10 +145,6 @@ public unsafe class ResourceFactory(
         return CreateBuffer(new Span<byte>(new byte[sizeof(PixelShaderConstants)]), BindFlag.ConstantBuffer);
     }
 
-    internal D3DBuffer CreateConstantBuffer<T>() where T : unmanaged
-    {
-        return CreateBuffer(new Span<byte>(new byte[sizeof(T)]), BindFlag.ConstantBuffer);
-    }
     internal VertexBuffer CreateSquareBuffer()
     {
         return CreateVertexBuffer(GeometryFactory.Plane());
@@ -189,33 +185,6 @@ public unsafe class ResourceFactory(
         ID3D11DepthStencilState* depthStencilStateOn = null;
         device.Device->CreateDepthStencilState(ref depthStencilOn, ref depthStencilStateOn).D3D11Check("CreateDepthStencilState");
         return depthStencilStateOn;
-    }
-
-    public ID3D11DepthStencilState* CreateDepthStencilStateAlwaysPass()
-    {
-        var depthStencilAlwaysPass = new DepthStencilDesc(
-            depthEnable: true,
-            depthWriteMask: DepthWriteMask.All,
-            depthFunc: ComparisonFunc.Always,
-            stencilEnable: false,
-            stencilReadMask: 0xff,
-            stencilWriteMask: 0xff,
-            frontFace: new DepthStencilopDesc(
-                stencilFailOp: StencilOp.Keep,
-                stencilDepthFailOp: StencilOp.Keep,
-                stencilPassOp: StencilOp.Keep,
-                stencilFunc: ComparisonFunc.Always
-                ),
-            backFace: new DepthStencilopDesc(
-                stencilFailOp: StencilOp.Keep,
-                stencilDepthFailOp: StencilOp.Keep,
-                stencilPassOp: StencilOp.Keep,
-                stencilFunc: ComparisonFunc.Always
-                )
-            );
-        ID3D11DepthStencilState* depthStencilStateAlwaysPass = null;
-        device.Device->CreateDepthStencilState(ref depthStencilAlwaysPass, ref depthStencilStateAlwaysPass).D3D11Check("CreateDepthStencilState");
-        return depthStencilStateAlwaysPass;
     }
 
     public ID3D11DepthStencilState* CreateDepthStencilStateOff()

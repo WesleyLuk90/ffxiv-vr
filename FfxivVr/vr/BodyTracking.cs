@@ -43,14 +43,4 @@ public unsafe class BodyTracking(
         fBBodyTracking.DestroyBodyTrackerFB(bodyTracker).LogResult("DestroyBodyTrackerFB", logger);
     }
 
-    internal BodySkeletonJointFB[] GetSkeleton()
-    {
-        var joints = new BodySkeletonJointFB[(int)BodyJointFB.CountFB];
-        fixed (BodySkeletonJointFB* ptr = new Span<BodySkeletonJointFB>(joints))
-        {
-            var skele = new BodySkeletonFB(jointCount: (uint?)BodyJointFB.CountFB, joints: ptr);
-            fBBodyTracking.GetBodySkeletonFB(bodyTracker, ref skele).CheckResult("GetBodySkeletonFB");
-        }
-        return joints;
-    }
 }

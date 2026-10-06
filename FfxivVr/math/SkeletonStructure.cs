@@ -23,7 +23,6 @@ public unsafe class SkeletonStructure
             var name = skeleton->Bones[boneIndex].Name.String ?? "unknown";
             var bone = new Bone(
                 index: boneIndex,
-                parent: skeleton->ParentIndices[boneIndex],
                 referencePose: skeleton->ReferencePose[boneIndex],
                 name: name!
             );
@@ -77,10 +76,9 @@ public unsafe class SkeletonStructure
         return bones;
     }
 }
-public unsafe class Bone(int index, int parent, hkQsTransformf referencePose, string name)
+public unsafe class Bone(int index, hkQsTransformf referencePose, string name)
 {
     internal readonly int Index = index;
-    internal readonly int Parent = parent;
     internal List<int> Children = new List<int>();
     internal readonly hkQsTransformf ReferencePose = referencePose;
     public readonly string Name = name;

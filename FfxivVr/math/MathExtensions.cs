@@ -27,16 +27,6 @@ public static class MathExtensions
         return new Vector3(vec.X, vec.Y, vec.Z);
     }
 
-    public static hkVector4f ToHkVector4(this Vector3D<float> vec)
-    {
-        var hk = new hkVector4f();
-        hk.X = vec.X;
-        hk.Y = vec.Y;
-        hk.Z = vec.Z;
-        hk.W = 0;
-        return hk;
-    }
-
     public static Quaternion<float> ToQuaternion(this Quaternionf quat)
     {
         return new Quaternion<float>(quat.X, quat.Y, quat.Z, quat.W);
