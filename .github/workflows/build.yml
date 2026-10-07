@@ -35,6 +35,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Line Ending Check
+        run: |
+          $bad = git ls-files --eol | Where-Object { $_ -match '^i/(crlf|mixed)' }
+          if ($bad) {
+            $bad
+            throw "Files committed with CRLF line endings"
+          }
+
       - name: Install .NET Core
         uses: actions/setup-dotnet@v6
         with:
