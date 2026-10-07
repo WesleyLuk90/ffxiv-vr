@@ -131,7 +131,7 @@ mod tests {
         let mut buf: CameraParameters = unsafe { std::mem::zeroed() };
         buf.projection_matrix = projection();
         buf.a_main_view_to_projection_matrix = projection();
-        buf.projection_matrix2 = projection();
+        buf.projection_matrix_prev = projection();
         modify_camera_parameters(&mut buf, &mut camera);
         camera.update_camera(0, eye_view, None);
         camera.set_active_eye(Some(0));

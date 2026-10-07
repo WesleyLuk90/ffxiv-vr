@@ -10,6 +10,8 @@ pub struct CameraState {
     eyes: [Option<EyeRemap>; 2],
     active_eye: Option<usize>,
     original_projection: Mat4,
+    eye_projections: [Option<Mat4>; 2],
+    eye_projections_prev: [Option<Mat4>; 2],
 }
 
 impl CameraState {
@@ -18,6 +20,8 @@ impl CameraState {
             eyes: [None; 2],
             active_eye: None,
             original_projection: Mat4::IDENTITY,
+            eye_projections: [None; 2],
+            eye_projections_prev: [None; 2],
         }
     }
 
@@ -65,6 +69,26 @@ impl CameraState {
         remap
             .projection_override
             .unwrap_or(self.original_projection.transpose())
+    }
+
+    pub fn record_eye_projection(&mut self, projection: Mat4) -> Mat4 {
+        let Some(eye) = self.active_eye else {
+            return projection;
+        };
+        self.eye_projections[eye] = Some(projection);
+        self.eye_projections_prev[eye].unwrap_or(projection)
+    }
+
+    pub fn end_frame(&mut self) {
+        for (current, prev) in self
+            .eye_projections
+            .iter_mut()
+            .zip(self.eye_projections_prev.iter_mut())
+        {
+            if let Some(projection) = current.take() {
+                *prev = Some(projection);
+            }
+        }
     }
 
     pub fn update_camera(&mut self, eye: usize, view: Mat4, projection: Option<Mat4>) -> bool {
