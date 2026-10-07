@@ -289,5 +289,6 @@ pub extern "system" fn ffxiv_vr_native_on_frame_end() -> bool {
         );
     }
     app.eye_resources.end_frame();
+    app.camera.end_frame();
     true
 }
