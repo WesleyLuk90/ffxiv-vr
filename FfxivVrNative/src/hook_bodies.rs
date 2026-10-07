@@ -14,6 +14,7 @@ use crate::eye_resources::{Access, MIRRORED_EYE, ViewKind};
 use crate::hooks;
 use crate::modifiers::Pass;
 use crate::modifiers::camera_parameters::{CameraParameters, modify_camera_parameters};
+use crate::modifiers::clip_to_world_matrix::{ClipToWorldMatrix, modify_clip_to_world_matrix};
 use crate::modifiers::light_param::{LightParamBuffer, modify_light_param};
 use crate::modifiers::projection_matrix::{ProjectionMatrix, modify_compositing_projection_matrix};
 use crate::modifiers::ps_view_projection_inverse_matrix::{
@@ -106,7 +107,7 @@ fn render_target_resource(view: *mut c_void) -> Option<*mut c_void> {
 
 /// # Safety
 /// `data` must be valid for `byte_width` bytes, writable, and correctly aligned for whichever of
-/// `CameraParameters`/`VSViewProjectionMatrix`/`PSViewProjectionInverseMatrix`/`WorldViewProjMatrix`/
+/// `CameraParameters`/`VSViewProjectionMatrix`/`PSViewProjectionInverseMatrix`/`ClipToWorldMatrix`/`WorldViewProjMatrix`/
 /// `ProjectionMatrix`/`LightParamBuffer`/`SkyQuadParam`/`SunParam`/`RadialBlurParam`/
 /// `LensFlareParam` `byte_width` selects.
 unsafe fn try_modify_camera_buffer(app: &mut AppState, byte_width: u32, data: *mut c_void) -> bool {
@@ -161,6 +162,10 @@ unsafe fn try_modify_camera_buffer(app: &mut AppState, byte_width: u32, data: *m
         }
         let view_projection_inverse = unsafe { &mut *(data as *mut PSViewProjectionInverseMatrix) };
         if modify_geometry_ps_view_projection_inverse_matrix(view_projection_inverse, &app.camera) {
+            return true;
+        }
+        let clip_to_world = unsafe { &mut *(data as *mut ClipToWorldMatrix) };
+        if modify_clip_to_world_matrix(clip_to_world, &app.camera) {
             return true;
         }
     }
