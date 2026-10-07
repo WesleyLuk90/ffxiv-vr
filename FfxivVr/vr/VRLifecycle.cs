@@ -234,6 +234,14 @@ public unsafe class VRLifecycle(
         }
     }
 
+    internal Silk.NET.Maths.Vector3D<float>? GetPlayerHeadLookAtTarget(GameObject* gameObject, int attachBoneIndex)
+    {
+        lock (this)
+        {
+            return vrSession?.GetPlayerHeadLookAtTarget(gameObject, attachBoneIndex);
+        }
+    }
+
     internal bool ShouldDisableCameraVerticalFly()
     {
         lock (this)

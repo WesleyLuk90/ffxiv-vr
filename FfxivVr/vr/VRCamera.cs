@@ -106,6 +106,15 @@ FirstPersonManager firstPersonManager
         return invertedViewMatrix;
     }
 
+    internal Vector3D<float> ComputeHeadWorldPosition(View left, View right, VRCameraMode cameraMode, GameCamera gameCamera)
+    {
+        var headPosition = cameraMode.UseHeadMovement
+            ? (left.Pose.Position.ToVector3D() + right.Pose.Position.ToVector3D()) / 2 / configuration.WorldScale
+            : Vector3D<float>.Zero;
+        var gameViewMatrix = cameraMode.GetRotationMatrix(gameCamera) * Matrix4X4.CreateTranslation(cameraMode.GetCameraPosition(gameCamera));
+        return Vector3D.Transform(headPosition, gameViewMatrix);
+    }
+
     internal Matrix4X4<float> ComputeVRViewProjectionMatrix(View view)
     {
         var rotation = Matrix4X4.CreateFromQuaternion(view.Pose.Orientation.ToQuaternion());

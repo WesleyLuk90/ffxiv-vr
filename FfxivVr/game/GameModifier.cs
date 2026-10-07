@@ -1,5 +1,7 @@
 using Dalamud.Game.Gui.NamePlate;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Maths;
 using System.Collections.Generic;
 
@@ -33,6 +35,18 @@ public unsafe class GameModifier(
         }
         var skeleton = characterBase->Skeleton;
         skeletonModifier.HideHead(skeleton, Conditions.Instance()->Mounted);
+    }
+
+    private const int HeadAttachBoneIndex = 1;
+
+    internal bool IsHiddenHeadAttachBone(GameObject* gameObject, int attachBoneIndex)
+    {
+        if (attachBoneIndex != HeadAttachBoneIndex || !firstPersonManager.IsFirstPerson || gameState.IsInCutscene())
+        {
+            return false;
+        }
+        var characterBase = gameState.GetCharacterBase();
+        return characterBase != null && (CharacterBase*)gameObject->DrawObject == characterBase;
     }
 
 

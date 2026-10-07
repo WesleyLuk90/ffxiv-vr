@@ -225,6 +225,23 @@ public unsafe class VRSession(
         }
     }
 
+    public Vector3D<float>? GetPlayerHeadLookAtTarget(GameObject* gameObject, int attachBoneIndex)
+    {
+        if (!State.SessionRunning || !gameModifier.IsHiddenHeadAttachBone(gameObject, attachBoneIndex))
+        {
+            return null;
+        }
+        if (renderStrategy.VRSessionData is not VRSessionData phase)
+        {
+            return null;
+        }
+        if (phase.GetGameCamera(vrCamera.CreateGameCamera) is not GameCamera gameCamera)
+        {
+            return null;
+        }
+        return vrCamera.ComputeHeadWorldPosition(phase.Views[Eye.Left.ToIndex()], phase.Views[Eye.Right.ToIndex()], phase.CameraMode, gameCamera);
+    }
+
     public bool ShouldDrawGameObject(bool shouldDraw, GameObject* gameObject, Vector3D<float> cameraPosition, Vector3D<float> lookAtPosition)
     {
         if (gameState.IsInCutscene() || gameState.IsBetweenAreas())

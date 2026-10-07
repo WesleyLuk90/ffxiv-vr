@@ -79,6 +79,7 @@ public unsafe class GameHooks(
         InitializeHook(MousePointToRayHook, nameof(MousePointToRayHook));
         InitializeHook(shouldDrawGameObjectHook, nameof(shouldDrawGameObjectHook));
         InitializeHook(RMIFlyHook, nameof(RMIFlyHook));
+        InitializeHook(GetAttachBoneWorldLocationHook, nameof(GetAttachBoneWorldLocationHook));
     }
     private void InitializeHook<T>(Hook<T>? hook, string name) where T : Delegate
     {
@@ -386,6 +387,22 @@ public unsafe class GameHooks(
             shouldDraw = vrLifecycle.ShouldDrawGameObject(shouldDraw, gameObject, new Vector3D<float>(sceneCameraPos->X, sceneCameraPos->Y, sceneCameraPos->Z), new Vector3D<float>(lookAtVector->X, lookAtVector->Y, lookAtVector->Z));
         });
         return shouldDraw;
+    }
+
+    private delegate bool GetAttachBoneWorldLocationDelegate(GameObject* gameObject, int attachBoneIndex, Vector3* outLocation);
+    [Signature("48 89 5C 24 08 48 89 74 24 10 48 89 7C 24 18 55 41 56 41 57 48 8B EC 48 83 EC 70 4C 8B B1 08 01 00 00", DetourName = nameof(GetAttachBoneWorldLocationDetour))]
+    private Hook<GetAttachBoneWorldLocationDelegate>? GetAttachBoneWorldLocationHook = null;
+    private bool GetAttachBoneWorldLocationDetour(GameObject* gameObject, int attachBoneIndex, Vector3* outLocation)
+    {
+        var found = GetAttachBoneWorldLocationHook!.Original(gameObject, attachBoneIndex, outLocation);
+        exceptionHandler.FaultBarrier(() =>
+        {
+            if (vrLifecycle.GetPlayerHeadLookAtTarget(gameObject, attachBoneIndex) is { } location)
+            {
+                *outLocation = new Vector3(location.X, location.Y, location.Z);
+            }
+        });
+        return found;
     }
 
     // https://github.com/awgil/ffxiv_navmesh/blob/master/vnavmesh/Movement/OverrideMovement.cs#L61
