@@ -1,5 +1,6 @@
 pub mod camera_parameters;
 pub mod clip_to_world_matrix;
+pub mod decal_parameter;
 pub mod light_param;
 pub mod projection_matrix;
 pub mod ps_view_projection_inverse_matrix;

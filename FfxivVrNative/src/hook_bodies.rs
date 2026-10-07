@@ -15,6 +15,7 @@ use crate::hooks;
 use crate::modifiers::Pass;
 use crate::modifiers::camera_parameters::{CameraParameters, modify_camera_parameters};
 use crate::modifiers::clip_to_world_matrix::{ClipToWorldMatrix, modify_clip_to_world_matrix};
+use crate::modifiers::decal_parameter::{DecalParameter, modify_decal_parameter};
 use crate::modifiers::light_param::{LightParamBuffer, modify_light_param};
 use crate::modifiers::projection_matrix::{ProjectionMatrix, modify_compositing_projection_matrix};
 use crate::modifiers::ps_view_projection_inverse_matrix::{
@@ -108,7 +109,7 @@ fn render_target_resource(view: *mut c_void) -> Option<*mut c_void> {
 /// # Safety
 /// `data` must be valid for `byte_width` bytes, writable, and correctly aligned for whichever of
 /// `CameraParameters`/`VSViewProjectionMatrix`/`PSViewProjectionInverseMatrix`/`ClipToWorldMatrix`/`WorldViewProjMatrix`/
-/// `ProjectionMatrix`/`LightParamBuffer`/`SkyQuadParam`/`SunParam`/`RadialBlurParam`/
+/// `ProjectionMatrix`/`LightParamBuffer`/`DecalParameter`/`SkyQuadParam`/`SunParam`/`RadialBlurParam`/
 /// `LensFlareParam` `byte_width` selects.
 unsafe fn try_modify_camera_buffer(app: &mut AppState, byte_width: u32, data: *mut c_void) -> bool {
     if byte_width == CAMERA_PARAMETERS_SIZE {
@@ -117,6 +118,10 @@ unsafe fn try_modify_camera_buffer(app: &mut AppState, byte_width: u32, data: *m
     }
 
     if byte_width == LIGHT_PARAM_BUFFER_SIZE {
+        let decal = unsafe { &mut *(data as *mut DecalParameter) };
+        if decal.is_decal_parameter() {
+            return modify_decal_parameter(decal, &app.camera);
+        }
         let buffer = unsafe { &mut *(data as *mut LightParamBuffer) };
         return modify_light_param(buffer, &app.camera);
     }
