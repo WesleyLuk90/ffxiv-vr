@@ -103,6 +103,11 @@ public unsafe class SinglePassRenderStrategy(
             {
                 centerView.Fov = VRCamera.WidenFovToAspect(centerView.Fov, (float)size.X / size.Y);
             }
+            if (!phase.CameraMode.UseHeadMovement)
+            {
+                var headCenter = (phase.Views[Eye.Left.ToIndex()].Pose.Position.ToVector3D() + phase.Views[Eye.Right.ToIndex()].Pose.Position.ToVector3D()) / 2;
+                centerView.Pose.Position = (centerView.Pose.Position.ToVector3D() - headCenter).ToVector3f();
+            }
             vrCamera.UpdateCamera(camera, phase.GetGameCamera(vrCamera.CreateGameCamera), phase.CameraMode, centerView);
         }
     }

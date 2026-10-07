@@ -47,7 +47,7 @@ public unsafe class AltEyeRenderStrategy(
         else
         {
             var view = phase.Views[eye.ToIndex()];
-            var center = (phase.Views[0].Pose.Position.ToVector3D() + phase.Views[0].Pose.Position.ToVector3D()) / 2;
+            var center = (phase.Views[0].Pose.Position.ToVector3D() + phase.Views[1].Pose.Position.ToVector3D()) / 2;
             view.Pose.Position = (view.Pose.Position.ToVector3D() - center).ToVector3f();
             return view;
         }
