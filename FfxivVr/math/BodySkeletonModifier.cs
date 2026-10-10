@@ -39,7 +39,6 @@ public unsafe class BodySkeletonModifier(
         DoRotation(BodyJointFB.LeftArmUpperFB, HumanBones.ArmLeft, 180, 180);
         DoRotation(BodyJointFB.LeftArmLowerFB, HumanBones.ForearmLeft, 180, 180);
         DoRotation(BodyJointFB.LeftHandWristFB, HumanBones.HandLeft, 90, -90, fallback: (true, HandJointEXT.PalmExt));
-        DoRotation(BodyJointFB.LeftHandWristTwistFB, HumanBones.WristLeft, 180, 180, fallback: (true, HandJointEXT.WristExt));
         DoRotation(BodyJointFB.LeftHandLittleProximalFB, HumanBones.PinkyFingerLeftA, 90, fallback: (true, HandJointEXT.LittleProximalExt));
         DoRotation(BodyJointFB.LeftHandLittleIntermediateFB, HumanBones.PinkyFingerLeftB, 90, fallback: (true, HandJointEXT.LittleIntermediateExt));
         DoRotation(BodyJointFB.LeftHandRingProximalFB, HumanBones.RingFingerLeftA, 90, fallback: (true, HandJointEXT.RingProximalExt));
@@ -55,7 +54,6 @@ public unsafe class BodySkeletonModifier(
         DoRotation(BodyJointFB.RightArmUpperFB, HumanBones.ArmRight, 0);
         DoRotation(BodyJointFB.RightArmLowerFB, HumanBones.ForearmRight, 0);
         DoRotation(BodyJointFB.RightHandWristFB, HumanBones.HandRight, 90, 90, fallback: (false, HandJointEXT.PalmExt));
-        DoRotation(BodyJointFB.RightHandWristTwistFB, HumanBones.WristRight, 0, fallback: (false, HandJointEXT.WristExt));
         DoRotation(BodyJointFB.RightHandLittleProximalFB, HumanBones.PinkyFingerRightA, 90, fallback: (false, HandJointEXT.LittleProximalExt));
         DoRotation(BodyJointFB.RightHandLittleIntermediateFB, HumanBones.PinkyFingerRightB, 90, fallback: (false, HandJointEXT.LittleIntermediateExt));
         DoRotation(BodyJointFB.RightHandRingProximalFB, HumanBones.RingFingerRightA, 90, fallback: (false, HandJointEXT.RingProximalExt));
@@ -66,6 +64,17 @@ public unsafe class BodySkeletonModifier(
         DoRotation(BodyJointFB.RightHandIndexIntermediateFB, HumanBones.IndexFingerRightB, 90, fallback: (false, HandJointEXT.IndexIntermediateExt));
         DoRotation(BodyJointFB.RightHandThumbProximalFB, HumanBones.ThumbRightA, 90, fallback: (false, HandJointEXT.ThumbProximalExt));
         DoRotation(BodyJointFB.RightHandThumbDistalFB, HumanBones.ThumbRightB, 90, fallback: (false, HandJointEXT.ThumbDistalExt));
+
+        DistributeWristTwist(HumanBones.HandLeft, HumanBones.WristLeft, pose, structure);
+        DistributeWristTwist(HumanBones.HandRight, HumanBones.WristRight, pose, structure);
+    }
+
+    private void DistributeWristTwist(string handBoneName, string wristBoneName, hkaPose* pose, SkeletonStructure structure)
+    {
+        if (structure.GetBone(handBoneName) is Bone hand && structure.GetBone(wristBoneName) is Bone wrist)
+        {
+            skeletonModifier.DistributeWristTwist(hand, wrist, pose);
+        }
     }
     private void ApplyBoneRotation(Posef posef, string type, hkaPose* pose, SkeletonStructure skeletonStructure, Quaternion<float> skeletonRotation, Quaternion<float> quaternion)
     {

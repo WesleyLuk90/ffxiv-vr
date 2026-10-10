@@ -37,7 +37,7 @@ public unsafe class HandTrackingSkeletonModifier(
         if (handPose.LeftHand is HandJointLocationEXT[] leftHand)
         {
             skeletonModifier.UpdateArmIK(leftHand[(int)HandJointEXT.WristExt].Pose, pose, structure, head, HumanBones.ArmLeft, HumanBones.ForearmLeft, HumanBones.HandLeft, skeletonRotation);
-            skeletonModifier.RotateHand(leftHand[(int)HandJointEXT.PalmExt].Pose, HumanBones.HandLeft, HumanBones.WristLeft, HumanBones.ForearmLeft, structure, pose, skeletonRotation);
+            skeletonModifier.RotateHand(leftHand[(int)HandJointEXT.PalmExt].Pose, HumanBones.HandLeft, HumanBones.WristLeft, structure, pose, skeletonRotation);
 
             foreach (var joint in HandJoints)
             {
@@ -47,7 +47,7 @@ public unsafe class HandTrackingSkeletonModifier(
         if (handPose.RightHand is HandJointLocationEXT[] rightHand)
         {
             skeletonModifier.UpdateArmIK(rightHand[(int)HandJointEXT.WristExt].Pose, pose, structure, head, HumanBones.ArmRight, HumanBones.ForearmRight, HumanBones.HandRight, skeletonRotation);
-            skeletonModifier.RotateHand(rightHand[(int)HandJointEXT.PalmExt].Pose, HumanBones.HandRight, HumanBones.WristRight, HumanBones.ForearmRight, structure, pose, skeletonRotation);
+            skeletonModifier.RotateHand(rightHand[(int)HandJointEXT.PalmExt].Pose, HumanBones.HandRight, HumanBones.WristRight, structure, pose, skeletonRotation);
 
             foreach (var joint in HandJoints)
             {
