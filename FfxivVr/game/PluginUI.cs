@@ -20,6 +20,8 @@ public class PluginUI(
         WindowSystem.AddWindow(configWindow);
         WindowSystem.AddWindow(debugWindow);
 
+        pluginInterface.UiBuilder.DisableCutsceneUiHide = true;
+
         pluginInterface.UiBuilder.Draw += DrawUI;
         pluginInterface.UiBuilder.OpenMainUi += ToggleConfigUI;
         pluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;

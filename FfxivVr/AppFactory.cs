@@ -32,6 +32,7 @@ public unsafe class AppFactory
     [PluginService] public static IFramework Framework { get; set; } = null!;
     [PluginService] public static INamePlateGui NamePlateGui { get; set; } = null!;
     [PluginService] public static IDtrBar DtrBar { get; set; } = null!;
+    [PluginService] public static IAddonLifecycle AddonLifecycle { get; set; } = null!;
     [PluginService] public static DalamudConfiguration DalamudConfiguration { get; set; } = null!;
     [PluginService] public static InterfaceManager InterfaceManager { get; set; } = null!;
 
@@ -74,6 +75,7 @@ public unsafe class AppFactory
         builder.Services.AddSingleton(Framework);
         builder.Services.AddSingleton(NamePlateGui);
         builder.Services.AddSingleton(DtrBar);
+        builder.Services.AddSingleton(AddonLifecycle);
         builder.Services.AddSingleton<IInterfaceManager>(new DalamudInterfaceManager(InterfaceManager));
 
         builder.Services.AddSingleton<CommandHander>();
@@ -91,6 +93,7 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<HookStatus>();
         builder.Services.AddSingleton<NameplateModifier>();
         builder.Services.AddSingleton<HudLayoutManager>();
+        builder.Services.AddSingleton<TalkPositionManager>();
         builder.Services.AddSingleton<Logger>();
         builder.Services.AddSingleton<PluginUI>();
         builder.Services.AddSingleton<SkeletonModifier>();

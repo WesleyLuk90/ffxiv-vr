@@ -98,6 +98,7 @@ public class ConfigWindow : Window
         Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
         ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
         ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
+        Slider("Dialogue Box Height", ref config.TalkHeightOffset, defaultValue: 0.25f, min: 0, max: 0.8f);
         SliderInt("UI Snap Angle", ref config.UITransitionAngle, min: 0, max: 180, "How far away you need to turn before the UI snaps in front of you. Set to 180 to disable.");
     }
 
