@@ -53,6 +53,7 @@ public class Configuration : IPluginConfiguration
 
     public int? VRHudLayout = null;
     public int? DefaultHudLayout = null;
+    public float TalkHeightOffset = 0.25f;
 
     public bool DisableCutsceneLetterbox = true;
 

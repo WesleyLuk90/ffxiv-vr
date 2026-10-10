@@ -24,6 +24,7 @@ public sealed class Plugin : IDalamudPlugin
         AppHost.Services.GetRequiredService<GameHooks>().Initialize();
         AppHost.Services.GetRequiredService<CommandHander>().Initialize();
         AppHost.Services.GetRequiredService<GameEvents>().Initialize();
+        AppHost.Services.GetRequiredService<TalkPositionManager>().Initialize();
         AppHost.Services.GetRequiredService<PluginUI>().Initialize();
 
         EarlyLogger.Debug("Loaded VR Plugin");
