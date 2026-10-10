@@ -1,3 +1,4 @@
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
@@ -25,14 +26,13 @@ public unsafe class SinglePassRenderStrategy(
     public VRSessionData? RenderSessionData { get; private set; }
 
     private FrameState? renderFrameState = null;
-    // private Task<FrameState>? waitFrameTask;
     private Vector2D<uint>? pendingNativeSize;
     private nint lastCompositingTexture;
     private nint lastGeometryTexture;
 
     public void Initialize(Vector2D<uint> size)
     {
-        logger.Info($"Configure VR with size {size}");
+        logger.Debug($"Configure VR with size {size}");
         pendingNativeSize = size;
     }
 
@@ -69,10 +69,10 @@ public unsafe class SinglePassRenderStrategy(
             {
                 return;
             }
-            logger.Info("Compositing/geometry render targets were reallocated, reinitializing native render");
+            logger.Debug("Compositing/geometry render targets were reallocated, reinitializing native render");
             ffxivVrNative.Shutdown();
         }
-        logger.Info($"Compositing/geometry textures resized to {size}, initializing native render");
+        logger.Debug($"Compositing/geometry textures resized to {size}, initializing native render");
         if (ffxivVrNative.Initialize(dxDeviceContext, size, compositingTexture->D3D11Texture2D, geometryTexture->D3D11Texture2D, configuration.DumpDirectory))
         {
             lastCompositingTexture = compositingPtr;
@@ -145,6 +145,28 @@ public unsafe class SinglePassRenderStrategy(
     public bool ShouldSecondRender()
     {
         return false;
+    }
+
+    private const int RootCommandListId = 30;
+
+    public void ExecuteCommands(ImmediateContext* context, int commandListId, System.Action executeOriginal)
+    {
+        if (commandListId != RootCommandListId)
+        {
+            executeOriginal();
+            return;
+        }
+        ExecuteCommandsForEye(context, Eye.Left, executeOriginal);
+        logger.Trace("ExecuteCommands replaying top-level call a second time");
+        ExecuteCommandsForEye(context, Eye.Right, executeOriginal);
+    }
+
+    private void ExecuteCommandsForEye(ImmediateContext* context, Eye eye, System.Action executeOriginal)
+    {
+        ffxivVrNative.SetActiveEye(eye);
+        ImmediateContextExtended.FromImmediateContext(context)->InvalidateConstantBuffers();
+        executeOriginal();
+        ffxivVrNative.SetActiveEye(null);
     }
 
     public bool OnPresentFrame()

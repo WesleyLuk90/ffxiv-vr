@@ -26,8 +26,7 @@ public unsafe class GameHooks(
     ISigScanner sigScanner,
     GameState gameState,
     Configuration configuration,
-    EndFrameDispatcher endFrameDispatcher,
-    FfxivVrNative ffxivVrNative
+    EndFrameDispatcher endFrameDispatcher
 ) : IDisposable
 {
     /**
@@ -188,38 +187,13 @@ public unsafe class GameHooks(
     [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 0F B6 83 ?? ?? ?? ?? 3C 01 73 70", DetourName = nameof(ExecuteCommandsDetour))]
     private Hook<ExecuteCommandsDelegate>? ExecuteCommandsHook = null;
 
-    private const int RootCommandListId = 30;
-
-    private bool ShouldReplayCommandsTwice(int commandListId)
-    {
-        return commandListId == RootCommandListId
-            && vrLifecycle.IsRenderStrategyActive<SinglePassRenderStrategy>();
-    }
-
     private void ExecuteCommandsDetour(ImmediateContext* context, int commandListId, uint* commandsExecutedCounter, RenderCommandBufferGroup* renderCommands, uint renderCommandCount)
     {
         logger.Trace($"ExecuteCommandsDetour count={renderCommandCount} commandListId={commandListId}");
-        if (!ShouldReplayCommandsTwice(commandListId))
+        vrLifecycle.OnExecuteDrawCommands(context, commandListId, () =>
         {
             ExecuteCommandsHook!.Original(context, commandListId, commandsExecutedCounter, renderCommands, renderCommandCount);
-        }
-        else
-        {
-            ffxivVrNative.SetActiveEye(Eye.Left);
-            ImmediateContextExtended.FromImmediateContext(context)->InvalidateConstantBuffers();
-            ExecuteCommandsHook!.Original(context, commandListId, commandsExecutedCounter, renderCommands, renderCommandCount);
-            ffxivVrNative.SetActiveEye(null);
-            // Replay the same frame's commands a second time for the right eye. Both passes have
-            // the native side reproject the center camera to the active eye for every real draw
-            // they trigger (see FfxivVrNative.SetActiveEye) - not a single swap around this whole
-            // call, since the game's own per-draw state setup would just clobber that before the
-            // first draw.
-            logger.Trace("ExecuteCommandsDetour replaying top-level call a second time");
-            ffxivVrNative.SetActiveEye(Eye.Right);
-            ImmediateContextExtended.FromImmediateContext(context)->InvalidateConstantBuffers();
-            ExecuteCommandsHook!.Original(context, commandListId, commandsExecutedCounter, renderCommands, renderCommandCount);
-            ffxivVrNative.SetActiveEye(null);
-        }
+        });
     }
 
     private delegate void RenderSkeletonListDelegate(long RenderSkeletonLinkedList, float frameTiming);

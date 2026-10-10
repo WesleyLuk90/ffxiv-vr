@@ -1,3 +1,4 @@
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
@@ -88,6 +89,11 @@ public unsafe class AltEyeRenderStrategy(
     public bool ShouldSecondRender()
     {
         return VRSessionData != null && eye == Eye.Right;
+    }
+
+    public void ExecuteCommands(ImmediateContext* context, int commandListId, System.Action executeOriginal)
+    {
+        executeOriginal();
     }
 
     public bool OnPresentFrame()

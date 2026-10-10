@@ -98,11 +98,18 @@ public unsafe class VRLifecycle(
         }
     }
 
-    internal bool IsRenderStrategyActive<T>() where T : IRenderStrategy
+    internal void OnExecuteDrawCommands(FFXIVClientStructs.FFXIV.Client.Graphics.Kernel.ImmediateContext* context, int commandListId, Action executeOriginal)
     {
         lock (this)
         {
-            return vrSession?.IsRenderStrategyActive<T>() ?? false;
+            if (vrSession == null)
+            {
+                executeOriginal();
+            }
+            else
+            {
+                vrSession.ExecuteCommands(context, commandListId, executeOriginal);
+            }
         }
     }
 
