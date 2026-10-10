@@ -3,7 +3,7 @@
     "Author": "Steelgunner90",
     "Name": "FFXIV VR",
     "InternalName": "FfxivVR",
-    "AssemblyVersion": "0.0.79.0",
+    "AssemblyVersion": "0.0.80.0",
     "Description": "A VR mod for FFXIV. Run /vr to open settings",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/WesleyLuk90/ffxiv-vr",
@@ -17,10 +17,10 @@
     "LoadPriority": 69420,
     "Punchline": "A VR mod for FFXIV",
     "AcceptsFeedback": true,
-    "Changelog": "# Validate line endings (#140)\r\n\r\n# Fix decals (#139)\r\n\r\n# Fix locked to head (#138)\r\n\r\n# Fix AO (#137)\r\n\r\n# Fix fog (#136)\r\n\r\n# Clear the constant buffer cache (#135)\r\n\r\n# Remove unused code (#134)",
-    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.79/FfxivVR.zip",
-    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.79/FfxivVR.zip",
-    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.79/FfxivVR.zip",
-    "LastUpdated": 1791354534
+    "Changelog": "# Cleanup new renderer (#142)\r\n\r\n# Fix npc gaze #72 (#141)",
+    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.80/FfxivVR.zip",
+    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.80/FfxivVR.zip",
+    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.80/FfxivVR.zip",
+    "LastUpdated": 1791656214
   }
 ]

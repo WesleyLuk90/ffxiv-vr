@@ -1,13 +1,3 @@
-# Validate line endings (#140)
+# Cleanup new renderer (#142)
 
-# Fix decals (#139)
-
-# Fix locked to head (#138)
-
-# Fix AO (#137)
-
-# Fix fog (#136)
-
-# Clear the constant buffer cache (#135)
-
-# Remove unused code (#134)
+# Fix npc gaze #72 (#141)
