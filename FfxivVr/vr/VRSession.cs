@@ -67,9 +67,14 @@ public unsafe class VRSession(
         return renderStrategy.ShouldSecondRender();
     }
 
-    public bool IsRenderStrategyActive<T>() where T : IRenderStrategy
+    public void ExecuteCommands(FFXIVClientStructs.FFXIV.Client.Graphics.Kernel.ImmediateContext* context, int commandListId, Action executeOriginal)
     {
-        return State.SessionRunning && renderStrategy is T;
+        if (!State.SessionRunning)
+        {
+            executeOriginal();
+            return;
+        }
+        renderStrategy.ExecuteCommands(context, commandListId, executeOriginal);
     }
 
     // Test Cases

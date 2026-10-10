@@ -1,3 +1,4 @@
+using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
@@ -15,5 +16,6 @@ public unsafe interface IRenderStrategy
     void OnStartUIRender(Eye? eye);
     bool ShouldSecondRender();
     bool OnPresentFrame();
+    void ExecuteCommands(ImmediateContext* context, int commandListId, System.Action executeOriginal);
     void OnSessionEnd();
 }
