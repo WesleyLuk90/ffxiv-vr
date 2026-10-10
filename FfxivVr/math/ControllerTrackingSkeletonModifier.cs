@@ -16,14 +16,14 @@ public unsafe class ControllerTrackingSkeletonModifier(
         {
             var wrist = ControllerToWrist(leftController, MathFactory.ZRotation(float.DegreesToRadians(90)));
             skeletonModifier.UpdateArmIK(wrist, pose, structure, head, HumanBones.ArmLeft, HumanBones.ForearmLeft, HumanBones.HandLeft, skeletonRotation);
-            skeletonModifier.RotateHand(wrist, HumanBones.HandLeft, HumanBones.WristLeft, HumanBones.ForearmLeft, structure, pose, skeletonRotation);
+            skeletonModifier.RotateHand(wrist, HumanBones.HandLeft, HumanBones.WristLeft, structure, pose, skeletonRotation);
         }
 
         if (palmPose.RightPalm is Posef rightController)
         {
             var wrist = ControllerToWrist(rightController, MathFactory.ZRotation(float.DegreesToRadians(-90)));
             skeletonModifier.UpdateArmIK(wrist, pose, structure, head, HumanBones.ArmRight, HumanBones.ForearmRight, HumanBones.HandRight, skeletonRotation);
-            skeletonModifier.RotateHand(wrist, HumanBones.HandRight, HumanBones.WristRight, HumanBones.ForearmRight, structure, pose, skeletonRotation);
+            skeletonModifier.RotateHand(wrist, HumanBones.HandRight, HumanBones.WristRight, structure, pose, skeletonRotation);
         }
     }
 

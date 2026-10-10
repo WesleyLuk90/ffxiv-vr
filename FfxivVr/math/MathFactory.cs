@@ -32,6 +32,18 @@ public static class MathFactory
         return Matrix4X4.CreateScale(scale) * Matrix4X4.CreateFromQuaternion(rotation) * Matrix4X4.CreateTranslation(translation);
     }
 
+    public static Quaternion<float> GetTwist(this Quaternion<float> quat, Vector3D<float> axis)
+    {
+        var projected = axis * Vector3D.Dot(new Vector3D<float>(quat.X, quat.Y, quat.Z), axis);
+        var twist = new Quaternion<float>(projected.X, projected.Y, projected.Z, quat.W);
+        var lengthSquared = twist.X * twist.X + twist.Y * twist.Y + twist.Z * twist.Z + twist.W * twist.W;
+        if (lengthSquared < 1e-12f)
+        {
+            return Quaternion<float>.Identity;
+        }
+        return Quaternion<float>.Normalize(twist);
+    }
+
     public static float GetYaw(this Quaternion<float> quat)
     {
         return 2 * MathF.Atan2(quat.Y, quat.W);

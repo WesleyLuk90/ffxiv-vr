@@ -152,7 +152,7 @@ public unsafe class SkeletonModifier(
         *local = bone.ReferencePose;
     }
 
-    public void RotateHand(Posef palmPose, string handBoneName, string wristBoneName, string forearmBoneName, SkeletonStructure structure, hkaPose* pose, Quaternion<float> skeletonRotation)
+    public void RotateHand(Posef palmPose, string handBoneName, string wristBoneName, SkeletonStructure structure, hkaPose* pose, Quaternion<float> skeletonRotation)
     {
         var desiredRotation = palmPose.Orientation.ToQuaternion();
 
@@ -161,10 +161,6 @@ public unsafe class SkeletonModifier(
             return;
         }
         if (structure.GetBone(wristBoneName) is not Bone wristBone)
-        {
-            return;
-        }
-        if (structure.GetBone(forearmBoneName) is not Bone forearmBone)
         {
             return;
         }
@@ -179,12 +175,19 @@ public unsafe class SkeletonModifier(
             * MathFactory.YRotation(float.DegreesToRadians(-90))
             * MathFactory.XRotation(float.DegreesToRadians(flipHand))).ToQuaternion();
 
-        var wrist = wristBone.GetLocalTransforms(pose);
-        var forearm = forearmBone.GetLocalTransforms(pose);
+        DistributeWristTwist(hand, wristBone, pose);
+    }
 
-        var half = Quaternion<float>.Slerp(handTransforms->Rotation.ToQuaternion(), forearm->Rotation.ToQuaternion(), 0.5f);
-        var half2 = Quaternion<float>.Normalize(new Quaternion<float>(half.X, 0, 0, half.W));
-        wrist->Rotation = half2.ToQuaternion();
+    private const float WristTwistFraction = 0.5f;
+
+    public void DistributeWristTwist(Bone hand, Bone wrist, hkaPose* pose)
+    {
+        var forearmAxis = Vector3D.Normalize(hand.ReferencePose.Translation.ToVector3D());
+        var handRest = hand.ReferencePose.Rotation.ToQuaternion();
+        var handLocal = hand.GetLocalTransforms(pose)->Rotation.ToQuaternion();
+        var twist = (handLocal * handRest.Inverse()).GetTwist(forearmAxis);
+        var partialTwist = Quaternion<float>.Slerp(Quaternion<float>.Identity, twist, WristTwistFraction);
+        wrist.GetLocalTransforms(pose)->Rotation = (partialTwist * wrist.ReferencePose.Rotation.ToQuaternion()).ToQuaternion();
     }
 
     private Quaternion<float> y180 = MathFactory.YRotation(float.DegreesToRadians(180));
