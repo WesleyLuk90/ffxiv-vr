@@ -32,8 +32,7 @@ impl LightParamBuffer {
         let m = &self.world_view_projection_matrix;
         approximately(m.m31, 0.0)
             && approximately(m.m32, 0.0)
-            && approximately(m.m33, 0.0)
-            && approximately(m.m34, 0.1)
+            && !(approximately(m.m33, 0.0) && approximately(m.m34, 0.0))
     }
 }
 
@@ -70,6 +69,14 @@ mod tests {
     fn is_world_view_projection_matrix_true_for_the_captured_signature() {
         let mut buf = buffer();
         buf.world_view_projection_matrix.m34 = 0.1;
+        assert!(buf.is_world_view_projection_matrix());
+    }
+
+    #[test]
+    fn is_world_view_projection_matrix_true_for_a_shadow_frustum_volume() {
+        let mut buf = buffer();
+        buf.world_view_projection_matrix.m33 = -0.016011;
+        buf.world_view_projection_matrix.m34 = 0.018856;
         assert!(buf.is_world_view_projection_matrix());
     }
 
