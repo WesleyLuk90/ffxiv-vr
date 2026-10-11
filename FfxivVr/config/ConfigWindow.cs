@@ -98,7 +98,7 @@ public class ConfigWindow : Window
         Checkbox("Scale the game window to fit on screen", ref config.FitWindowOnScreen);
         ComboDropdown("Switch HUD layout when starting VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.VRHudLayout);
         ComboDropdown("Switch HUD layout when stopping VR", ["Disabled", "Hud Layout 1", "Hud Layout 2", "Hud Layout 3", "Hud Layout 4"], ref config.DefaultHudLayout);
-        Slider("Dialogue Box Height", ref config.TalkHeightOffset, defaultValue: 0.25f, min: 0, max: 0.8f);
+        Slider("Cutscene Dialogue Box Height", ref config.TalkHeightOffset, defaultValue: 0.25f, min: 0, max: 0.8f, help: "How far to raise the dialogue box during cutscenes.");
         SliderInt("UI Snap Angle", ref config.UITransitionAngle, min: 0, max: 180, "How far away you need to turn before the UI snaps in front of you. Set to 180 to disable.");
     }
 
@@ -317,7 +317,7 @@ public class ConfigWindow : Window
             }
         }
     }
-    private void Slider(string label, ref float value, float defaultValue = 1.0f, float min = 0.1f, float max = 10)
+    private void Slider(string label, ref float value, float defaultValue = 1.0f, float min = 0.1f, float max = 10, string? help = null)
     {
         var tempValue = value;
         ImGui.Text(label);
@@ -326,6 +326,7 @@ public class ConfigWindow : Window
             value = tempValue;
             config.Save();
         }
+        Tooltip(help);
         ImGui.SameLine();
         if (ImGui.SmallButton($"Reset##{label}"))
         {
