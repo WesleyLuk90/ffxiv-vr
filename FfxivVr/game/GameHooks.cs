@@ -342,7 +342,7 @@ public unsafe class GameHooks(
         var value = MousePointToRayHook!.Original(gameCamera, ray, mousePosX, mousePosY);
         exceptionHandler.FaultBarrier(() =>
         {
-            if (vrLifecycle.GetTargetRay(gameCamera) is CSRay ray)
+            if (vrLifecycle.GetTargetRay(gameCamera, mousePosX, mousePosY) is CSRay ray)
             {
                 *value = ray;
             }

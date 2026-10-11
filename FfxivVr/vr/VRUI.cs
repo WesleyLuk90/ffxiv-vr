@@ -41,7 +41,6 @@ public class VRUI(
 
     private Quaternion<float> CurrentAngleRotation => MathFactory.YRotation(currentAngle);
     private Vector3D<float> PlaneCenter => new Vector3D<float>(0.0f, 0.0f, -configuration.UIDistance);
-    private Vector3D<float> Normal => Vector3D.Transform(new Vector3D<float>(0, 0, -1), CurrentAngleRotation);
 
     internal void ResetAngle()
     {
@@ -50,28 +49,27 @@ public class VRUI(
         currentAngle = 0;
     }
 
-    internal Line Intersect(Ray ray)
+    private UIPanel Panel => new UIPanel(GetModelMatrix(), configuration.UICurvature, resources.UIRenderTarget.AspectRatio);
+
+    internal Line? Intersect(Ray ray)
     {
-        var normal = Normal;
-        var center = Vector3D.Transform(PlaneCenter, CurrentAngleRotation);
-        var d = Vector3D.Dot(center - ray.Origin, normal) / Vector3D.Dot(normal, ray.Direction);
-        return ray.ToLine(d);
+        return Panel.Intersect(new Ray(ray.Origin / configuration.WorldScale, ray.Direction));
+    }
+
+    internal Vector3D<float> ViewportToWorld(Vector2D<float> viewportPosition)
+    {
+        return Panel.ViewportToWorld(viewportPosition);
+    }
+
+    internal Vector2D<float> ScreenToViewport(int x, int y)
+    {
+        var size = resources.UIRenderTarget.Size.As<float>();
+        return new Vector2D<float>(x / size.X, y / size.Y);
     }
 
     internal Vector2D<float>? GetViewportPosition(Line line)
     {
-        var center = Vector3D.Transform(PlaneCenter, CurrentAngleRotation);
-        var lookAt = Matrix4X4.CreateLookAt(Vector3D<float>.Zero, center, Vector3D<float>.UnitY);
-        var size = new Vector2D<float>(2 * configuration.UISize, 2 * configuration.UISize * resources.UIRenderTarget.AspectRatio);
-        var projected = Vector3D.Transform(line.End, lookAt);
-        var viewport = new Vector2D<float>(projected.X, projected.Y);
-        var v = (viewport + size / 2) / size;
-        v.Y = 1 - v.Y;
-        if (v.X < 0 || v.X > 1 || v.Y < 0 || v.Y > 1)
-        {
-            return null;
-        }
-        return v;
+        return Panel.WorldToViewport(line.End);
     }
 
     internal Vector2D<float>? GetViewportPosition(AimType aimType, AimPose aimPose)
@@ -80,7 +78,10 @@ public class VRUI(
         {
             return null;
         }
-        var line = Intersect(ray);
+        if (Intersect(ray) is not { } line)
+        {
+            return null;
+        }
         return GetViewportPosition(line);
     }
 
