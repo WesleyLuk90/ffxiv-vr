@@ -225,11 +225,11 @@ public unsafe class VRLifecycle(
         }
     }
 
-    internal CSRay? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
+    internal CSRay? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera, int mouseX, int mouseY)
     {
         lock (this)
         {
-            return vrSession?.GetTargetRay(camera);
+            return vrSession?.GetTargetRay(camera, mouseX, mouseY);
         }
     }
 

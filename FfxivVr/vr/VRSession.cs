@@ -201,33 +201,27 @@ public unsafe class VRSession(
         }
     }
 
-    public CSRay? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* sceneCamera)
+    public CSRay? GetTargetRay(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* sceneCamera, int mouseX, int mouseY)
     {
         logger.Trace("GetTargetRay");
-        if (renderStrategy.VRSessionData is VRSessionData phase)
-        {
-            var camera = gameState.GetCurrentCamera();
-            if (camera == null || camera != sceneCamera)
-            {
-                return null;
-            }
-
-            if (phase.GetGameCamera(vrCamera.CreateGameCamera) is not GameCamera gameCamera)
-            {
-                return null;
-            }
-
-            var rotationMatrix = phase.CameraMode.GetRotationMatrix(gameCamera);
-            var direction = Vector3D.Transform(new Vector3D<float>(0, 0, -1), Matrix4X4.CreateFromQuaternion(phase.Views[0].Pose.Orientation.ToQuaternion()) * rotationMatrix);
-            return new CSRay(
-                camera->Position,
-                direction.ToVector3()
-            );
-        }
-        else
+        if (renderStrategy.VRSessionData is not VRSessionData phase)
         {
             return null;
         }
+        var camera = gameState.GetCurrentCamera();
+        if (camera == null || camera != sceneCamera)
+        {
+            return null;
+        }
+        if (phase.GetGameCamera(vrCamera.CreateGameCamera) is not GameCamera gameCamera)
+        {
+            return null;
+        }
+        var eyeCenter = (phase.Views[Eye.Left.ToIndex()].Pose.Position.ToVector3D() + phase.Views[Eye.Right.ToIndex()].Pose.Position.ToVector3D()) / 2 / configuration.WorldScale;
+        var cursorPosition = vrUI.ViewportToWorld(vrUI.ScreenToViewport(mouseX, mouseY));
+        var gameViewMatrix = phase.CameraMode.GetRotationMatrix(gameCamera) * Matrix4X4.CreateTranslation(phase.CameraMode.GetCameraPosition(gameCamera));
+        var ray = Ray.Through(eyeCenter, cursorPosition).Transform(gameViewMatrix);
+        return new CSRay(ray.Origin.ToVector3(), ray.Direction.ToVector3());
     }
 
     public Vector3D<float>? GetPlayerHeadLookAtTarget(GameObject* gameObject, int attachBoneIndex)
