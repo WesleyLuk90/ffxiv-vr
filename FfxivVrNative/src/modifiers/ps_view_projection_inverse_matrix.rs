@@ -9,7 +9,10 @@ pub struct PSViewProjectionInverseMatrix {
 
 impl PSViewProjectionInverseMatrix {
     pub fn is_inverse_view_projection_matrix(&self) -> bool {
-        approximately(self.matrix.m34, 10.0)
+        approximately(self.matrix.m14, 0.0)
+            && approximately(self.matrix.m24, 0.0)
+            && approximately(self.matrix.m34, 10.0)
+            && approximately(self.matrix.m44, 0.0)
     }
 }
 
@@ -36,4 +39,26 @@ pub fn modify_geometry_ps_view_projection_inverse_matrix(
     };
     buffer.matrix = modified;
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detects_decal_inverse_view_projection() {
+        let matrix = Mat4::from_row_major(&[
+            1.37638, 0.0, 0.0, 0.0, 0.0, 1.48226, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, -0.231229,
+            -1.0, 0.0,
+        ]);
+        assert!(PSViewProjectionInverseMatrix { matrix }.is_inverse_view_projection_matrix());
+    }
+
+    #[test]
+    fn ignores_a_matrix_with_only_the_near_plane_term() {
+        let matrix = Mat4::from_row_major(&[
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 10.0, 0.0, 0.0, 0.0, 1.0,
+        ]);
+        assert!(!PSViewProjectionInverseMatrix { matrix }.is_inverse_view_projection_matrix());
+    }
 }
