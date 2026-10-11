@@ -1,3 +1,7 @@
-# Cleanup new renderer (#142)
+# Only adjust box in cutscene (#146)
 
-# Fix npc gaze #72 (#141)
+# Fix shadows (#145)
+
+# Adjust cutscene dialog position (#144)
+
+# Fix wrist #33 (#143)
