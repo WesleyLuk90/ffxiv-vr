@@ -1,7 +1,1 @@
-# Only adjust box in cutscene (#146)
-
-# Fix shadows (#145)
-
-# Adjust cutscene dialog position (#144)
-
-# Fix wrist #33 (#143)
+# Fix mouse targeting (#147)

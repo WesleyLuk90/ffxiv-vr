@@ -3,7 +3,7 @@
     "Author": "Steelgunner90",
     "Name": "FFXIV VR",
     "InternalName": "FfxivVR",
-    "AssemblyVersion": "0.0.81.0",
+    "AssemblyVersion": "0.0.82.0",
     "Description": "A VR mod for FFXIV. Run /vr to open settings",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/WesleyLuk90/ffxiv-vr",
@@ -17,10 +17,10 @@
     "LoadPriority": 69420,
     "Punchline": "A VR mod for FFXIV",
     "AcceptsFeedback": true,
-    "Changelog": "# Only adjust box in cutscene (#146)\r\n\r\n# Fix shadows (#145)\r\n\r\n# Adjust cutscene dialog position (#144)\r\n\r\n# Fix wrist #33 (#143)",
-    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.81/FfxivVR.zip",
-    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.81/FfxivVR.zip",
-    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.81/FfxivVR.zip",
-    "LastUpdated": 1791694532
+    "Changelog": "# Fix mouse targeting (#147)",
+    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.82/FfxivVR.zip",
+    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.82/FfxivVR.zip",
+    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.82/FfxivVR.zip",
+    "LastUpdated": 1791745996
   }
 ]
