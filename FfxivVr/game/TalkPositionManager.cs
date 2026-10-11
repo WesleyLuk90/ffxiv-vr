@@ -1,6 +1,7 @@
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
@@ -43,7 +44,7 @@ public unsafe class TalkPositionManager(
             {
                 return;
             }
-            var targetY = vrLifecycle.IsEnabled() ? (short)Math.Max(0, y - GetOffset()) : y;
+            var targetY = vrLifecycle.IsEnabled() && IsInCutscene() ? (short)Math.Max(0, y - GetOffset()) : y;
             if (addon->Y != targetY)
             {
                 addon->SetPosition(addon->X, targetY);
@@ -56,6 +57,12 @@ public unsafe class TalkPositionManager(
     {
         originalY = null;
         appliedY = null;
+    }
+
+    private bool IsInCutscene()
+    {
+        var conditions = Conditions.Instance();
+        return conditions->WatchingCutscene || conditions->WatchingCutscene78 || conditions->OccupiedInCutSceneEvent;
     }
 
     private int GetOffset()
