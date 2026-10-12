@@ -240,25 +240,21 @@ fn flush_shadow_to_gpu(
     };
     let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
     let mapped_ptr = &mut mapped as *mut D3D11_MAPPED_SUBRESOURCE as *mut c_void;
-    let hr = hooks::call_original(&hooks::map::DETOUR, |hook| unsafe {
-        hook.call(
-            context,
-            resource,
-            subresource,
-            D3D11_MAP_WRITE_DISCARD,
-            0,
-            mapped_ptr,
-        )
-    });
+    let hr = hooks::map::original(
+        context,
+        resource,
+        subresource,
+        D3D11_MAP_WRITE_DISCARD,
+        0,
+        mapped_ptr,
+    );
     if !matches!(hr, Some(hr) if hr >= 0) {
         return;
     }
     unsafe {
         std::ptr::copy_nonoverlapping(data.as_ptr(), mapped.pData as *mut u8, data.len());
     }
-    hooks::call_original(&hooks::unmap::DETOUR, |hook| unsafe {
-        hook.call(context, resource, subresource)
-    });
+    hooks::unmap::original(context, resource, subresource);
 }
 
 pub(crate) fn compute_camera_update_subresource(
@@ -309,9 +305,7 @@ fn record_access(app: &mut AppState, resource: &ID3D11Resource, access: Access) 
         return;
     };
     let context = app.device_context;
-    hooks::call_original(&hooks::copy_resource::DETOUR, |hook| unsafe {
-        hook.call(context, created.mirror.as_raw(), created.original.as_raw())
-    });
+    hooks::copy_resource::original(context, created.mirror.as_raw(), created.original.as_raw());
 }
 
 pub(crate) fn eye_views(
@@ -365,34 +359,33 @@ pub(crate) fn eye_resource(
         .unwrap_or(resource)
 }
 
-type ShaderResourcesDetour =
-    std::sync::Mutex<Option<retour::GenericDetour<hooks::ps_set_shader_resources::Fn>>>;
+type SetShaderResources = fn(*mut ID3D11DeviceContext, u32, u32, *const *mut c_void) -> Option<()>;
 type ShaderResourcesGetter = fn(&ID3D11DeviceContext, &mut [Option<ID3D11ShaderResourceView>]);
 
-fn shader_resource_stages() -> [(&'static ShaderResourcesDetour, ShaderResourcesGetter); 6] {
+fn shader_resource_stages() -> [(SetShaderResources, ShaderResourcesGetter); 6] {
     [
         (
-            &hooks::vs_set_shader_resources::DETOUR,
+            hooks::vs_set_shader_resources::original,
             |context, views| unsafe { context.VSGetShaderResources(0, Some(views)) },
         ),
         (
-            &hooks::hs_set_shader_resources::DETOUR,
+            hooks::hs_set_shader_resources::original,
             |context, views| unsafe { context.HSGetShaderResources(0, Some(views)) },
         ),
         (
-            &hooks::ds_set_shader_resources::DETOUR,
+            hooks::ds_set_shader_resources::original,
             |context, views| unsafe { context.DSGetShaderResources(0, Some(views)) },
         ),
         (
-            &hooks::gs_set_shader_resources::DETOUR,
+            hooks::gs_set_shader_resources::original,
             |context, views| unsafe { context.GSGetShaderResources(0, Some(views)) },
         ),
         (
-            &hooks::ps_set_shader_resources::DETOUR,
+            hooks::ps_set_shader_resources::original,
             |context, views| unsafe { context.PSGetShaderResources(0, Some(views)) },
         ),
         (
-            &hooks::cs_set_shader_resources::DETOUR,
+            hooks::cs_set_shader_resources::original,
             |context, views| unsafe { context.CSGetShaderResources(0, Some(views)) },
         ),
     ]
@@ -426,7 +419,7 @@ pub(crate) fn sync_bound_views(app: &mut AppState) {
         return;
     };
 
-    for (detour, get) in shader_resource_stages() {
+    for (set_shader_resources, get) in shader_resource_stages() {
         let mut views: [Option<ID3D11ShaderResourceView>; SHADER_RESOURCE_SLOT_COUNT] =
             std::array::from_fn(|_| None);
         get(&context, &mut views);
@@ -439,9 +432,7 @@ pub(crate) fn sync_bound_views(app: &mut AppState) {
             else {
                 continue;
             };
-            hooks::call_original(detour, |hook| unsafe {
-                hook.call(context_ptr, slot as u32, 1, &swapped)
-            });
+            set_shader_resources(context_ptr, slot as u32, 1, &swapped);
         }
     }
 
@@ -457,9 +448,12 @@ pub(crate) fn sync_bound_views(app: &mut AppState) {
             continue;
         };
         let keep_counter = u32::MAX;
-        hooks::call_original(
-            &hooks::cs_set_unordered_access_views::DETOUR,
-            |hook| unsafe { hook.call(context_ptr, slot as u32, 1, &swapped, &keep_counter) },
+        hooks::cs_set_unordered_access_views::original(
+            context_ptr,
+            slot as u32,
+            1,
+            &swapped,
+            &keep_counter,
         );
     }
 
@@ -492,19 +486,14 @@ pub(crate) fn sync_bound_views(app: &mut AppState) {
         .iter()
         .rposition(|ptr| !ptr.is_null())
         .map_or(0, |last| last + 1);
-    hooks::call_original(
-        &hooks::om_set_render_targets_and_unordered_access_views::DETOUR,
-        |hook| unsafe {
-            hook.call(
-                context_ptr,
-                count as u32,
-                rtv_ptrs.as_ptr(),
-                dsv_ptr,
-                0,
-                D3D11_KEEP_UNORDERED_ACCESS_VIEWS,
-                std::ptr::null(),
-                std::ptr::null(),
-            )
-        },
+    hooks::om_set_render_targets_and_unordered_access_views::original(
+        context_ptr,
+        count as u32,
+        rtv_ptrs.as_ptr(),
+        dsv_ptr,
+        0,
+        D3D11_KEEP_UNORDERED_ACCESS_VIEWS,
+        std::ptr::null(),
+        std::ptr::null(),
     );
 }

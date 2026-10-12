@@ -98,74 +98,6 @@ fn init_logger(log_dir: *const u8) {
     });
 }
 
-macro_rules! for_each_hook {
-    ($action:ident) => {
-        $action!(
-            (om_set_render_targets, om_set_render_targets_detour),
-            (
-                om_set_render_targets_and_unordered_access_views,
-                om_set_render_targets_and_unordered_access_views_detour
-            ),
-            (map, map_detour),
-            (unmap, unmap_detour),
-            (update_subresource, update_subresource_detour),
-            (dispatch, dispatch_detour),
-            (dispatch_indirect, dispatch_indirect_detour),
-            (vs_set_shader_resources, vs_set_shader_resources_detour),
-            (hs_set_shader_resources, hs_set_shader_resources_detour),
-            (ds_set_shader_resources, ds_set_shader_resources_detour),
-            (gs_set_shader_resources, gs_set_shader_resources_detour),
-            (ps_set_shader_resources, ps_set_shader_resources_detour),
-            (cs_set_shader_resources, cs_set_shader_resources_detour),
-            (
-                cs_set_unordered_access_views,
-                cs_set_unordered_access_views_detour
-            ),
-            (copy_subresource_region, copy_subresource_region_detour),
-            (copy_resource, copy_resource_detour),
-            (resolve_subresource, resolve_subresource_detour),
-            (clear_render_target_view, clear_render_target_view_detour),
-            (
-                clear_unordered_access_view_uint,
-                clear_unordered_access_view_uint_detour
-            ),
-            (
-                clear_unordered_access_view_float,
-                clear_unordered_access_view_float_detour
-            ),
-            (clear_depth_stencil_view, clear_depth_stencil_view_detour),
-            (generate_mips, generate_mips_detour),
-        )
-    };
-}
-
-/// # Safety
-/// `context` must be a valid, non-null `ID3D11DeviceContext*` for the game's immediate context.
-unsafe fn install_hooks(context: *mut ID3D11DeviceContext) -> bool {
-    macro_rules! install {
-        ($(($hook:ident, $detour:ident)),* $(,)?) => {
-            true $(&& unsafe {
-                hooks::install_hook(
-                    context,
-                    hooks::$hook::INDEX,
-                    hooks::$detour as hooks::$hook::Fn,
-                    &hooks::$hook::DETOUR,
-                )
-            })*
-        };
-    }
-    for_each_hook!(install)
-}
-
-fn uninstall_hooks() -> bool {
-    macro_rules! uninstall {
-        ($(($hook:ident, $detour:ident)),* $(,)?) => {
-            true $(& hooks::uninstall_hook(&hooks::$hook::DETOUR))*
-        };
-    }
-    for_each_hook!(uninstall)
-}
-
 /// # Safety
 /// `context` must be a valid, non-null `ID3D11DeviceContext*` for the game's immediate context.
 #[unsafe(no_mangle)]
@@ -187,7 +119,7 @@ pub unsafe extern "system" fn ffxiv_vr_native_init(
         return false;
     };
 
-    let installed = unsafe { install_hooks(context) };
+    let installed = unsafe { hooks::install_all(context) };
     if !installed {
         return false;
     }
@@ -201,7 +133,7 @@ pub unsafe extern "system" fn ffxiv_vr_native_init(
 
 #[unsafe(no_mangle)]
 pub extern "system" fn ffxiv_vr_native_shutdown() -> bool {
-    let uninstalled = uninstall_hooks();
+    let uninstalled = hooks::uninstall_all();
     if let Ok(mut guard) = APP.lock() {
         *guard = None;
     }
