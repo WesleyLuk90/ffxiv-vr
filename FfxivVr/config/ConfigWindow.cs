@@ -119,6 +119,7 @@ public class ConfigWindow : Window
         }
         Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
         Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);
+        Checkbox("Keep nameplates upright", ref config.RemoveCameraRoll, "New renderer only. Removes head roll from the game camera so nameplates and other screen-facing UI don't rotate when you tilt your head.");
         Checkbox("Use new renderer (beta)", ref config.UseSinglePassRender, "Faster, with better sync between the two eyes, but still in beta so there are some graphical glitches (Requires VR restart).");
     }
 

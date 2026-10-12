@@ -78,6 +78,7 @@ public class Configuration : IPluginConfiguration
     public bool DisableShaderModCheck = false;
     public bool DisableVRControllers = false;
     public bool AltFramePrediction = false;
+    public bool RemoveCameraRoll = true;
     public bool UseSinglePassRender = false;
 
     public string? DumpDirectory = null;
