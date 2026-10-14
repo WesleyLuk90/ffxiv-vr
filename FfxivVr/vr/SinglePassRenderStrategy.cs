@@ -83,6 +83,10 @@ public unsafe class SinglePassRenderStrategy(
     public void PrepareCameraPhase(View[] views, VRInputData inputData, VRCameraMode cameraType)
     {
         VRSessionData = new VRSessionData(views, inputData, cameraType);
+    }
+
+    private void SetEyeProjections(View[] views)
+    {
         var centerView = vrCamera.ComputeCenterView(views[Eye.Left.ToIndex()], views[Eye.Right.ToIndex()]);
         SetEyeProjection(Eye.Left, centerView, views[Eye.Left.ToIndex()]);
         SetEyeProjection(Eye.Right, centerView, views[Eye.Right.ToIndex()]);
@@ -155,6 +159,10 @@ public unsafe class SinglePassRenderStrategy(
         {
             executeOriginal();
             return;
+        }
+        if (RenderSessionData is VRSessionData render)
+        {
+            SetEyeProjections(render.Views);
         }
         ExecuteCommandsForEye(context, Eye.Left, executeOriginal);
         logger.Trace("ExecuteCommands replaying top-level call a second time");
