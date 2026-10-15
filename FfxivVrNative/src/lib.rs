@@ -36,6 +36,7 @@ struct AppState {
     geometry_texture: *mut c_void,
     composition_texture: *mut c_void,
     current_pass: Option<Pass>,
+    corrected_footprint_buffer: Option<*mut c_void>,
 }
 
 unsafe impl Send for AppState {}
@@ -64,6 +65,7 @@ impl AppState {
             geometry_texture,
             composition_texture,
             current_pass: None,
+            corrected_footprint_buffer: None,
         })
     }
 }
@@ -194,6 +196,7 @@ pub extern "system" fn ffxiv_vr_native_set_active_eye(eye: i32) -> bool {
     let accepted = app.camera.set_active_eye(usize::try_from(eye).ok());
     app.sun_modifier.reset();
     app.eye_resources.begin_pass();
+    app.corrected_footprint_buffer = None;
     hook_bodies::sync_bound_views(app);
     accepted
 }

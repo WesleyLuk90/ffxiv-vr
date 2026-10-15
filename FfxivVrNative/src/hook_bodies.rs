@@ -3,9 +3,9 @@ use core::ffi::c_void;
 use windows::Win32::Graphics::Direct3D11::{
     D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, D3D11_KEEP_UNORDERED_ACCESS_VIEWS,
     D3D11_MAPPED_SUBRESOURCE, D3D11_PS_CS_UAV_REGISTER_COUNT,
-    D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, ID3D11DepthStencilView, ID3D11DeviceContext,
-    ID3D11RenderTargetView, ID3D11Resource, ID3D11ShaderResourceView, ID3D11UnorderedAccessView,
-    ID3D11View,
+    D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, ID3D11Buffer, ID3D11DepthStencilView,
+    ID3D11DeviceContext, ID3D11RenderTargetView, ID3D11Resource, ID3D11ShaderResourceView,
+    ID3D11UnorderedAccessView, ID3D11View,
 };
 use windows::core::Interface;
 
@@ -16,6 +16,7 @@ use crate::modifiers::Pass;
 use crate::modifiers::camera_parameters::{CameraParameters, modify_camera_parameters};
 use crate::modifiers::clip_to_world_matrix::{ClipToWorldMatrix, modify_clip_to_world_matrix};
 use crate::modifiers::decal_parameter::{DecalParameter, modify_decal_parameter};
+use crate::modifiers::footprint_instances::{FootprintInstances, modify_footprint_instances};
 use crate::modifiers::light_param::{LightParamBuffer, modify_light_param};
 use crate::modifiers::projection_matrix::{ProjectionMatrix, modify_compositing_projection_matrix};
 use crate::modifiers::ps_view_projection_inverse_matrix::{
@@ -51,6 +52,8 @@ const SKY_QUAD_PARAM_SIZE: u32 = std::mem::size_of::<SkyQuadParam>() as u32;
 const SUN_PARAM_SIZE: u32 = std::mem::size_of::<SunParam>() as u32;
 const LENS_FLARE_PARAM_SIZE: u32 = std::mem::size_of::<LensFlareParam>() as u32;
 const RADIAL_BLUR_PARAM_SIZE: u32 = std::mem::size_of::<RadialBlurParam>() as u32;
+const FOOTPRINT_INSTANCES_SIZE: u32 = std::mem::size_of::<FootprintInstances>() as u32;
+const FOOTPRINT_VERTEX_BUFFER_SLOTS: usize = 2;
 
 const SHADER_RESOURCE_SLOT_COUNT: usize = D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT as usize;
 const UNORDERED_ACCESS_SLOT_COUNT: usize = D3D11_PS_CS_UAV_REGISTER_COUNT as usize;
@@ -67,6 +70,7 @@ fn is_camera_buffer_size(app: &AppState, byte_width: u32) -> bool {
         || byte_width == LIGHT_PARAM_BUFFER_SIZE
         || byte_width == SKY_QUAD_PARAM_SIZE
         || byte_width == SUN_PARAM_SIZE
+        || byte_width == FOOTPRINT_INSTANCES_SIZE
 }
 
 pub(crate) fn om_set_render_targets(
@@ -110,8 +114,13 @@ fn render_target_resource(view: *mut c_void) -> Option<*mut c_void> {
 /// `data` must be valid for `byte_width` bytes, writable, and correctly aligned for whichever of
 /// `CameraParameters`/`VSViewProjectionMatrix`/`PSViewProjectionInverseMatrix`/`ClipToWorldMatrix`/`WorldViewProjMatrix`/
 /// `ProjectionMatrix`/`LightParamBuffer`/`DecalParameter`/`SkyQuadParam`/`SunParam`/`RadialBlurParam`/
-/// `LensFlareParam` `byte_width` selects.
+/// `LensFlareParam`/`FootprintInstances` `byte_width` selects.
 unsafe fn try_modify_camera_buffer(app: &mut AppState, byte_width: u32, data: *mut c_void) -> bool {
+    if byte_width == FOOTPRINT_INSTANCES_SIZE {
+        let buffer = unsafe { &mut *(data as *mut FootprintInstances) };
+        return modify_footprint_instances(buffer, &app.camera);
+    }
+
     if byte_width == CAMERA_PARAMETERS_SIZE {
         let buffer = unsafe { &mut *(data as *mut CameraParameters) };
         return modify_camera_parameters(buffer, &mut app.camera);
@@ -224,20 +233,19 @@ pub(crate) fn unmap(
         return;
     };
     if app.camera.has_active_eye() {
-        unsafe { try_modify_camera_buffer(app, byte_width, data) };
+        let shadow = unsafe { std::slice::from_raw_parts(data as *const u8, byte_width as usize) };
+        let scratch = app.shadow_buffers.load_scratch(shadow);
+        if unsafe { try_modify_camera_buffer(app, byte_width, scratch) } {
+            upload(context, resource, subresource, app.shadow_buffers.scratch());
+            return;
+        }
     }
-    flush_shadow_to_gpu(app, context, resource, subresource);
+    if let Some(shadow) = app.shadow_buffers.data(resource) {
+        upload(context, resource, subresource, shadow);
+    }
 }
 
-fn flush_shadow_to_gpu(
-    app: &AppState,
-    context: *mut ID3D11DeviceContext,
-    resource: *mut c_void,
-    subresource: u32,
-) {
-    let Some(data) = app.shadow_buffers.data(resource) else {
-        return;
-    };
+fn upload(context: *mut ID3D11DeviceContext, resource: *mut c_void, subresource: u32, data: &[u8]) {
     let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
     let mapped_ptr = &mut mapped as *mut D3D11_MAPPED_SUBRESOURCE as *mut c_void;
     let hr = hooks::map::original(
@@ -257,6 +265,46 @@ fn flush_shadow_to_gpu(
     hooks::unmap::original(context, resource, subresource);
 }
 
+pub(crate) fn correct_bound_footprints(app: &mut AppState) {
+    if !app.camera.has_active_eye() {
+        return;
+    }
+    let raw_context = app.device_context as *mut c_void;
+    let Some(context) = (unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw_context) }) else {
+        return;
+    };
+    let mut buffers: [Option<ID3D11Buffer>; FOOTPRINT_VERTEX_BUFFER_SLOTS] = Default::default();
+    unsafe {
+        context.IAGetVertexBuffers(
+            0,
+            FOOTPRINT_VERTEX_BUFFER_SLOTS as u32,
+            Some(buffers.as_mut_ptr()),
+            None,
+            None,
+        )
+    };
+    for buffer in buffers.iter().flatten() {
+        let resource = buffer.as_raw();
+        if app.shadow_buffers.byte_width(resource) != Some(FOOTPRINT_INSTANCES_SIZE)
+            || app.corrected_footprint_buffer == Some(resource)
+        {
+            continue;
+        }
+        app.corrected_footprint_buffer = Some(resource);
+        let Some(scratch) = app.shadow_buffers.load_scratch_from_shadow(resource) else {
+            continue;
+        };
+        if unsafe { try_modify_camera_buffer(app, FOOTPRINT_INSTANCES_SIZE, scratch) } {
+            upload(
+                app.device_context,
+                resource,
+                0,
+                app.shadow_buffers.scratch(),
+            );
+        }
+    }
+}
+
 pub(crate) fn compute_camera_update_subresource(
     app: &mut AppState,
     dst_resource: *mut c_void,
@@ -271,9 +319,9 @@ pub(crate) fn compute_camera_update_subresource(
         return None;
     }
     let src = unsafe { std::slice::from_raw_parts(src_data as *const u8, byte_width as usize) };
-    let ptr = app.shadow_buffers.load_update_subresource_scratch(src);
+    let ptr = app.shadow_buffers.load_scratch(src);
     let modified = unsafe { try_modify_camera_buffer(app, byte_width, ptr) };
-    modified.then_some(app.shadow_buffers.update_subresource_scratch())
+    modified.then_some(app.shadow_buffers.scratch())
 }
 
 fn view_slice<'a>(views: *const *mut c_void, num_views: u32) -> Option<&'a [*mut c_void]> {
