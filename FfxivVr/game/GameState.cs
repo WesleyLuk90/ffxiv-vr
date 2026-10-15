@@ -178,18 +178,19 @@ public unsafe class GameState(
         return FadeBack;
     }
 
-    public float GetFade()
+    public Vector4D<float> GetFade()
     {
-        var fade = 0f;
-        var middle = GetFadeMiddle();
-        if (middle != null)
-        {
-            fade = AddonFade.GetAlpha(middle);
-        }
+        var fade = Vector4D<float>.Zero;
         var back = GetFadeBack();
         if (back != null)
         {
-            fade = float.Max(fade, AddonFade.GetAlpha(back));
+            fade = AddonFade.GetPremultipliedColor(back);
+        }
+        var middle = GetFadeMiddle();
+        if (middle != null)
+        {
+            var color = AddonFade.GetPremultipliedColor(middle);
+            fade = color + fade * (1 - color.W);
         }
         return fade;
     }

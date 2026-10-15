@@ -29,7 +29,7 @@ public unsafe class Renderer(
         return resources.SceneRenderTargets[eye.ToIndex()];
     }
 
-    private void RenderGame(ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, float fade = 0)
+    private void RenderGame(ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, Vector4D<float> fade)
     {
         resources.UpdateCamera(Context, new CameraConstants(
             modelViewProjection: modelViewProjection,
@@ -39,9 +39,17 @@ public unsafe class Renderer(
         resources.SetPixelShaderConstants(Context, new PixelShaderConstants(
             mode: ShaderMode.Texture,
             gamma: configuration.Gamma,
-            color: new Vector4D<float>(1 - fade, 1 - fade, 1 - fade, 1)));
+            color: new Vector4D<float>(1 - fade.W, 1 - fade.W, 1 - fade.W, 1)));
         resources.SetSampler(Context, shaderResourceView);
         resources.DrawSquare(Context);
+        if (fade.X > 0 || fade.Y > 0 || fade.Z > 0)
+        {
+            resources.SetPixelShaderConstants(Context, new PixelShaderConstants(
+                mode: ShaderMode.Fill,
+                gamma: configuration.Gamma,
+                color: new Vector4D<float>(fade.X, fade.Y, fade.Z, 0)));
+            resources.DrawSquare(Context);
+        }
     }
     private void RenderUILayer(ID3D11ShaderResourceView* shaderResourceView, Matrix4X4<float> modelViewProjection, Matrix4X4<float> deform, float fade = 0)
     {
