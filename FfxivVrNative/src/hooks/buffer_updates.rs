@@ -5,7 +5,7 @@ use crate::modifiers::Pass;
 use crate::modifiers::camera_parameters::{CameraParameters, modify_camera_parameters};
 use crate::modifiers::clip_to_world_matrix::{ClipToWorldMatrix, modify_clip_to_world_matrix};
 use crate::modifiers::decal_parameter::{DecalParameter, modify_decal_parameter};
-use crate::modifiers::footprint_instances::{FootprintInstances, modify_footprint_instances};
+use crate::modifiers::footprint_instances::FootprintInstances;
 use crate::modifiers::light_param::{LightParamBuffer, modify_light_param};
 use crate::modifiers::projection_matrix::{ProjectionMatrix, modify_compositing_projection_matrix};
 use crate::modifiers::ps_view_projection_inverse_matrix::{
@@ -61,15 +61,14 @@ fn is_camera_buffer_size(app: &AppState, byte_width: u32) -> bool {
 /// `data` must be valid for `byte_width` bytes, writable, and correctly aligned for whichever of
 /// `CameraParameters`/`VSViewProjectionMatrix`/`PSViewProjectionInverseMatrix`/`ClipToWorldMatrix`/`WorldViewProjMatrix`/
 /// `ProjectionMatrix`/`LightParamBuffer`/`DecalParameter`/`SkyQuadParam`/`SunParam`/`RadialBlurParam`/
-/// `LensFlareParam`/`FootprintInstances` `byte_width` selects.
+/// `LensFlareParam` `byte_width` selects.
 pub(super) unsafe fn try_modify_camera_buffer(
     app: &mut AppState,
     byte_width: u32,
     data: *mut c_void,
 ) -> bool {
     if byte_width == FOOTPRINT_INSTANCES_SIZE {
-        let buffer = unsafe { &mut *(data as *mut FootprintInstances) };
-        return modify_footprint_instances(buffer, &app.camera);
+        return false;
     }
 
     if byte_width == CAMERA_PARAMETERS_SIZE {
