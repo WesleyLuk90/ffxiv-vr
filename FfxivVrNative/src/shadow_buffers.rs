@@ -15,7 +15,7 @@ struct ShadowBuffer {
 pub(crate) struct ShadowBuffers {
     buffers: HashMap<*mut c_void, ShadowBuffer>,
     byte_widths: HashMap<*mut c_void, Option<u32>>,
-    update_subresource_scratch: Vec<u8>,
+    scratch: Vec<u8>,
 }
 
 impl ShadowBuffers {
@@ -70,14 +70,24 @@ impl ShadowBuffers {
             .map(|shadow| shadow.data.as_slice())
     }
 
-    pub(crate) fn load_update_subresource_scratch(&mut self, data: &[u8]) -> *mut c_void {
-        self.update_subresource_scratch.clear();
-        self.update_subresource_scratch.extend_from_slice(data);
-        self.update_subresource_scratch.as_mut_ptr() as *mut c_void
+    pub(crate) fn load_scratch(&mut self, data: &[u8]) -> *mut c_void {
+        self.scratch.clear();
+        self.scratch.extend_from_slice(data);
+        self.scratch.as_mut_ptr() as *mut c_void
     }
 
-    pub(crate) fn update_subresource_scratch(&self) -> &[u8] {
-        &self.update_subresource_scratch
+    pub(crate) fn load_scratch_from_shadow(
+        &mut self,
+        resource: *mut c_void,
+    ) -> Option<*mut c_void> {
+        let shadow = self.buffers.get(&resource)?;
+        self.scratch.clear();
+        self.scratch.extend_from_slice(&shadow.data);
+        Some(self.scratch.as_mut_ptr() as *mut c_void)
+    }
+
+    pub(crate) fn scratch(&self) -> &[u8] {
+        &self.scratch
     }
 }
 

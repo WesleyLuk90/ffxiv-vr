@@ -25,3 +25,30 @@ declare_hook!(
         original(context, buffer_for_args, aligned_byte_offset_for_args);
     }
 );
+
+declare_hook!(
+    draw_indexed_instanced,
+    20,
+    fn(
+        context,
+        index_count_per_instance: u32,
+        instance_count: u32,
+        start_index_location: u32,
+        base_vertex_location: i32,
+        start_instance_location: u32,
+    ) {
+        run_hook(
+            context,
+            |app, _unhooked| hook_bodies::correct_bound_footprints(app),
+            || {},
+        );
+        original(
+            context,
+            index_count_per_instance,
+            instance_count,
+            start_index_location,
+            base_vertex_location,
+            start_instance_location,
+        );
+    }
+);
