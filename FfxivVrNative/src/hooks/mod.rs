@@ -2,10 +2,15 @@ use core::ffi::c_void;
 use retour::{Function, GenericDetour};
 use std::sync::Mutex;
 
-use windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext;
+use windows::Win32::Graphics::Direct3D11::{
+    D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, D3D11_KEEP_UNORDERED_ACCESS_VIEWS,
+    D3D11_PS_CS_UAV_REGISTER_COUNT, D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, ID3D11DepthStencilView,
+    ID3D11DeviceContext, ID3D11RenderTargetView, ID3D11Resource, ID3D11ShaderResourceView,
+    ID3D11UnorderedAccessView, ID3D11View,
+};
+use windows::core::Interface;
 
-use crate::eye_resources::{Access, ViewKind};
-use crate::hook_bodies;
+use crate::eye_resources::{Access, MIRRORED_EYE, ViewKind};
 use crate::{APP, AppState};
 
 macro_rules! declare_hook {
@@ -54,7 +59,7 @@ pub(crate) use clears::{
     clear_unordered_access_view_uint,
 };
 pub(crate) use copies::{copy_resource, copy_subresource_region, resolve_subresource};
-pub(crate) use draws::{dispatch, dispatch_indirect, draw_indexed_instanced};
+pub(crate) use draws::draw_indexed_instanced;
 pub(crate) use render_targets::{
     cs_set_unordered_access_views, om_set_render_targets,
     om_set_render_targets_and_unordered_access_views,
@@ -72,8 +77,6 @@ macro_rules! for_each_hook {
             map,
             unmap,
             update_subresource,
-            dispatch,
-            dispatch_indirect,
             draw_indexed_instanced,
             vs_set_shader_resources,
             hs_set_shader_resources,
@@ -197,7 +200,7 @@ fn with_eye_view(
 ) {
     run_hook(
         context,
-        |app, _unhooked| call(hook_bodies::eye_view(app, kind, access, view)),
+        |app, _unhooked| call(eye_view(app, kind, access, view)),
         || call(view),
     );
 }
@@ -213,9 +216,216 @@ fn with_eye_views(
     run_hook(
         context,
         |app, _unhooked| {
-            let substituted = hook_bodies::eye_views(app, kind, access, views, num_views);
+            let substituted = eye_views(app, kind, access, views, num_views);
             call(substituted.as_ref().map_or(views, |views| views.as_ptr()));
         },
         || call(views),
+    );
+}
+
+const SHADER_RESOURCE_SLOT_COUNT: usize = D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT as usize;
+const UNORDERED_ACCESS_SLOT_COUNT: usize = D3D11_PS_CS_UAV_REGISTER_COUNT as usize;
+const RENDER_TARGET_SLOT_COUNT: usize = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT as usize;
+
+fn view_slice<'a>(views: *const *mut c_void, num_views: u32) -> Option<&'a [*mut c_void]> {
+    if views.is_null() || num_views == 0 {
+        return None;
+    }
+    Some(unsafe { std::slice::from_raw_parts(views, num_views as usize) })
+}
+
+fn is_mirrored_eye(app: &AppState) -> bool {
+    app.camera.active_eye() == Some(MIRRORED_EYE)
+}
+
+fn view_resource(view: *mut c_void) -> Option<ID3D11Resource> {
+    let typed = unsafe { ID3D11View::from_raw_borrowed(&view) }?;
+    unsafe { typed.GetResource() }.ok()
+}
+
+fn record_access(app: &mut AppState, resource: &ID3D11Resource, access: Access) {
+    let excluded = [app.geometry_texture, app.composition_texture];
+    let Some(created) = app
+        .eye_resources
+        .record(&app.device, resource, access, &excluded)
+    else {
+        return;
+    };
+    let context = app.device_context;
+    copy_resource::original(context, created.mirror.as_raw(), created.original.as_raw());
+}
+
+fn eye_views(
+    app: &mut AppState,
+    kind: ViewKind,
+    access: Access,
+    views: *const *mut c_void,
+    num_views: u32,
+) -> Option<Vec<*mut c_void>> {
+    if !app.camera.has_active_eye() {
+        return None;
+    }
+    let views = view_slice(views, num_views)?;
+    for &view in views {
+        if let Some(resource) = view_resource(view) {
+            record_access(app, &resource, access);
+        }
+    }
+    if !is_mirrored_eye(app) {
+        return None;
+    }
+    app.eye_resources.substitute(&app.device, kind, views)
+}
+
+fn eye_view(app: &mut AppState, kind: ViewKind, access: Access, view: *mut c_void) -> *mut c_void {
+    eye_views(app, kind, access, &view, 1).map_or(view, |views| views[0])
+}
+
+fn eye_resource(app: &mut AppState, access: Access, resource: *mut c_void) -> *mut c_void {
+    if !app.camera.has_active_eye() {
+        return resource;
+    }
+    let Some(typed) = (unsafe { ID3D11Resource::from_raw_borrowed(&resource) }).cloned() else {
+        return resource;
+    };
+    record_access(app, &typed, access);
+    if !is_mirrored_eye(app) {
+        return resource;
+    }
+    app.eye_resources
+        .mirror_resource(resource)
+        .unwrap_or(resource)
+}
+
+type SetShaderResources = fn(*mut ID3D11DeviceContext, u32, u32, *const *mut c_void) -> Option<()>;
+type ShaderResourcesGetter = fn(&ID3D11DeviceContext, &mut [Option<ID3D11ShaderResourceView>]);
+
+fn shader_resource_stages() -> [(SetShaderResources, ShaderResourcesGetter); 6] {
+    [
+        (vs_set_shader_resources::original, |context, views| unsafe {
+            context.VSGetShaderResources(0, Some(views))
+        }),
+        (hs_set_shader_resources::original, |context, views| unsafe {
+            context.HSGetShaderResources(0, Some(views))
+        }),
+        (ds_set_shader_resources::original, |context, views| unsafe {
+            context.DSGetShaderResources(0, Some(views))
+        }),
+        (gs_set_shader_resources::original, |context, views| unsafe {
+            context.GSGetShaderResources(0, Some(views))
+        }),
+        (ps_set_shader_resources::original, |context, views| unsafe {
+            context.PSGetShaderResources(0, Some(views))
+        }),
+        (cs_set_shader_resources::original, |context, views| unsafe {
+            context.CSGetShaderResources(0, Some(views))
+        }),
+    ]
+}
+
+fn swapped_view(
+    app: &mut AppState,
+    kind: ViewKind,
+    view: *mut c_void,
+    to_mirror: bool,
+) -> Option<*mut c_void> {
+    if view.is_null() {
+        return None;
+    }
+    if to_mirror {
+        app.eye_resources.mirror_view(&app.device, kind, view)
+    } else {
+        app.eye_resources.original_view(view)
+    }
+}
+
+pub(crate) fn sync_bound_views(app: &mut AppState) {
+    if !app.eye_resources.has_mirrors() {
+        return;
+    }
+    let to_mirror = app.hooks_enabled && is_mirrored_eye(app);
+    let context_ptr = app.device_context;
+    let raw_context = context_ptr as *mut c_void;
+    let Some(context) = (unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw_context) }).cloned()
+    else {
+        return;
+    };
+
+    for (set_shader_resources, get) in shader_resource_stages() {
+        let mut views: [Option<ID3D11ShaderResourceView>; SHADER_RESOURCE_SLOT_COUNT] =
+            std::array::from_fn(|_| None);
+        get(&context, &mut views);
+        for (slot, view) in views.iter().enumerate() {
+            let Some(view) = view else {
+                continue;
+            };
+            let Some(swapped) =
+                swapped_view(app, ViewKind::ShaderResource, view.as_raw(), to_mirror)
+            else {
+                continue;
+            };
+            set_shader_resources(context_ptr, slot as u32, 1, &swapped);
+        }
+    }
+
+    let mut uavs: [Option<ID3D11UnorderedAccessView>; UNORDERED_ACCESS_SLOT_COUNT] =
+        Default::default();
+    unsafe { context.CSGetUnorderedAccessViews(0, Some(&mut uavs)) };
+    for (slot, uav) in uavs.iter().enumerate() {
+        let Some(uav) = uav else {
+            continue;
+        };
+        let Some(swapped) = swapped_view(app, ViewKind::UnorderedAccess, uav.as_raw(), to_mirror)
+        else {
+            continue;
+        };
+        let keep_counter = u32::MAX;
+        cs_set_unordered_access_views::original(
+            context_ptr,
+            slot as u32,
+            1,
+            &swapped,
+            &keep_counter,
+        );
+    }
+
+    let mut rtvs: [Option<ID3D11RenderTargetView>; RENDER_TARGET_SLOT_COUNT] = Default::default();
+    let mut dsv: Option<ID3D11DepthStencilView> = None;
+    unsafe { context.OMGetRenderTargets(Some(&mut rtvs), Some(&mut dsv)) };
+    let mut rtv_ptrs: Vec<*mut c_void> = rtvs
+        .iter()
+        .map(|view| {
+            view.as_ref()
+                .map_or(std::ptr::null_mut(), Interface::as_raw)
+        })
+        .collect();
+    let mut dsv_ptr = dsv.as_ref().map_or(std::ptr::null_mut(), Interface::as_raw);
+    let mut changed = false;
+    for ptr in rtv_ptrs.iter_mut() {
+        if let Some(swapped) = swapped_view(app, ViewKind::RenderTarget, *ptr, to_mirror) {
+            *ptr = swapped;
+            changed = true;
+        }
+    }
+    if let Some(swapped) = swapped_view(app, ViewKind::DepthStencil, dsv_ptr, to_mirror) {
+        dsv_ptr = swapped;
+        changed = true;
+    }
+    if !changed {
+        return;
+    }
+    let count = rtv_ptrs
+        .iter()
+        .rposition(|ptr| !ptr.is_null())
+        .map_or(0, |last| last + 1);
+    om_set_render_targets_and_unordered_access_views::original(
+        context_ptr,
+        count as u32,
+        rtv_ptrs.as_ptr(),
+        dsv_ptr,
+        0,
+        D3D11_KEEP_UNORDERED_ACCESS_VIEWS,
+        std::ptr::null(),
+        std::ptr::null(),
     );
 }

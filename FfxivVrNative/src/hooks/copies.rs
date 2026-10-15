@@ -9,8 +9,8 @@ fn with_eye_resources(
     run_hook(
         context,
         |app, _unhooked| {
-            let effective_src = hook_bodies::eye_resource(app, Access::Read, src_resource);
-            let effective_dst = hook_bodies::eye_resource(app, Access::Write, dst_resource);
+            let effective_src = eye_resource(app, Access::Read, src_resource);
+            let effective_dst = eye_resource(app, Access::Write, dst_resource);
             call(effective_dst, effective_src);
         },
         || call(dst_resource, src_resource),

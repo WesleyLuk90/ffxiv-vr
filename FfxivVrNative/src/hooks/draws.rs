@@ -1,30 +1,48 @@
+use super::buffer_updates::{FOOTPRINT_INSTANCES_SIZE, try_modify_camera_buffer, upload};
 use super::*;
+use windows::Win32::Graphics::Direct3D11::ID3D11Buffer;
 
-declare_hook!(
-    dispatch,
-    41,
-    fn(
-        context,
-        thread_group_count_x: u32,
-        thread_group_count_y: u32,
-        thread_group_count_z: u32,
-    ) {
-        original(
-            context,
-            thread_group_count_x,
-            thread_group_count_y,
-            thread_group_count_z,
-        );
-    }
-);
+const FOOTPRINT_VERTEX_BUFFER_SLOTS: usize = 2;
 
-declare_hook!(
-    dispatch_indirect,
-    42,
-    fn(context, buffer_for_args: *mut c_void, aligned_byte_offset_for_args: u32) {
-        original(context, buffer_for_args, aligned_byte_offset_for_args);
+fn correct_bound_footprints(app: &mut AppState) {
+    if !app.camera.has_active_eye() {
+        return;
     }
-);
+    let raw_context = app.device_context as *mut c_void;
+    let Some(context) = (unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw_context) }) else {
+        return;
+    };
+    let mut buffers: [Option<ID3D11Buffer>; FOOTPRINT_VERTEX_BUFFER_SLOTS] = Default::default();
+    unsafe {
+        context.IAGetVertexBuffers(
+            0,
+            FOOTPRINT_VERTEX_BUFFER_SLOTS as u32,
+            Some(buffers.as_mut_ptr()),
+            None,
+            None,
+        )
+    };
+    for buffer in buffers.iter().flatten() {
+        let resource = buffer.as_raw();
+        if app.shadow_buffers.byte_width(resource) != Some(FOOTPRINT_INSTANCES_SIZE)
+            || app.corrected_footprint_buffer == Some(resource)
+        {
+            continue;
+        }
+        app.corrected_footprint_buffer = Some(resource);
+        let Some(scratch) = app.shadow_buffers.load_scratch_from_shadow(resource) else {
+            continue;
+        };
+        if unsafe { try_modify_camera_buffer(app, FOOTPRINT_INSTANCES_SIZE, scratch) } {
+            upload(
+                app.device_context,
+                resource,
+                0,
+                app.shadow_buffers.scratch(),
+            );
+        }
+    }
+}
 
 declare_hook!(
     draw_indexed_instanced,
@@ -39,7 +57,7 @@ declare_hook!(
     ) {
         run_hook(
             context,
-            |app, _unhooked| hook_bodies::correct_bound_footprints(app),
+            |app, _unhooked| correct_bound_footprints(app),
             || {},
         );
         original(
