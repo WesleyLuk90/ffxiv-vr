@@ -55,7 +55,7 @@ declare_hook!(
         run_hook(
             context,
             |app, _unhooked| {
-                let effective_view = hook_bodies::eye_view(
+                let effective_view = eye_view(
                     app,
                     ViewKind::DepthStencil,
                     Access::Write,

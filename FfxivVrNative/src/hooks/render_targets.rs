@@ -3,6 +3,36 @@ use windows::Win32::Graphics::Direct3D11::{
     D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, D3D11_KEEP_UNORDERED_ACCESS_VIEWS,
 };
 
+use crate::modifiers::Pass;
+
+fn current_pass(
+    app: &AppState,
+    num_views: u32,
+    render_target_views: *mut *mut c_void,
+    depth_stencil_view: *mut c_void,
+) -> Option<Pass> {
+    if render_target_views.is_null() {
+        return None;
+    }
+    let views = unsafe { std::slice::from_raw_parts(render_target_views, num_views as usize) };
+    views.iter().copied().find_map(|view| {
+        let resource = render_target_resource(view)?;
+        if resource == app.geometry_texture {
+            Some(Pass::Geometry)
+        } else if resource == app.composition_texture && !depth_stencil_view.is_null() {
+            Some(Pass::Compositing)
+        } else {
+            None
+        }
+    })
+}
+
+fn render_target_resource(view: *mut c_void) -> Option<*mut c_void> {
+    let typed = unsafe { ID3D11RenderTargetView::from_raw_borrowed(&view) }?;
+    let resource = unsafe { typed.GetResource() }.ok()?;
+    Some(Interface::as_raw(&resource))
+}
+
 declare_hook!(
     om_set_render_targets,
     33,
@@ -15,13 +45,9 @@ declare_hook!(
         run_hook(
             context,
             |app, _unhooked| {
-                hook_bodies::om_set_render_targets(
-                    app,
-                    num_views,
-                    render_target_views,
-                    depth_stencil_view,
-                );
-                let substituted = hook_bodies::eye_views(
+                app.current_pass =
+                    current_pass(app, num_views, render_target_views, depth_stencil_view);
+                let substituted = eye_views(
                     app,
                     ViewKind::RenderTarget,
                     Access::Write,
@@ -31,7 +57,7 @@ declare_hook!(
                 let effective_views = substituted.as_ref().map_or(render_target_views, |views| {
                     views.as_ptr() as *mut *mut c_void
                 });
-                let effective_depth_stencil_view = hook_bodies::eye_view(
+                let effective_depth_stencil_view = eye_view(
                     app,
                     ViewKind::DepthStencil,
                     Access::Write,
@@ -79,14 +105,14 @@ declare_hook!(
                         (None, depth_stencil_view)
                     } else {
                         (
-                            hook_bodies::eye_views(
+                            eye_views(
                                 app,
                                 ViewKind::RenderTarget,
                                 Access::Write,
                                 render_target_views,
                                 num_rtvs,
                             ),
-                            hook_bodies::eye_view(
+                            eye_view(
                                 app,
                                 ViewKind::DepthStencil,
                                 Access::Write,
@@ -97,7 +123,7 @@ declare_hook!(
                 let substituted_uavs = if num_uavs == D3D11_KEEP_UNORDERED_ACCESS_VIEWS {
                     None
                 } else {
-                    hook_bodies::eye_views(
+                    eye_views(
                         app,
                         ViewKind::UnorderedAccess,
                         Access::Write,

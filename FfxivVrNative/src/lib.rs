@@ -10,7 +10,6 @@ use windows::core::Interface;
 
 mod camera_state;
 mod eye_resources;
-mod hook_bodies;
 mod hooks;
 mod math;
 mod modifiers;
@@ -197,7 +196,7 @@ pub extern "system" fn ffxiv_vr_native_set_active_eye(eye: i32) -> bool {
     app.sun_modifier.reset();
     app.eye_resources.begin_pass();
     app.corrected_footprint_buffer = None;
-    hook_bodies::sync_bound_views(app);
+    hooks::sync_bound_views(app);
     accepted
 }
 
