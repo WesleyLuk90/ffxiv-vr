@@ -1,5 +1,6 @@
-use super::buffer_updates::{FOOTPRINT_INSTANCES_SIZE, try_modify_camera_buffer, upload};
+use super::buffer_updates::{FOOTPRINT_INSTANCES_SIZE, upload};
 use super::*;
+use crate::modifiers::footprint_instances::{FootprintInstances, modify_footprint_instances};
 use windows::Win32::Graphics::Direct3D11::ID3D11Buffer;
 
 const FOOTPRINT_VERTEX_BUFFER_SLOTS: usize = 2;
@@ -33,7 +34,8 @@ fn correct_bound_footprints(app: &mut AppState) {
         let Some(scratch) = app.shadow_buffers.load_scratch_from_shadow(resource) else {
             continue;
         };
-        if unsafe { try_modify_camera_buffer(app, FOOTPRINT_INSTANCES_SIZE, scratch) } {
+        let footprints = unsafe { &mut *(scratch as *mut FootprintInstances) };
+        if modify_footprint_instances(footprints, &app.camera) {
             upload(
                 app.device_context,
                 resource,
