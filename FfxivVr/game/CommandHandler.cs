@@ -42,6 +42,9 @@ public class CommandHander(
                 case "off":
                     vrStartStop.StopVR();
                     break;
+                case "restart":
+                    vrStartStop.RestartVR();
+                    break;
                 case "recenter":
                     vrLifecycle.RecenterCamera();
                     break;

@@ -12,7 +12,8 @@ public class GameEvents(
     IFramework framework,
     ExceptionHandler exceptionHandler,
     VRLifecycle vrLifecycle,
-    HudLayoutManager hudLayoutManager
+    HudLayoutManager hudLayoutManager,
+    VRStartStop vrStartStop
 ) : IDisposable
 {
 
@@ -45,6 +46,7 @@ public class GameEvents(
         exceptionHandler.FaultBarrier(() =>
         {
             hudLayoutManager.Update();
+            vrStartStop.Update();
         });
     }
 
