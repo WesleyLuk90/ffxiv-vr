@@ -34,21 +34,59 @@ FirstPersonManager firstPersonManager
         var leftPosition = left.Pose.Position.ToVector3D();
         var rightPosition = right.Pose.Position.ToVector3D();
         var orientation = Quaternion<float>.Slerp(left.Pose.Orientation.ToQuaternion(), right.Pose.Orientation.ToQuaternion(), 0.5f);
-        var fov = new Fovf(
-            angleLeft: MathF.Min(left.Fov.AngleLeft, right.Fov.AngleLeft),
-            angleRight: MathF.Max(left.Fov.AngleRight, right.Fov.AngleRight),
-            angleUp: MathF.Max(left.Fov.AngleUp, right.Fov.AngleUp),
-            angleDown: MathF.Min(left.Fov.AngleDown, right.Fov.AngleDown)
-        );
-        var halfSeparation = Vector3D.Distance(leftPosition, rightPosition) / 2;
-        var pullBack = MathF.Max(halfSeparation / MathF.Tan(-fov.AngleLeft), halfSeparation / MathF.Tan(fov.AngleRight));
-        var position = (leftPosition + rightPosition) / 2 + Vector3D.Transform(new Vector3D<float>(0, 0, pullBack), orientation);
+        if (configuration.RemoveCameraRoll)
+        {
+            orientation = RemoveRoll(orientation);
+        }
+        var toCenter = Quaternion<float>.Inverse(orientation);
+        float tanLeft = 0, tanRight = 0, tanDown = 0, tanUp = 0;
+        foreach (var eye in new[] { left, right })
+        {
+            var eyeOrientation = eye.Pose.Orientation.ToQuaternion();
+            foreach (var x in new[] { MathF.Tan(eye.Fov.AngleLeft), MathF.Tan(eye.Fov.AngleRight) })
+            {
+                foreach (var y in new[] { MathF.Tan(eye.Fov.AngleDown), MathF.Tan(eye.Fov.AngleUp) })
+                {
+                    var corner = Vector3D.Transform(Vector3D.Transform(new Vector3D<float>(x, y, -1), eyeOrientation), toCenter);
+                    if (corner.Z >= 0)
+                    {
+                        continue;
+                    }
+                    tanLeft = MathF.Min(tanLeft, corner.X / -corner.Z);
+                    tanRight = MathF.Max(tanRight, corner.X / -corner.Z);
+                    tanDown = MathF.Min(tanDown, corner.Y / -corner.Z);
+                    tanUp = MathF.Max(tanUp, corner.Y / -corner.Z);
+                }
+            }
+        }
+        var midpoint = (leftPosition + rightPosition) / 2;
+        var pullBack = 0f;
+        foreach (var eyePosition in new[] { leftPosition, rightPosition })
+        {
+            var offset = Vector3D.Transform(eyePosition - midpoint, toCenter);
+            pullBack = MathF.Max(pullBack, offset.Z + (offset.X >= 0 ? offset.X / tanRight : offset.X / tanLeft));
+            pullBack = MathF.Max(pullBack, offset.Z + (offset.Y >= 0 ? offset.Y / tanUp : offset.Y / tanDown));
+        }
+        var position = midpoint + Vector3D.Transform(new Vector3D<float>(0, 0, pullBack), orientation);
         return new View
         {
             Type = StructureType.View,
             Pose = new Posef(orientation.ToQuaternionf(), position.ToVector3f()),
-            Fov = fov,
+            Fov = new Fovf(
+                angleLeft: MathF.Atan(tanLeft),
+                angleRight: MathF.Atan(tanRight),
+                angleUp: MathF.Atan(tanUp),
+                angleDown: MathF.Atan(tanDown)
+            ),
         };
+    }
+
+    private static Quaternion<float> RemoveRoll(Quaternion<float> orientation)
+    {
+        var forward = Vector3D.Transform(new Vector3D<float>(0, 0, -1), orientation);
+        var yaw = MathF.Atan2(-forward.X, -forward.Z);
+        var pitch = MathF.Asin(Math.Clamp(forward.Y, -1f, 1f));
+        return Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0);
     }
 
     internal static Fovf WidenFovToAspect(Fovf fov, float aspect)
