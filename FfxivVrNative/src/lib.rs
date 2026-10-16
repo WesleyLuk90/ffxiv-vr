@@ -1,7 +1,9 @@
 use core::ffi::c_void;
+use std::cell::Cell;
 use std::ffi::CStr;
 use std::fs::OpenOptions;
-use std::sync::{Mutex, OnceLock};
+use std::ops::{Deref, DerefMut};
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use log::LevelFilter;
 use simplelog::WriteLogger;
@@ -71,6 +73,41 @@ impl AppState {
 
 static APP: Mutex<Option<AppState>> = Mutex::new(None);
 
+thread_local! {
+    static APP_LOCKED: Cell<bool> = const { Cell::new(false) };
+}
+
+struct AppGuard(MutexGuard<'static, Option<AppState>>);
+
+impl Deref for AppGuard {
+    type Target = Option<AppState>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for AppGuard {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl Drop for AppGuard {
+    fn drop(&mut self) {
+        APP_LOCKED.set(false);
+    }
+}
+
+fn lock_app() -> Option<AppGuard> {
+    if APP_LOCKED.get() {
+        return None;
+    }
+    let guard = APP.lock().ok()?;
+    APP_LOCKED.set(true);
+    Some(AppGuard(guard))
+}
+
 static LOGGER_INIT: OnceLock<()> = OnceLock::new();
 
 fn c_str_to_string(ptr: *const u8) -> Option<String> {
@@ -124,7 +161,7 @@ pub unsafe extern "system" fn ffxiv_vr_native_init(
     if !installed {
         return false;
     }
-    let Ok(mut guard) = APP.lock() else {
+    let Some(mut guard) = lock_app() else {
         return false;
     };
     *guard = Some(app_state);
@@ -135,7 +172,7 @@ pub unsafe extern "system" fn ffxiv_vr_native_init(
 #[unsafe(no_mangle)]
 pub extern "system" fn ffxiv_vr_native_shutdown() -> bool {
     let uninstalled = hooks::uninstall_all();
-    if let Ok(mut guard) = APP.lock() {
+    if let Some(mut guard) = lock_app() {
         *guard = None;
     }
     uninstalled
@@ -143,7 +180,7 @@ pub extern "system" fn ffxiv_vr_native_shutdown() -> bool {
 
 #[unsafe(no_mangle)]
 pub extern "system" fn ffxiv_vr_native_set_config(hooks_enabled: bool) -> bool {
-    let Ok(mut guard) = APP.lock() else {
+    let Some(mut guard) = lock_app() else {
         return false;
     };
     let Some(app) = guard.as_mut() else {
@@ -175,7 +212,7 @@ pub unsafe extern "system" fn ffxiv_vr_native_set_projection_matrix(
             None => return false,
         }
     };
-    let Ok(mut guard) = APP.lock() else {
+    let Some(mut guard) = lock_app() else {
         return false;
     };
     let Some(app) = guard.as_mut() else {
@@ -186,7 +223,7 @@ pub unsafe extern "system" fn ffxiv_vr_native_set_projection_matrix(
 
 #[unsafe(no_mangle)]
 pub extern "system" fn ffxiv_vr_native_set_active_eye(eye: i32) -> bool {
-    let Ok(mut guard) = APP.lock() else {
+    let Some(mut guard) = lock_app() else {
         return false;
     };
     let Some(app) = guard.as_mut() else {
@@ -210,7 +247,7 @@ unsafe fn read_mat4(matrix: *const f32) -> Option<Mat4> {
 
 #[unsafe(no_mangle)]
 pub extern "system" fn ffxiv_vr_native_on_frame_end() -> bool {
-    let Ok(mut guard) = APP.lock() else {
+    let Some(mut guard) = lock_app() else {
         return false;
     };
     let Some(app) = guard.as_mut() else {
