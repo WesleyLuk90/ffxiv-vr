@@ -11,7 +11,7 @@ use windows::Win32::Graphics::Direct3D11::{
 use windows::core::Interface;
 
 use crate::eye_resources::{Access, MIRRORED_EYE, ViewKind};
-use crate::{APP, AppState};
+use crate::{AppState, lock_app};
 
 macro_rules! declare_hook {
     (@ret) => { () };
@@ -175,7 +175,7 @@ fn call_original<F: Function, R>(
 }
 
 fn with_app<R>(context: *mut ID3D11DeviceContext, f: impl FnOnce(&mut AppState) -> R) -> Option<R> {
-    let mut guard = APP.lock().ok()?;
+    let mut guard = lock_app()?;
     let app = guard.as_mut()?;
     if app.device_context != context || !app.hooks_enabled {
         return None;
