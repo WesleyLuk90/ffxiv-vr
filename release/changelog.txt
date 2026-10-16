@@ -1,1 +1,15 @@
-# Fix mouse targeting (#147)
+# Add /vr restart command (#156)
+
+# Fix HBAO deadlock from re-entrant hooks (#155)
+
+# Cleanup footprints (#154)
+
+# Refactor hook bodies (#153)
+
+# Fix footprints (#152)
+
+# Fade improvements (#151)
+
+# Split hooks (#150)
+
+# Set eye projections from the rendered frame's views (#148)

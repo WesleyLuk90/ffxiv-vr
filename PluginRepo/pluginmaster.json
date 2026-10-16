@@ -3,7 +3,7 @@
     "Author": "Steelgunner90",
     "Name": "FFXIV VR",
     "InternalName": "FfxivVR",
-    "AssemblyVersion": "0.0.82.0",
+    "AssemblyVersion": "0.0.83.0",
     "Description": "A VR mod for FFXIV. Run /vr to open settings",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/WesleyLuk90/ffxiv-vr",
@@ -17,10 +17,10 @@
     "LoadPriority": 69420,
     "Punchline": "A VR mod for FFXIV",
     "AcceptsFeedback": true,
-    "Changelog": "# Fix mouse targeting (#147)",
-    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.82/FfxivVR.zip",
-    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.82/FfxivVR.zip",
-    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.82/FfxivVR.zip",
-    "LastUpdated": 1791745996
+    "Changelog": "# Add /vr restart command (#156)\r\n\r\n# Fix HBAO deadlock from re-entrant hooks (#155)\r\n\r\n# Cleanup footprints (#154)\r\n\r\n# Refactor hook bodies (#153)\r\n\r\n# Fix footprints (#152)\r\n\r\n# Fade improvements (#151)\r\n\r\n# Split hooks (#150)\r\n\r\n# Set eye projections from the rendered frame's views (#148)",
+    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.83/FfxivVR.zip",
+    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.83/FfxivVR.zip",
+    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.83/FfxivVR.zip",
+    "LastUpdated": 1792127994
   }
 ]
