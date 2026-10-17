@@ -14,4 +14,5 @@ pub mod world_view_proj_matrix;
 pub enum Pass {
     Geometry,
     Compositing,
+    Overlay,
 }

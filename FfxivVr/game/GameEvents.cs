@@ -55,6 +55,6 @@ public class GameEvents(
         framework.Update -= FrameworkUpdate;
         clientState.Login -= Login;
         clientState.Logout -= Logout;
-        namePlateGui.OnNamePlateUpdate -= OnNamePlateUpdate;
+        namePlateGui.OnDataUpdate -= OnNamePlateUpdate;
     }
 }

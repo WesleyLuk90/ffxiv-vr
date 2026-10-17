@@ -41,6 +41,7 @@ const SKY_QUAD_PARAM_SIZE: u32 = std::mem::size_of::<SkyQuadParam>() as u32;
 const SUN_PARAM_SIZE: u32 = std::mem::size_of::<SunParam>() as u32;
 const LENS_FLARE_PARAM_SIZE: u32 = std::mem::size_of::<LensFlareParam>() as u32;
 const RADIAL_BLUR_PARAM_SIZE: u32 = std::mem::size_of::<RadialBlurParam>() as u32;
+pub(super) const PROJECTION_MATRIX_SIZE: u32 = std::mem::size_of::<ProjectionMatrix>() as u32;
 pub(super) const FOOTPRINT_INSTANCES_SIZE: u32 = std::mem::size_of::<FootprintInstances>() as u32;
 
 fn is_camera_buffer_size(app: &AppState, byte_width: u32) -> bool {
