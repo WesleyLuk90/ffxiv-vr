@@ -59,7 +59,7 @@ pub(crate) use clears::{
     clear_unordered_access_view_uint,
 };
 pub(crate) use copies::{copy_resource, copy_subresource_region, resolve_subresource};
-pub(crate) use draws::draw_indexed_instanced;
+pub(crate) use draws::{draw_indexed, draw_indexed_instanced};
 pub(crate) use render_targets::{
     cs_set_unordered_access_views, om_set_render_targets,
     om_set_render_targets_and_unordered_access_views,
@@ -77,6 +77,7 @@ macro_rules! for_each_hook {
             map,
             unmap,
             update_subresource,
+            draw_indexed,
             draw_indexed_instanced,
             vs_set_shader_resources,
             hs_set_shader_resources,
