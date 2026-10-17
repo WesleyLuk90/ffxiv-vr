@@ -9,7 +9,7 @@ public unsafe class FirstPersonManager(
     VRSpace vrSpace,
     Configuration configuration,
     GameConfigManager gameConfigManager
-)
+) : IDisposable
 {
 
     private bool DisableBodyRotation()
@@ -46,7 +46,6 @@ public unsafe class FirstPersonManager(
             return;
         }
         var changed = false;
-        var internalCamera = gameState.GetGameCameraExtended();
         var activeCamera = gameState.GetActiveCamera();
         if (configuration.AutoCombatViewMode != null && WasInCombat != null && WasInCombat != Conditions.Instance()->InCombat)
         {
@@ -64,9 +63,9 @@ public unsafe class FirstPersonManager(
 
             // Transition to first person can either be done by changing the camera to first person
         }
-        else if (internalCamera->CameraMode == CameraView.FirstPerson)
+        else if (activeCamera->ZoomMode == CameraZoomMode.FirstPerson)
         {
-            internalCamera->CameraMode = CameraView.ThirdPerson;
+            activeCamera->ZoomMode = CameraZoomMode.ThirdPerson;
             IsFirstPerson = !IsFirstPerson;
             changed = true;
         }
@@ -119,6 +118,19 @@ public unsafe class FirstPersonManager(
         {
             gameConfigManager.Revert(UiControlOption.AutoFaceTargetOnAction.ToString());
             gameConfigManager.Revert(UiControlOption.MoveMode.ToString());
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!IsFirstPerson)
+        {
+            return;
+        }
+        var activeCamera = gameState.GetActiveCamera();
+        if (activeCamera != null)
+        {
+            activeCamera->ZoomMode = CameraZoomMode.FirstPerson;
         }
     }
 

@@ -73,7 +73,7 @@ public class DebugWindow : Window
     private unsafe void renderCustomData()
     {
         var sceneCameraEx = gameState.GetSceneCameraExtended();
-        var gameCamera = gameState.GetGameCameraExtended();
+        var gameCamera = gameState.GetActiveCamera();
         var charBase = gameState.GetCharacterBaseExtended();
         var charExt = gameState.GetCharacterExtended();
         var charOrGpose = gameState.getCharacterOrGpose();
@@ -89,9 +89,10 @@ public class DebugWindow : Window
         if (gameCamera != null)
         {
             ImGui.Text($"Game Camera Address: 0x{Convert.ToString((long)gameCamera, 16)}");
-            ImGui.Text($"DirectionHorizontal: {float.RadiansToDegrees(gameCamera->DirectionHorizontal):F2}°");
-            ImGui.Text($"DirectionVertical: {float.RadiansToDegrees(gameCamera->DirectionVertical):F2}°");
-            ImGui.Text($"CameraMode: {gameCamera->CameraMode}");
+            ImGui.Text($"DirH: {float.RadiansToDegrees(gameCamera->DirH):F2}°");
+            ImGui.Text($"DirV: {float.RadiansToDegrees(gameCamera->DirV):F2}°");
+            ImGui.Text($"ZoomMode: {gameCamera->ZoomMode}");
+            ImGui.Text($"ControlMode: {gameCamera->ControlMode}");
         }
 
         if (charExt != null && charOrGpose != null && currentCamera != null)
