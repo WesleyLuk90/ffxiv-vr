@@ -168,6 +168,54 @@ public unsafe class Renderer(
         return compositionLayerProjectionView;
     }
 
+    internal void RenderWindow(Eye eye)
+    {
+        var backBuffer = GameTextures.GetBackBuffer();
+        var renderTargetView = GameTextures.GetRenderTargetView(backBuffer);
+        var compositingTexture = GameTextures.GetCompositingTexture();
+        if (renderTargetView == null || compositingTexture == null)
+        {
+            return;
+        }
+        var context = Context;
+        var viewport = new Viewport(
+            topLeftX: 0f,
+            topLeftY: 0f,
+            width: backBuffer->ActualWidth,
+            height: backBuffer->ActualHeight,
+            minDepth: 0f,
+            maxDepth: 1f);
+        context->RSSetViewports(1, &viewport);
+        var scissor = new Box2D<int>(
+            new Vector2D<int>(0, 0),
+            new Vector2D<int>((int)backBuffer->ActualWidth, (int)backBuffer->ActualHeight)
+        );
+        context->RSSetScissorRects(1, &scissor);
+        context->OMSetRenderTargets(1, ref renderTargetView, null);
+        shaders.SetShaders(context);
+        resources.DisableDepthStencil(context);
+
+        resources.SetOpaqueBlendState(context);
+        RenderWindowLayer(GetSourceRenderTarget(eye).ShaderResourceView);
+        resources.SetCompositingBlendState(context);
+        RenderWindowLayer((ID3D11ShaderResourceView*)compositingTexture->D3D11ShaderResourceView);
+    }
+
+    private void RenderWindowLayer(ID3D11ShaderResourceView* shaderResourceView)
+    {
+        resources.UpdateCamera(Context, new CameraConstants(
+            modelViewProjection: Matrix4X4<float>.Identity,
+            deform: Matrix4X4<float>.Identity,
+            curvature: 0
+        ));
+        resources.SetPixelShaderConstants(Context, new PixelShaderConstants(
+            mode: ShaderMode.Texture,
+            gamma: 1f,
+            color: new Vector4D<float>(1, 1, 1, 1)));
+        resources.SetSampler(Context, shaderResourceView);
+        resources.DrawSquare(Context);
+    }
+
     private bool resolutionErrorChecked = false;
     private void CheckResolution(SwapchainView swapchainView)
     {
