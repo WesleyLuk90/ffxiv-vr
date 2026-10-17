@@ -17,7 +17,6 @@ public unsafe class Renderer(
     VRSpace vrSpace,
     Configuration configuration,
     VRCamera vrCamera,
-    ResolutionManager resolutionManager,
     GameState gameState,
     VRUI vrUI,
     DxDeviceContext dxDeviceContext)
@@ -194,7 +193,7 @@ public unsafe class Renderer(
         var deformMatrix = vrUI.GetDeformMatrix();
         resources.SetCompositingBlendState(context);
         RenderUILayer(resources.UIRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix);
-        RenderUILayer(resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: resolutionManager.GetDalamudScale() * deformMatrix);
+        RenderUILayer(resources.DalamudRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix);
         RenderUILayer(resources.CursorRenderTarget.ShaderResourceView, modelViewProjection: matrix, deform: deformMatrix);
     }
 
