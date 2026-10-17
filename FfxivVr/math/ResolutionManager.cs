@@ -244,18 +244,15 @@ public unsafe class ResolutionManager : IDisposable
         return null;
     }
 
-    public Matrix4X4<float> GetDalamudScale()
+    internal Vector2D<float>? GetMouseScale()
     {
         if (resizeState is ResizeState state)
         {
-            var xScale = (float)state.RenderResolution.X / state.ClientArea.Size.X;
-            var yScale = (float)state.RenderResolution.Y / state.ClientArea.Size.Y;
-            return Matrix4X4.CreateTranslation(1f, -1f, 0) * Matrix4X4.CreateScale(xScale, yScale, 1) * Matrix4X4.CreateTranslation<float>(-1, 1, 0);
+            return new Vector2D<float>(
+                (float)state.RenderResolution.X / state.ClientArea.Size.X,
+                (float)state.RenderResolution.Y / state.ClientArea.Size.Y);
         }
-        else
-        {
-            return Matrix4X4<float>.Identity;
-        }
+        return null;
     }
 
     public void Dispose()

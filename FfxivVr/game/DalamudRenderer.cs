@@ -24,21 +24,52 @@ public class DalamudInterfaceManager : IInterfaceManager
     public InterfaceManager InterfaceManager => _interfaceManager;
 }
 
-public unsafe class DalamudRenderer(IInterfaceManager interfaceManager, Resources resources) : IDisposable
+public unsafe class DalamudRenderer(IInterfaceManager interfaceManager, Resources resources, ResolutionManager resolutionManager) : IDisposable
 {
     private readonly IInterfaceManager _interfaceManager = interfaceManager;
+    private Dx11Win32Backend? backend;
     private Dx11Renderer? renderer;
     private bool disposed = false;
+    private int scaledMouseEvents = 0;
 
     public void Initialize()
     {
-        var backend = _interfaceManager.InterfaceManager.Backend as Dx11Win32Backend ?? throw new Exception("Failed to get Dx11Win32Backend");
+        backend = _interfaceManager.InterfaceManager.Backend as Dx11Win32Backend ?? throw new Exception("Failed to get Dx11Win32Backend");
         renderer = backend.Renderer as Dx11Renderer ?? throw new Exception("Failed to get Dx11Renderer");
+        backend.NewInputFrame += OnNewInputFrame;
         _interfaceManager.InterfaceManager.Draw += OnDraw;
+    }
+
+    private void OnNewInputFrame()
+    {
+        var queue = ImGui.GetCurrentContext().InputEventsQueue.AsSpan();
+        if (disposed || resolutionManager.GetMouseScale() is not { } scale)
+        {
+            scaledMouseEvents = queue.Length;
+            return;
+        }
+        var origin = ImGui.GetMainViewport().Pos;
+        for (var i = Math.Min(scaledMouseEvents, queue.Length); i < queue.Length; i++)
+        {
+            ref var inputEvent = ref queue[i];
+            if (inputEvent.Type != ImGuiInputEventType.MousePos)
+            {
+                continue;
+            }
+            ref var position = ref inputEvent.Union.MousePos;
+            if (position.PosX <= -float.MaxValue || position.PosY <= -float.MaxValue)
+            {
+                continue;
+            }
+            position.PosX = MathF.Floor(origin.X + (position.PosX - origin.X) * scale.X);
+            position.PosY = MathF.Floor(origin.Y + (position.PosY - origin.Y) * scale.Y);
+        }
+        scaledMouseEvents = queue.Length;
     }
 
     private void OnDraw()
     {
+        scaledMouseEvents = ImGui.GetCurrentContext().InputEventsQueue.Size;
         // Render before Dalamud disposes textures, otherwise the draw data may reference disposed textures
         _interfaceManager.InterfaceManager.RunAfterImGuiRender(Render);
     }
@@ -56,6 +87,10 @@ public unsafe class DalamudRenderer(IInterfaceManager interfaceManager, Resource
     public void Dispose()
     {
         disposed = true;
+        if (backend != null)
+        {
+            backend.NewInputFrame -= OnNewInputFrame;
+        }
         if (renderer != null)
         {
             _interfaceManager.InterfaceManager.Draw -= OnDraw;
