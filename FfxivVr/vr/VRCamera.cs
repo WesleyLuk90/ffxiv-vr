@@ -13,7 +13,8 @@ GameState gameState,
 FirstPersonManager firstPersonManager
 )
 {
-    private float near = 0.1f;
+    public const float NearPlane = 0.1f;
+    private float near = NearPlane;
 
     internal Matrix4x4 ComputeGameProjectionMatrix(View view)
     {

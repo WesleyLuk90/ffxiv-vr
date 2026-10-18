@@ -7,7 +7,11 @@ use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use log::LevelFilter;
 use simplelog::WriteLogger;
-use windows::Win32::Graphics::Direct3D11::{ID3D11Device, ID3D11DeviceContext};
+use windows::Win32::Graphics::Direct3D11::{
+    D3D11_COMPARISON_GREATER_EQUAL, D3D11_DEPTH_STENCIL_DESC, D3D11_DEPTH_WRITE_MASK_ZERO,
+    ID3D11DepthStencilState, ID3D11DepthStencilView, ID3D11Device, ID3D11DeviceContext,
+    ID3D11RenderTargetView,
+};
 use windows::core::Interface;
 
 mod camera_state;
@@ -37,10 +41,33 @@ struct AppState {
     geometry_texture: *mut c_void,
     composition_texture: *mut c_void,
     current_pass: Option<Pass>,
+    target_cursor_depth: Option<f32>,
+    target_cursor_depth_tested: bool,
+    target_cursor_texture: *mut c_void,
+    target_cursor_depth_state: Option<ID3D11DepthStencilState>,
+    eye_scene_targets: Option<[EyeSceneTarget; 2]>,
     corrected_footprint_buffer: Option<*mut c_void>,
 }
 
 unsafe impl Send for AppState {}
+
+struct EyeSceneTarget {
+    color: ID3D11RenderTargetView,
+    depth: ID3D11DepthStencilView,
+}
+
+fn create_target_cursor_depth_state(device: &ID3D11Device) -> Option<ID3D11DepthStencilState> {
+    let desc = D3D11_DEPTH_STENCIL_DESC {
+        DepthEnable: true.into(),
+        DepthWriteMask: D3D11_DEPTH_WRITE_MASK_ZERO,
+        DepthFunc: D3D11_COMPARISON_GREATER_EQUAL,
+        StencilEnable: false.into(),
+        ..Default::default()
+    };
+    let mut state = None;
+    unsafe { device.CreateDepthStencilState(&desc, Some(&mut state)) }.ok()?;
+    state
+}
 
 impl AppState {
     /// # Safety
@@ -54,6 +81,7 @@ impl AppState {
         let raw = context as *mut c_void;
         let ctx = unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw) }?;
         let device = unsafe { ctx.GetDevice() }.ok()?;
+        let target_cursor_depth_state = create_target_cursor_depth_state(&device);
 
         Some(Self {
             device_context: context,
@@ -66,6 +94,11 @@ impl AppState {
             geometry_texture,
             composition_texture,
             current_pass: None,
+            target_cursor_depth: None,
+            target_cursor_depth_tested: false,
+            target_cursor_texture: std::ptr::null_mut(),
+            target_cursor_depth_state,
+            eye_scene_targets: None,
             corrected_footprint_buffer: None,
         })
     }
@@ -235,6 +268,67 @@ pub extern "system" fn ffxiv_vr_native_set_active_eye(eye: i32) -> bool {
     app.corrected_footprint_buffer = None;
     hooks::sync_bound_views(app);
     accepted
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn ffxiv_vr_native_set_target_cursor_depth(
+    depth: f32,
+    depth_tested: bool,
+) -> bool {
+    let Some(mut guard) = lock_app() else {
+        return false;
+    };
+    let Some(app) = guard.as_mut() else {
+        return false;
+    };
+    if depth.is_finite() {
+        app.target_cursor_depth = Some(depth);
+    }
+    app.target_cursor_depth_tested = depth_tested;
+    true
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn ffxiv_vr_native_set_target_cursor_texture(
+    shader_resource_view: *mut c_void,
+) -> bool {
+    let Some(mut guard) = lock_app() else {
+        return false;
+    };
+    let Some(app) = guard.as_mut() else {
+        return false;
+    };
+    app.target_cursor_texture = shader_resource_view;
+    true
+}
+
+/// # Safety
+/// `left` and `right` must each be null or a valid `ID3D11RenderTargetView*`, and `left_depth`
+/// and `right_depth` must each be null or a valid `ID3D11DepthStencilView*`.
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn ffxiv_vr_native_set_eye_scene_targets(
+    left: *mut c_void,
+    right: *mut c_void,
+    left_depth: *mut c_void,
+    right_depth: *mut c_void,
+) -> bool {
+    let views = [(left, left_depth), (right, right_depth)].map(|(color, depth)| {
+        Some(EyeSceneTarget {
+            color: unsafe { ID3D11RenderTargetView::from_raw_borrowed(&color) }?.clone(),
+            depth: unsafe { ID3D11DepthStencilView::from_raw_borrowed(&depth) }?.clone(),
+        })
+    });
+    let Some(mut guard) = lock_app() else {
+        return false;
+    };
+    let Some(app) = guard.as_mut() else {
+        return false;
+    };
+    app.eye_scene_targets = match views {
+        [Some(left), Some(right)] => Some([left, right]),
+        _ => None,
+    };
+    true
 }
 
 /// # Safety

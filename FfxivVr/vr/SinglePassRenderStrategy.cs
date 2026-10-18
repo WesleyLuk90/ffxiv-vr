@@ -1,9 +1,13 @@
+using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.Collections.Concurrent;
 using System.Numerics;
 
 namespace FfxivVR;
@@ -19,7 +23,11 @@ public unsafe class SinglePassRenderStrategy(
     FfxivVrNative ffxivVrNative,
     DxDeviceContext dxDeviceContext,
     Configuration configuration,
-    WaitFrameService waitFrameService
+    WaitFrameService waitFrameService,
+    ITargetManager targetManager,
+    IGameGui gameGui,
+    Resources resources,
+    NameplateModifier nameplateModifier
 ) : IRenderStrategy, IDisposable
 {
     public VRSessionData? VRSessionData { get; private set; }
@@ -29,6 +37,9 @@ public unsafe class SinglePassRenderStrategy(
     private Vector2D<uint>? pendingNativeSize;
     private nint lastCompositingTexture;
     private nint lastGeometryTexture;
+    private const int MaxPendingTargetCursorDepths = 3;
+    private readonly ConcurrentQueue<float?> pendingTargetCursorDepths = new();
+    private Matrix4x4? centerViewProjection;
 
     public void Initialize(Vector2D<uint> size)
     {
@@ -77,6 +88,11 @@ public unsafe class SinglePassRenderStrategy(
         {
             lastCompositingTexture = compositingPtr;
             lastGeometryTexture = geometryPtr;
+            ffxivVrNative.SetEyeSceneTargets(
+                resources.SceneRenderTargets[Eye.Left.ToIndex()].RenderTargetView,
+                resources.SceneRenderTargets[Eye.Right.ToIndex()].RenderTargetView,
+                resources.SceneDepthTargets[Eye.Left.ToIndex()].DepthStencilView,
+                resources.SceneDepthTargets[Eye.Right.ToIndex()].DepthStencilView);
         }
     }
 
@@ -113,16 +129,77 @@ public unsafe class SinglePassRenderStrategy(
                 centerView.Pose.Position = (centerView.Pose.Position.ToVector3D() - headCenter).ToVector3f();
             }
             vrCamera.UpdateCamera(camera, phase.GetGameCamera(vrCamera.CreateGameCamera), phase.CameraMode, centerView);
+            centerViewProjection = Matrix4x4.Multiply(camera->RenderCamera->ViewMatrix, camera->RenderCamera->ProjectionMatrix);
         }
     }
 
 
     public void OnStartUI()
     {
+        ffxivVrNative.SetTargetCursorTexture(FindTargetCursorTexture());
+        pendingTargetCursorDepths.Enqueue(ComputeTargetCursorDepth());
+        while (pendingTargetCursorDepths.Count > MaxPendingTargetCursorDepths)
+        {
+            pendingTargetCursorDepths.TryDequeue(out _);
+        }
         renderPipelineInjector.QueueRenderTargetCommand(Eye.Left);
         renderPipelineInjector.QueueClearCommand();
     }
 
+    private ID3D11ShaderResourceView* FindTargetCursorTexture()
+    {
+        var cursor = (AtkUnitBase*)gameGui.GetAddonByName("_TargetCursor", 1).Address;
+        if (cursor == null)
+        {
+            return null;
+        }
+        foreach (var node in cursor->UldManager.Nodes)
+        {
+            if (node.Value == null || node.Value->Type != NodeType.Image)
+            {
+                continue;
+            }
+            var image = (AtkImageNode*)node.Value;
+            if (image->PartsList == null || image->PartId >= image->PartsList->PartCount)
+            {
+                continue;
+            }
+            var asset = image->PartsList->Parts[image->PartId].UldAsset;
+            if (asset == null || asset->AtkTexture.TextureType != TextureType.Resource)
+            {
+                continue;
+            }
+            var resource = asset->AtkTexture.Resource;
+            if (resource == null || resource->KernelTextureObject == null)
+            {
+                continue;
+            }
+            return (ID3D11ShaderResourceView*)resource->KernelTextureObject->D3D11ShaderResourceView;
+        }
+        return null;
+    }
+
+    private float? ComputeTargetCursorDepth()
+    {
+        var target = targetManager.Target ?? targetManager.SoftTarget;
+        if (target == null)
+        {
+            return null;
+        }
+        if (nameplateModifier.TargetNameplateDepth is float nameplateDepth)
+        {
+            return nameplateDepth;
+        }
+        if (centerViewProjection is not Matrix4x4 viewProjection)
+        {
+            return null;
+        }
+        var gameObject = (GameObject*)target.Address;
+        FFXIVClientStructs.FFXIV.Common.Math.Vector3 position;
+        gameObject->GetNamePlateWorldPosition(&position);
+        var clip = Vector4.Transform(new Vector4(position, 1), viewProjection);
+        return clip.W > 0 ? MathF.Min(clip.Z / clip.W, nameplateModifier.MaxNameplateDepth) : null;
+    }
 
     Eye eye = Eye.Left;
     public void OnStartUIRender(Eye? _eye)
@@ -137,6 +214,10 @@ public unsafe class SinglePassRenderStrategy(
             renderer.CopyTexture(eye, (ID3D11Texture2D*)texture->D3D11Texture2D, (ID3D11Texture2D*)depth->D3D11Texture2D);
             if (eye == Eye.Left)
             {
+                if (pendingTargetCursorDepths.TryDequeue(out var targetCursorDepth) && targetCursorDepth is float cursorDepth)
+                {
+                    ffxivVrNative.SetTargetCursorDepth(cursorDepth, renderer.ShouldUseDepthTexture());
+                }
                 eye = Eye.Right;
             }
             else
@@ -235,6 +316,8 @@ public unsafe class SinglePassRenderStrategy(
     {
         // Ensure we end the frame if we need to end the session
         VRSessionData = null;
+        pendingTargetCursorDepths.Clear();
+        centerViewProjection = null;
         if (renderFrameState is FrameState fs)
         {
             renderer.StartFrame();
