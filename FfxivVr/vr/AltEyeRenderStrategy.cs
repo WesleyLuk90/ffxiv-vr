@@ -66,7 +66,7 @@ public unsafe class AltEyeRenderStrategy(
         if (VRSessionData != null)
         {
             logger.Trace($"Queue {eye} render");
-            renderPipelineInjector.QueueRenderTargetCommand(eye);
+            renderPipelineInjector.QueueEyeMarkerCommand(eye);
             // Only clear the left view to get a clean render for copying
             // The right view we skip clearing which lets it display the VR view
             if (eye == Eye.Left)

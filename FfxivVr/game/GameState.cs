@@ -86,22 +86,15 @@ public unsafe class GameState(
         return character->GameObject.EntityId == entityID;
     }
 
-    public CharacterExtended* GetCharacterExtended()
-    {
-        return CharacterExtended.FromCharacter(getCharacterOrGpose());
-    }
-
     public Vector3D<float> GetFixedHeadPosition()
     {
         var character = getCharacterOrGpose();
-        var internalCharacter = GetCharacterExtended();
 
-        if (character == null || internalCharacter == null)
+        if (character == null)
         {
-            // Provide a sane default here incase there is no character
             return GetCurrentCamera()->LookAtVector.ToVector3D();
         }
-        return character->Position.ToVector3D() + new Vector3D<float>(0, internalCharacter->FixHeadPosition, 0);
+        return character->Position.ToVector3D() + new Vector3D<float>(0, character->GameObject.CameraOffset.Y, 0);
     }
 
     internal bool IsInCutscene()
@@ -145,11 +138,6 @@ public unsafe class GameState(
             return null;
         }
         return manager->CurrentCamera;
-    }
-
-    public SceneCameraExtended* GetSceneCameraExtended()
-    {
-        return SceneCameraExtended.FromCamera(GetCurrentCamera());
     }
 
     private AddonFade* FadeMiddle = null;

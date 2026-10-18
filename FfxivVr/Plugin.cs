@@ -20,7 +20,6 @@ public sealed class Plugin : IDalamudPlugin
         var appFactory = PluginInterface.Create<AppFactory>() ?? throw new NullReferenceException("Failed to create AppFactory");
         AppHost = appFactory.CreateSession();
 
-        AppHost.Services.GetRequiredService<RenderPipelineInjector>().Initialize();
         AppHost.Services.GetRequiredService<GameHooks>().Initialize();
         AppHost.Services.GetRequiredService<CommandHander>().Initialize();
         AppHost.Services.GetRequiredService<GameEvents>().Initialize();

@@ -72,19 +72,10 @@ public class DebugWindow : Window
     }
     private unsafe void renderCustomData()
     {
-        var sceneCameraEx = gameState.GetSceneCameraExtended();
         var gameCamera = gameState.GetActiveCamera();
         var charBase = gameState.GetCharacterBaseExtended();
-        var charExt = gameState.GetCharacterExtended();
         var charOrGpose = gameState.getCharacterOrGpose();
         var currentCamera = gameState.GetCurrentCamera();
-
-        if (sceneCameraEx != null)
-        {
-            ImGui.Text($"Camera Extras 0x{Convert.ToString((long)sceneCameraEx, 16)}");
-            ImGui.Text($"Horizontal Rotation Rad:{sceneCameraEx->CurrentHRotation:F2} Deg:{float.RadiansToDegrees(sceneCameraEx->CurrentHRotation):F2}");
-            ImGui.Text($"Vertical Rotation Rad:{sceneCameraEx->CurrentVRotation:F2} Deg:{float.RadiansToDegrees(sceneCameraEx->CurrentVRotation):F2}");
-        }
 
         if (gameCamera != null)
         {
@@ -95,10 +86,9 @@ public class DebugWindow : Window
             ImGui.Text($"ControlMode: {gameCamera->ControlMode}");
         }
 
-        if (charExt != null && charOrGpose != null && currentCamera != null)
+        if (charOrGpose != null && currentCamera != null)
         {
-            ImGui.Text($"Character Extended Address: 0x{Convert.ToString((long)charExt, 16)}");
-            ImGui.Text($"FixHeadPosition: {charExt->FixHeadPosition:F2} == {currentCamera->Position.Y - charOrGpose->Position.Y:F2}");
+            ImGui.Text($"CameraOffset.Y: {charOrGpose->GameObject.CameraOffset.Y:F2} == {currentCamera->Position.Y - charOrGpose->Position.Y:F2}");
         }
 
         if (charBase != null)

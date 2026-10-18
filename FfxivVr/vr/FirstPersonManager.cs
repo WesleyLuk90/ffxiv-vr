@@ -148,9 +148,9 @@ public unsafe class FirstPersonManager(
     // Test UI rotation
     public void UpdateRotation(float yaw)
     {
-        var internalSceneCamera = gameState.GetSceneCameraExtended();
+        var camera = gameState.GetActiveCamera();
         var character = gameState.getCharacterOrGpose();
-        if (ShouldUpdateHeadRotation() && internalSceneCamera != null && character != null)
+        if (ShouldUpdateHeadRotation() && camera != null && character != null)
         {
             // Any difference in rotation we assume is from the player rotating their character
             // Compute the difference and apply it to the offset
@@ -159,12 +159,12 @@ public unsafe class FirstPersonManager(
             if (lastRotation is { } r)
             {
                 // Use camera rotation instead so that auto face target works
-                var delta = (internalSceneCamera->CurrentHRotation - r) % (MathF.PI * 2);
+                var delta = (camera->DirH - r) % (MathF.PI * 2);
                 offset += delta;
             }
             character->SetRotation(yaw + off + MathF.PI);
-            internalSceneCamera->CurrentHRotation = yaw + off;
-            lastRotation = internalSceneCamera->CurrentHRotation;
+            camera->DirH = yaw + off;
+            lastRotation = camera->DirH;
         }
         else
         {
