@@ -119,7 +119,7 @@ public unsafe class SinglePassRenderStrategy(
 
     public void OnStartUI()
     {
-        renderPipelineInjector.QueueRenderTargetCommand(Eye.Left);
+        renderPipelineInjector.QueueEyeMarkerCommand(Eye.Left);
         renderPipelineInjector.QueueClearCommand();
     }
 

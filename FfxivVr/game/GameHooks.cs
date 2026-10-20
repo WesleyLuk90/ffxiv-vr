@@ -157,27 +157,27 @@ public unsafe class GameHooks(
         });
     }
 
-    private delegate void RenderThreadSetRenderTargetDelegate(Device* deviceInstance, SetRenderTargetCommand* command);
+    private delegate void RenderThreadSetRenderTargetDelegate(Device* deviceInstance, RenderCommandSetTarget* command);
     [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? F3 0F 10 5F 18", DetourName = nameof(RenderThreadSetRenderTargetDetour))]
     private Hook<RenderThreadSetRenderTargetDelegate>? RenderThreadSetRenderTargetHook = null;
 
-    private void RenderThreadSetRenderTargetDetour(Device* deviceInstance, SetRenderTargetCommand* command)
+    private void RenderThreadSetRenderTargetDetour(Device* deviceInstance, RenderCommandSetTarget* command)
     {
-        var renderTargets = command->numRenderTargets;
+        var renderTargets = command->RenderTargetCount;
         exceptionHandler.FaultBarrier(() =>
         {
             Eye? eye = null;
-            if (renderTargets == LeftEyeRenderTargetNumber)
+            if (renderTargets == LeftEyeMarkerTargetCount)
             {
                 eye = Eye.Left;
             }
-            else if (renderTargets == RightEyeRenderTargetNumber)
+            else if (renderTargets == RightEyeMarkerTargetCount)
             {
                 eye = Eye.Right;
             }
             vrLifecycle.OnStartUIRender(eye);
         });
-        if (renderTargets != LeftEyeRenderTargetNumber && renderTargets != RightEyeRenderTargetNumber)
+        if (renderTargets != LeftEyeMarkerTargetCount && renderTargets != RightEyeMarkerTargetCount)
         {
             RenderThreadSetRenderTargetHook!.Original(deviceInstance, command);
         }
