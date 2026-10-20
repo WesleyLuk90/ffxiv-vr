@@ -83,6 +83,11 @@ public unsafe class VRSession(
 
     public void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
+        if (State.SessionRunning && renderStrategy.VRSessionData is VRSessionData phase)
+        {
+            var centerView = vrCamera.ComputeCenterView(phase.Views[Eye.Left.ToIndex()], phase.Views[Eye.Right.ToIndex()]);
+            firstPersonManager.UpdateRotation(centerView.Pose.Orientation.ToQuaternion().GetYaw());
+        }
         renderStrategy.UpdateCamera(camera);
     }
 
