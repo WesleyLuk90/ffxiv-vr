@@ -210,6 +210,9 @@ public unsafe class SinglePassRenderStrategy(
             RenderSessionData = null;
             renderFrameState = null;
         }
+        ffxivVrNative.SetRenderHooksEnabled(false);
+        renderer.RenderWindow(Eye.Left);
+        ffxivVrNative.SetRenderHooksEnabled(true);
         if (VRSessionData is VRSessionData phase)
         {
             var nextFrameState = waitFrameService.WaitFrame();

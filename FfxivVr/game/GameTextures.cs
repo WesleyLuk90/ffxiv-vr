@@ -27,6 +27,23 @@ public static unsafe class GameTextures
     {
         return RenderTargetManager.Instance()->ToneAdjustSource;
     }
+    public static Texture* GetBackBuffer()
+    {
+        var device = Device.Instance();
+        if (device == null || device->SwapChain == null)
+        {
+            return null;
+        }
+        return device->SwapChain->BackBuffer;
+    }
+    public static ID3D11RenderTargetView* GetRenderTargetView(Texture* texture)
+    {
+        if (texture == null || texture->MipRenderTargets == null)
+        {
+            return null;
+        }
+        return (ID3D11RenderTargetView*)texture->MipRenderTargets[0].D3D11RenderTargetViewOrDepthStencilView;
+    }
     public static Texture* GetGameDepthTexture()
     {
         return RenderTargetManager.Instance()->DepthStencil;

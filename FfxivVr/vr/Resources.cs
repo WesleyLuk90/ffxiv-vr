@@ -190,6 +190,10 @@ public unsafe class Resources(
     {
         context->OMSetBlendState(compositingBlendState, null, 0xffffffff);
     }
+    internal void SetOpaqueBlendState(ID3D11DeviceContext* context)
+    {
+        context->OMSetBlendState(null, null, 0xffffffff);
+    }
     internal void SetStandardBlendState(ID3D11DeviceContext* context)
     {
         context->OMSetBlendState(standardBlendState, null, 0xffffffff);
