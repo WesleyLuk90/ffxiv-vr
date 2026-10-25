@@ -18,13 +18,15 @@ class ResizeState
     public Rectangle<int> ClientArea;
     public Vector2D<uint> RenderResolution;
     public Vector2D<uint> OriginalRenderResolution;
+    public nint? OriginalStyle;
 
-    public ResizeState(Rectangle<int> originalWindow, Rectangle<int> clientRectangle, Vector2D<uint> renderResolution, Vector2D<uint> originalRenderResolution)
+    public ResizeState(Rectangle<int> originalWindow, Rectangle<int> clientRectangle, Vector2D<uint> renderResolution, Vector2D<uint> originalRenderResolution, nint? originalStyle)
     {
         OriginalWindow = originalWindow;
         ClientArea = clientRectangle;
         RenderResolution = renderResolution;
         OriginalRenderResolution = originalRenderResolution;
+        OriginalStyle = originalStyle;
     }
 }
 public unsafe class ResolutionManager : IDisposable
@@ -117,10 +119,18 @@ public unsafe class ResolutionManager : IDisposable
         HWND handle = GetGameWindowHandle();
         if (handle != 0)
         {
+            var windowRect = GetWindowRect(handle);
+            nint? originalStyle = null;
+            if (configuration.WindowBorderless)
+            {
+                var style = PInvoke.GetWindowLongPtr(handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+                SetWindowStyle(handle, style & ~(nint)WINDOW_STYLE.WS_OVERLAPPEDWINDOW);
+                originalStyle = style;
+            }
+
             var clientSize = ComputeClientSize(handle, resolution.As<int>());
             var clientRect = ComputeClientRectangle(handle, clientSize);
             var adjustRect = AdjustRect(handle, clientRect);
-            var windowRect = GetWindowRect(handle);
 
             if (!PInvoke.SetWindowPos(
                 hWnd: handle,
@@ -149,7 +159,8 @@ public unsafe class ResolutionManager : IDisposable
                 originalWindow: windowRect,
                 clientRectangle: clientRect,
                 renderResolution: resolution,
-                originalRenderResolution: originalRenderResolution
+                originalRenderResolution: originalRenderResolution,
+                originalStyle: originalStyle
             );
         }
         else
@@ -178,6 +189,13 @@ public unsafe class ResolutionManager : IDisposable
             throw new Exception("Failed to AdjustWindowRect");
         }
         return ToRectangle(desiredRect);
+    }
+
+    private static void SetWindowStyle(HWND handle, nint style)
+    {
+        PInvoke.SetWindowLongPtr(handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE, style);
+        PInvoke.SetWindowPos(handle, HWND.Null, 0, 0, 0, 0,
+            SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOSIZE | SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_FRAMECHANGED);
     }
 
     private void DisableSetCursor()
@@ -220,6 +238,10 @@ public unsafe class ResolutionManager : IDisposable
             HWND handle = GetGameWindowHandle();
             if (handle != IntPtr.Zero)
             {
+                if (state.OriginalStyle is nint originalStyle)
+                {
+                    SetWindowStyle(handle, originalStyle);
+                }
                 PInvoke.SetWindowPos(handle, NOTOPMOST, state.OriginalWindow.Origin.X, state.OriginalWindow.Origin.Y, state.OriginalWindow.Size.X, state.OriginalWindow.Size.Y, 0);
             }
 
