@@ -11,7 +11,6 @@ namespace FfxivVR;
 public unsafe class SinglePassRenderStrategy(
     RenderPipelineInjector renderPipelineInjector,
     Renderer renderer,
-    VRState state,
     Logger logger,
     FramePrediction framePrediction,
     InputManager inputManager,
@@ -100,7 +99,7 @@ public unsafe class SinglePassRenderStrategy(
     }
     public void UpdateCamera(Camera* camera)
     {
-        if (state.SessionRunning && VRSessionData is VRSessionData phase)
+        if (VRSessionData is VRSessionData phase)
         {
             var centerView = vrCamera.ComputeCenterView(phase.Views[Eye.Left.ToIndex()], phase.Views[Eye.Right.ToIndex()]);
             if (pendingNativeSize is Vector2D<uint> size && size.X > 0 && size.Y > 0)
@@ -179,16 +178,6 @@ public unsafe class SinglePassRenderStrategy(
 
     public bool OnPresentFrame()
     {
-        if (!state.SessionRunning)
-        {
-            if (VRSessionData != null)
-            {
-                logger.Debug("Session not running, discarding phase");
-                VRSessionData = null;
-            }
-            OnSessionEnd();
-            return true;
-        }
         if (RenderSessionData is VRSessionData render && renderFrameState is FrameState frameState)
         {
             logger.Trace("Wait for VR frame sync");
@@ -196,7 +185,6 @@ public unsafe class SinglePassRenderStrategy(
             if (frameState.ShouldRender == 1)
             {
                 ffxivVrNative.SetRenderHooksEnabled(false);
-                // TODO, maybe render this earlier so we copy the clean ui?
                 var leftLayer = renderer.RenderEye(new EyeRender(Eye.Left, render.Views[Eye.Left.ToIndex()]), inputManager.GetAimLine(AimType.Head, render.VRInputData));
                 var rightLayer = renderer.RenderEye(new EyeRender(Eye.Right, render.Views[Eye.Right.ToIndex()]), inputManager.GetAimLine(AimType.Head, render.VRInputData));
                 ffxivVrNative.SetRenderHooksEnabled(true);

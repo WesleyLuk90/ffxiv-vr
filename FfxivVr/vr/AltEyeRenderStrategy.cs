@@ -12,7 +12,6 @@ public unsafe class AltEyeRenderStrategy(
     FramePrediction framePrediction,
     Logger logger,
     InputManager inputManager,
-    VRState state,
     RenderPipelineInjector renderPipelineInjector,
     VRCamera vrCamera,
     WaitFrameService waitFrameService
@@ -29,7 +28,7 @@ public unsafe class AltEyeRenderStrategy(
 
     public void UpdateCamera(Camera* camera)
     {
-        if (state.SessionRunning && VRSessionData is VRSessionData phase)
+        if (VRSessionData is VRSessionData phase)
         {
             logger.Trace($"Set {eye} camera matrix");
             var view = CurrentView(phase, phase.CameraMode.UseHeadMovement);
@@ -96,15 +95,6 @@ public unsafe class AltEyeRenderStrategy(
 
     public bool OnPresentFrame()
     {
-        if (!state.SessionRunning)
-        {
-            if (VRSessionData != null)
-            {
-                logger.Debug("Session not running, discarding phases");
-                VRSessionData = null;
-            }
-            OnSessionEnd();
-        }
         var shouldPresent = true;
         if (renderPhase is LeftRenderPhase leftRenderPhase)
         {
@@ -161,6 +151,7 @@ public unsafe class AltEyeRenderStrategy(
     public void OnSessionEnd()
     {
         // Ensure we end the frame if we need to end the session
+        VRSessionData = null;
         if (renderPhase is LeftRenderPhase left)
         {
             renderer.StartFrame();

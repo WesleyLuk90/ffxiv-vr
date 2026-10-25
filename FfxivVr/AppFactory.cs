@@ -93,6 +93,7 @@ public unsafe class AppFactory
         builder.Services.AddSingleton<HookStatus>();
         builder.Services.AddSingleton<NameplateModifier>();
         builder.Services.AddSingleton<HudLayoutManager>();
+        builder.Services.AddSingleton<LetterboxModifier>();
         builder.Services.AddSingleton<TalkPositionManager>();
         builder.Services.AddSingleton<Logger>();
         builder.Services.AddSingleton<PluginUI>();
@@ -119,7 +120,6 @@ public unsafe class AppFactory
         builder.Services.AddScoped<VRSession>();
         builder.Services.AddScoped<VRShaders>();
         builder.Services.AddScoped<VRSpace>();
-        builder.Services.AddScoped<VRState>();
         builder.Services.AddScoped<VRSwapchains>();
         builder.Services.AddScoped<VRSystem>();
         builder.Services.AddScoped<VRUI>();

@@ -8,20 +8,21 @@ public class EventHandler(
     XR xr,
     VRSystem vrSystem,
     Logger logger,
-    VRState vrState,
     VRSpace vrSpace,
     WaitFrameService waitFrameService,
-    VRActionService vrInput)
+    VRActionService vrInput,
+    IRenderStrategy renderStrategy)
 {
-    internal unsafe void PollEvents(System.Action onSessionEnd)
+    internal unsafe SessionEvent? PollEvents()
     {
+        SessionEvent? outcome = null;
         while (true)
         {
             var eventDataBuffer = new EventDataBuffer(next: null);
             var result = xr.PollEvent(vrSystem.Instance, ref eventDataBuffer);
             if (result == Result.EventUnavailable)
             {
-                return;
+                return outcome;
             }
             result.CheckResult("PollEvent");
             switch (eventDataBuffer.Type)
@@ -60,7 +61,10 @@ public class EventHandler(
                 case StructureType.EventDataSessionStateChanged:
                     {
                         var stateChanged = Unsafe.As<EventDataBuffer, EventDataSessionStateChanged>(ref eventDataBuffer);
-                        HandleSessionStateChanged(stateChanged, onSessionEnd);
+                        if (HandleSessionStateChanged(stateChanged) is SessionEvent next && outcome is not SessionEvent.Exited)
+                        {
+                            outcome = next;
+                        }
                         break;
                     }
                 default:
@@ -71,12 +75,12 @@ public class EventHandler(
             }
         }
     }
-    private unsafe void HandleSessionStateChanged(EventDataSessionStateChanged stateChanged, System.Action onSessionEnd)
+    private unsafe SessionEvent? HandleSessionStateChanged(EventDataSessionStateChanged stateChanged)
     {
         if (!stateChanged.Session.Equals(vrSystem.Session))
         {
             logger.Error($"Session state changed for different session, got {stateChanged.Session.Handle} but expected {vrSystem.Session.Handle}");
-            return;
+            return null;
         }
         logger.Debug($"Session state has changed to {stateChanged.State}");
         switch (stateChanged.State)
@@ -86,31 +90,28 @@ public class EventHandler(
                     var beginInfo = new SessionBeginInfo(next: null, primaryViewConfigurationType: vrSystem.ViewConfigurationType);
                     xr.BeginSession(vrSystem.Session, ref beginInfo).CheckResult("BeginSession");
                     waitFrameService.SessionStarted();
-                    vrState.SessionRunning = true;
                     logger.Debug("Started session");
-                    break;
+                    return SessionEvent.Began.Instance;
                 }
             case SessionState.Stopping:
                 {
                     waitFrameService.SessionStopped();
-                    onSessionEnd();
+                    renderStrategy.OnSessionEnd();
                     xr.EndSession(vrSystem.Session).CheckResult("EndSession");
-                    vrState.SessionRunning = false;
-                    break;
+                    return SessionEvent.Ended.Instance;
                 }
             case SessionState.Exiting:
                 {
-                    vrState.SessionRunning = false;
-                    vrState.Exiting = true;
-                    break;
+                    return new SessionEvent.Exited(StopReason.RuntimeExiting);
                 }
             case SessionState.LossPending:
                 {
-                    vrState.SessionRunning = false;
-                    vrState.Exiting = true;
-                    break;
+                    return new SessionEvent.Exited(StopReason.SessionLost);
+                }
+            default:
+                {
+                    return null;
                 }
         }
-        vrState.State = stateChanged.State;
     }
 }

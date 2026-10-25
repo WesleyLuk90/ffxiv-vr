@@ -18,13 +18,13 @@ public unsafe class GameModifier(
     FirstPersonManager firstPersonManager
 )
 {
-    public void HideHeadMesh(bool force = false)
+    public void HideHeadMesh()
     {
-        if (gameState.IsInCutscene() && !force)
+        if (gameState.IsInCutscene())
         {
             return;
         }
-        if (!firstPersonManager.IsFirstPerson && !force)
+        if (!firstPersonManager.IsFirstPerson)
         {
             return;
         }
@@ -144,11 +144,6 @@ public unsafe class GameModifier(
     internal void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
         nameplateModifier.UpdateVRNameplates(context, handlers);
-    }
-
-    internal void UpdateLetterboxing(LetterboxingExtended* internalLetterboxing)
-    {
-        internalLetterboxing->ShouldLetterBox &= ~LetterBoxingOption.EnableLetterboxing;
     }
 
 }
