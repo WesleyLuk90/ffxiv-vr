@@ -119,6 +119,7 @@ public class ConfigWindow : Window
         }
         Checkbox("Start VR at game launch if headset is available", ref config.StartVRAtBoot);
         Checkbox("Keep game window always on top", ref config.WindowAlwaysOnTop);
+        Checkbox("Remove game window borders", ref config.WindowBorderless, "Removes the game window's borders and prevents resizing while VR is running (Requires VR restart).");
         Checkbox("Use new renderer (beta)", ref config.UseSinglePassRender, "Faster, with better sync between the two eyes, but still in beta so there are some graphical glitches (Requires VR restart).");
     }
 

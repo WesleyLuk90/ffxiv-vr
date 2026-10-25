@@ -11,4 +11,5 @@ SetCursorPos
 AdjustWindowRectEx
 DwmGetWindowAttribute
 GetWindowLongPtr
+SetWindowLongPtr
 SendInput
