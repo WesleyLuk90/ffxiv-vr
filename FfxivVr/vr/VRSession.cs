@@ -17,7 +17,6 @@ public unsafe class VRSession(
     GameState gameState,
     GameModifier gameModifier,
     VRSystem vrSystem,
-    VRState State,
     VRSwapchains swapchains,
     Resources resources,
     VRShaders vrShaders,
@@ -38,7 +37,6 @@ public unsafe class VRSession(
     ITargetManager targetManager
 )
 {
-    public VRState State { get; } = State;
     public void Initialize()
     {
         dalamudRenderer.Initialize();
@@ -52,14 +50,14 @@ public unsafe class VRSession(
         renderStrategy.Initialize(size);
     }
 
+    public SessionEvent? PollEvents()
+    {
+        return eventHandler.PollEvents();
+    }
+
     public bool OnPresentFrame()
     {
-        eventHandler.PollEvents(() =>
-        {
-            renderStrategy.OnSessionEnd();
-        });
-        var shouldPresent = renderStrategy.OnPresentFrame();
-        return shouldPresent;
+        return renderStrategy.OnPresentFrame();
     }
 
     public bool ShouldRerunGameLoop()
@@ -69,21 +67,12 @@ public unsafe class VRSession(
 
     public void ExecuteCommands(FFXIVClientStructs.FFXIV.Client.Graphics.Kernel.ImmediateContext* context, int commandListId, Action executeOriginal)
     {
-        if (!State.SessionRunning)
-        {
-            executeOriginal();
-            return;
-        }
         renderStrategy.ExecuteCommands(context, commandListId, executeOriginal);
     }
 
-    // Test Cases
-    // * Dungeon start cutscene
-    // * Inn login/logout
-
     public void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
-        if (State.SessionRunning && renderStrategy.VRSessionData is VRSessionData phase)
+        if (renderStrategy.VRSessionData is VRSessionData phase)
         {
             var centerView = vrCamera.ComputeCenterView(phase.Views[Eye.Left.ToIndex()], phase.Views[Eye.Right.ToIndex()]);
             firstPersonManager.UpdateRotation(centerView.Pose.Orientation.ToQuaternion().GetYaw());
@@ -102,29 +91,23 @@ public unsafe class VRSession(
         {
             return;
         }
-        if (State.SessionRunning)
+        gameModifier.HideHeadMesh();
+
+        if (renderStrategy.VRSessionData is VRSessionData phase && EnableMotionTracking())
         {
-            if (firstPersonManager.IsFirstPerson)
-            {
-                gameModifier.HideHeadMesh();
-            }
+            var camera = gameState.GetCurrentCamera();
+            var position = camera->Position.ToVector3D();
+            var lookAt = camera->LookAtVector.ToVector3D();
 
-            if (renderStrategy.VRSessionData is VRSessionData phase && EnableMotionTracking())
+            var gameCamera = phase.GetGameCamera(vrCamera.CreateGameCamera);
+            if (gameCamera == null)
             {
-                var camera = gameState.GetCurrentCamera();
-                var position = camera->Position.ToVector3D();
-                var lookAt = camera->LookAtVector.ToVector3D();
-
-                var gameCamera = phase.GetGameCamera(vrCamera.CreateGameCamera);
-                if (gameCamera == null)
-                {
-                    return;
-                }
-                gameModifier.UpdateMotionControls(
-                    phase.VRInputData,
-                    vrSystem.RuntimeAdjustments,
-                    gameCamera.GetYRotation());
+                return;
             }
+            gameModifier.UpdateMotionControls(
+                phase.VRInputData,
+                vrSystem.RuntimeAdjustments,
+                gameCamera.GetYRotation());
         }
     }
 
@@ -139,50 +122,46 @@ public unsafe class VRSession(
 
     public void OnStartUI()
     {
-        if (State.SessionRunning)
-        {
-            renderStrategy.OnStartUI();
-        }
+        renderStrategy.OnStartUI();
     }
 
     public void OnStartUIRender(Eye? eye)
     {
-        if (State.SessionRunning)
-        {
-            renderStrategy.OnStartUIRender(eye);
-        }
+        renderStrategy.OnStartUIRender(eye);
     }
 
 
-    public void OnStartGameLoop()
+    public float OnStartGameLoop()
     {
         var ticks = gameClock.MarkFrame();
         firstPersonManager.Update();
-        if (State.SessionRunning)
+        return ticks;
+    }
+
+    public void PrepareFrame(float ticks)
+    {
+        logger.Trace("Starting cycle");
+        long predictedTime;
+        if (!configuration.AltFramePrediction)
         {
-            logger.Trace("Starting cycle");
-            long predictedTime;
-            if (!configuration.AltFramePrediction)
-            {
-                predictedTime = framePrediction.GetPredictedFrameTime();
-            }
-            else
-            {
-                predictedTime = framePrediction.GetAltPredictedFrameTime() ?? framePrediction.GetPredictedFrameTime();
-            }
+            predictedTime = framePrediction.GetPredictedFrameTime();
+        }
+        else
+        {
+            predictedTime = framePrediction.GetAltPredictedFrameTime() ?? framePrediction.GetPredictedFrameTime();
+        }
 
-            var views = vrSpace.LocateView(predictedTime);
-            var localSpaceHeight = configuration.MatchFloorPosition ? vrSpace.GetLocalSpaceHeight(predictedTime) : null;
-            var inputData = vrInputService.PollInput(predictedTime);
-            VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight, configuration.BodyTracking && inputData.HasBodyData());
-            vrUI.Update(views[0], ticks);
+        var views = vrSpace.LocateView(predictedTime);
+        var localSpaceHeight = configuration.MatchFloorPosition ? vrSpace.GetLocalSpaceHeight(predictedTime) : null;
+        var inputData = vrInputService.PollInput(predictedTime);
+        VRCameraMode cameraType = vrCamera.GetVRCameraType(localSpaceHeight, configuration.BodyTracking && inputData.HasBodyData());
+        vrUI.Update(views[0], ticks);
 
-            renderStrategy.PrepareCameraPhase(views, inputData, cameraType);
+        renderStrategy.PrepareCameraPhase(views, inputData, cameraType);
 
-            if (cameraType.ShouldLockCameraVerticalRotation)
-            {
-                gameModifier.ResetVerticalCameraRotation(0);
-            }
+        if (cameraType.ShouldLockCameraVerticalRotation)
+        {
+            gameModifier.ResetVerticalCameraRotation(0);
         }
     }
 
@@ -231,7 +210,7 @@ public unsafe class VRSession(
 
     public Vector3D<float>? GetPlayerHeadLookAtTarget(GameObject* gameObject, int attachBoneIndex)
     {
-        if (!State.SessionRunning || !gameModifier.IsHiddenHeadAttachBone(gameObject, attachBoneIndex))
+        if (!gameModifier.IsHiddenHeadAttachBone(gameObject, attachBoneIndex))
         {
             return null;
         }

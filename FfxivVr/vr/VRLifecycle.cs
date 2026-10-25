@@ -13,30 +13,32 @@ namespace FfxivVR;
 public unsafe class VRLifecycle(
         IServiceScopeFactory scopeFactory,
         Logger logger,
-        Configuration configuration,
-        Debugging debugging,
         ExceptionHandler exceptionHandler
 ) : IDisposable
 {
-    private IServiceScope? scope;
-    public VRSession? vrSession;
+    private VRStatus status = VRStatus.Off.Instance;
+
+    private VRSession? ActiveSession => (status as VRStatus.Active)?.Session;
+    private VRSession? RunningSession => (status as VRStatus.Running)?.Session;
 
     public void EnableVR()
     {
         exceptionHandler.ClearExceptions();
-        if (vrSession != null)
+        if (status is VRStatus.Active)
         {
             logger.Error("VR is already running");
             return;
         }
         logger.Info("Starting VR");
+        var scope = scopeFactory.CreateScope();
         try
         {
-            var scope = scopeFactory.CreateScope();
-            this.scope = scope;
-            vrSession = scope.ServiceProvider.GetRequiredService<VRSession>(); ;
-
-            vrSession.Initialize();
+            var session = scope.ServiceProvider.GetRequiredService<VRSession>();
+            session.Initialize();
+            lock (this)
+            {
+                status = new VRStatus.Idle(scope, session);
+            }
         }
         catch (Exception e)
         {
@@ -56,45 +58,79 @@ public unsafe class VRLifecycle(
             {
                 logger.Error($"Failed to start VR {e}");
             }
-            vrSession = null;
-            this.scope?.Dispose();
-            this.scope = null;
+            scope.Dispose();
         }
     }
 
     public bool IsEnabled()
     {
-        return vrSession != null;
+        return status is VRStatus.Active;
     }
+
     public void RequestStop()
     {
-        if (vrSession is VRSession session)
+        lock (this)
         {
-            session.State.SessionRunning = false;
-            session.State.Exiting = true;
+            if (status is VRStatus.RestartPending)
+            {
+                status = VRStatus.Off.Instance;
+            }
+            else
+            {
+                Stop(StopReason.UserRequested);
+            }
         }
     }
 
-    // Try and only call this in the PresetFrame call, so that all threads are synchronized and not executing concurrently otherwise it can crash
-    private void StopVR()
+    public void RequestRestart()
     {
-        if (vrSession != null)
+        lock (this)
         {
-            logger.Info("Stopping VR");
-            lock (this)
-            {
-                this.scope?.Dispose();
-                this.scope = null;
-            }
-            vrSession = null;
+            Stop(StopReason.Restart);
         }
+    }
+
+    public bool TakePendingRestart()
+    {
+        lock (this)
+        {
+            if (status is not VRStatus.RestartPending)
+            {
+                return false;
+            }
+            status = VRStatus.Off.Instance;
+            return true;
+        }
+    }
+
+    private void Stop(StopReason reason)
+    {
+        switch (status)
+        {
+            case VRStatus.Stopping { Reason: StopReason.Restart } restarting when reason is StopReason.UserRequested or StopReason.PluginUnloaded:
+                status = new VRStatus.Stopping(restarting.Scope, restarting.Session, reason);
+                break;
+            case VRStatus.Stopping:
+                break;
+            case VRStatus.Active active:
+                status = new VRStatus.Stopping(active.Scope, active.Session, reason);
+                break;
+        }
+    }
+
+    private void StopVR(VRStatus.Stopping stopping)
+    {
+        logger.Info("Stopping VR");
+        logger.Debug($"Stop reason: {stopping.Reason}");
+        stopping.Scope.Dispose();
+        status = stopping.Reason == StopReason.Restart ? VRStatus.RestartPending.Instance : VRStatus.Off.Instance;
     }
 
     public bool ShouldRerunGameLoop()
     {
         lock (this)
         {
-            return vrSession?.ShouldRerunGameLoop() ?? false;
+            return ActiveSession?.ShouldRerunGameLoop() ?? false;
         }
     }
 
@@ -102,41 +138,65 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            if (vrSession == null)
+            if (RunningSession is VRSession session)
             {
-                executeOriginal();
+                session.ExecuteCommands(context, commandListId, executeOriginal);
             }
             else
             {
-                vrSession.ExecuteCommands(context, commandListId, executeOriginal);
+                executeOriginal();
             }
         }
     }
 
-    // Returns whether we should call the original present function
-    // This point is synchronized between the render and game thread
     public bool OnPresentFrame()
     {
         lock (this)
         {
-            if (vrSession?.State?.Exiting == true || exceptionHandler.HasException())
+            if (exceptionHandler.HasException())
             {
-                StopVR();
+                Stop(StopReason.Exception);
             }
-            return vrSession?.OnPresentFrame() ?? true;
+            if (status is VRStatus.Active active and not VRStatus.Stopping)
+            {
+                status = active.Session.PollEvents() switch
+                {
+                    SessionEvent.Began => new VRStatus.Running(active.Scope, active.Session),
+                    SessionEvent.Ended => new VRStatus.Idle(active.Scope, active.Session),
+                    SessionEvent.Exited exited => new VRStatus.Stopping(active.Scope, active.Session, exited.Reason),
+                    _ => status,
+                };
+            }
+            switch (status)
+            {
+                case VRStatus.Stopping stopping:
+                    StopVR(stopping);
+                    return true;
+                case VRStatus.Running running:
+                    return running.Session.OnPresentFrame();
+                default:
+                    return true;
+            }
         }
     }
 
     public void Dispose()
     {
-        StopVR();
+        lock (this)
+        {
+            Stop(StopReason.PluginUnloaded);
+            if (status is VRStatus.Stopping stopping)
+            {
+                StopVR(stopping);
+            }
+        }
     }
 
     internal void UpdateCamera(FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera* camera)
     {
         lock (this)
         {
-            vrSession?.UpdateCamera(camera);
+            RunningSession?.UpdateCamera(camera);
         }
     }
 
@@ -144,19 +204,15 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            vrSession?.RecenterCamera();
+            ActiveSession?.RecenterCamera();
         }
     }
 
     internal void UpdateVisibility()
     {
-        if (debugging.HideHead)
-        {
-            scope?.ServiceProvider.GetRequiredService<GameModifier>().HideHeadMesh(force: true);
-        }
         lock (this)
         {
-            vrSession?.UpdateVisibility();
+            RunningSession?.UpdateVisibility();
         }
     }
 
@@ -164,7 +220,7 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            vrSession?.OnStartUI();
+            RunningSession?.OnStartUI();
         }
     }
 
@@ -172,7 +228,7 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            vrSession?.OnStartUIRender(eye);
+            RunningSession?.OnStartUIRender(eye);
         }
     }
 
@@ -182,12 +238,19 @@ public unsafe class VRLifecycle(
         {
             try
             {
-                vrSession?.OnStartGameLoop();
+                if (ActiveSession is VRSession session)
+                {
+                    var ticks = session.OnStartGameLoop();
+                    if (status is VRStatus.Running)
+                    {
+                        session.PrepareFrame(ticks);
+                    }
+                }
             }
             catch (FatalVRException e)
             {
-                logger.Info($"Encountered a fatal VR error ${e}");
-                RequestStop();
+                logger.Info($"Encountered a fatal VR error {e}");
+                Stop(StopReason.FatalError);
                 throw;
             }
         }
@@ -196,7 +259,7 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            return vrSession?.ComputeMousePosition(point);
+            return ActiveSession?.ComputeMousePosition(point);
         }
     }
 
@@ -204,16 +267,7 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            vrSession?.OnNamePlateUpdate(context, handlers);
-        }
-    }
-
-    internal void UpdateLetterboxing(LetterboxingExtended* internalLetterbox)
-    {
-        // Always enable regardless of VR
-        if (configuration.DisableCutsceneLetterbox)
-        {
-            scope?.ServiceProvider.GetRequiredService<GameModifier>().UpdateLetterboxing(internalLetterbox);
+            ActiveSession?.OnNamePlateUpdate(context, handlers);
         }
     }
 
@@ -221,7 +275,7 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            vrSession?.UpdateGamepad(gamepadInput);
+            RunningSession?.UpdateGamepad(gamepadInput);
         }
     }
 
@@ -229,7 +283,7 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            return vrSession?.GetTargetRay(camera, mouseX, mouseY);
+            return RunningSession?.GetTargetRay(camera, mouseX, mouseY);
         }
     }
 
@@ -237,7 +291,7 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            return vrSession?.ShouldDrawGameObject(shouldDraw, gameObject, cameraPosition, lookAtPosition) ?? shouldDraw;
+            return ActiveSession?.ShouldDrawGameObject(shouldDraw, gameObject, cameraPosition, lookAtPosition) ?? shouldDraw;
         }
     }
 
@@ -245,7 +299,7 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            return vrSession?.GetPlayerHeadLookAtTarget(gameObject, attachBoneIndex);
+            return RunningSession?.GetPlayerHeadLookAtTarget(gameObject, attachBoneIndex);
         }
     }
 
@@ -253,7 +307,7 @@ public unsafe class VRLifecycle(
     {
         lock (this)
         {
-            return vrSession?.ShouldDisableCameraVerticalFly() ?? false;
+            return ActiveSession?.ShouldDisableCameraVerticalFly() ?? false;
         }
     }
 }

@@ -5,8 +5,6 @@ public class VRStartStop(
     Transitions transitions
 )
 {
-    private bool restartPending = false;
-
     public void ToggleVR()
     {
         if (vrLifecycle.IsEnabled())
@@ -44,8 +42,8 @@ public class VRStartStop(
     {
         if (vrLifecycle.IsEnabled())
         {
-            StopVR();
-            restartPending = true;
+            vrLifecycle.RequestRestart();
+            transitions.PostStopVR();
         }
         else
         {
@@ -55,9 +53,8 @@ public class VRStartStop(
 
     public void Update()
     {
-        if (restartPending && !vrLifecycle.IsEnabled())
+        if (vrLifecycle.TakePendingRestart())
         {
-            restartPending = false;
             StartVR();
         }
     }

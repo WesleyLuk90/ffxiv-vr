@@ -54,7 +54,6 @@ public class DebugWindow : Window
                 if (tab)
                 {
                     ImGui.Checkbox("Trace Logging", ref debugging.Trace);
-                    ImGui.Checkbox("Force Hide Head", ref debugging.HideHead);
                     ImGui.Checkbox("Always Motion Controls", ref debugging.AlwaysMotionControls);
                     ImGui.Checkbox("Enable tracking in 3rd person", ref debugging.ForceTracking);
                     ImGui.InputInt("Index", ref debugging.Index);

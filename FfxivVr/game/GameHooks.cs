@@ -26,7 +26,8 @@ public unsafe class GameHooks(
     ISigScanner sigScanner,
     GameState gameState,
     Configuration configuration,
-    EndFrameDispatcher endFrameDispatcher
+    EndFrameDispatcher endFrameDispatcher,
+    LetterboxModifier letterboxModifier
 ) : IDisposable
 {
     /**
@@ -294,10 +295,7 @@ public unsafe class GameHooks(
     private Hook<UpdateLetterboxingDelegate>? UpdateLetterboxingHook = null;
     private nint UpdateLetterboxingDetour(LetterboxingExtended* internalLetterbox)
     {
-        exceptionHandler.FaultBarrier(() =>
-        {
-            vrLifecycle.UpdateLetterboxing(internalLetterbox);
-        });
+        letterboxModifier.UpdateLetterboxing(internalLetterbox);
         return UpdateLetterboxingHook!.Original(internalLetterbox);
     }
 

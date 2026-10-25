@@ -18,7 +18,6 @@ public class Debugging(
 
     public int Index = 0;
     public float Float = 0;
-    public bool HideHead = false;
     public bool AlwaysMotionControls = false;
     public bool Trace = false;
 
