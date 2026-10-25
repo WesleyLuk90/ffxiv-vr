@@ -14,7 +14,6 @@ public unsafe class AltEyeRenderStrategy(
     InputManager inputManager,
     VRState state,
     RenderPipelineInjector renderPipelineInjector,
-    FirstPersonManager firstPersonManager,
     VRCamera vrCamera,
     WaitFrameService waitFrameService
 ) : IRenderStrategy
@@ -34,7 +33,6 @@ public unsafe class AltEyeRenderStrategy(
         {
             logger.Trace($"Set {eye} camera matrix");
             var view = CurrentView(phase, phase.CameraMode.UseHeadMovement);
-            firstPersonManager.UpdateRotation(MathFactory.GetYaw(view.Pose.Orientation.ToQuaternion()));
             vrCamera.UpdateCamera(camera, phase.GetGameCamera(vrCamera.CreateGameCamera), phase.CameraMode, view);
         }
     }
