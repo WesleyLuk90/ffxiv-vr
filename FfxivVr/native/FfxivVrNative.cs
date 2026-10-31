@@ -11,7 +11,7 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
     private readonly string path = path;
     private readonly EndFrameDispatcher endFrameDispatcher = endFrameDispatcher;
     private nint handle;
-    private delegate* unmanaged<ID3D11DeviceContext*, uint, uint, void*, void*, byte*, bool> initFn;
+    private delegate* unmanaged<ID3D11DeviceContext*, uint, uint, void*, void*, void*, byte*, bool> initFn;
     private delegate* unmanaged<bool> shutdownFn;
     private delegate* unmanaged<bool, bool> setConfigFn;
     private delegate* unmanaged<uint, float*, float*, bool> setProjectionMatrixFn;
@@ -25,7 +25,7 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
     // the VR session (see ffxiv_vr_native_init's doc comment) - if the game reallocates either
     // render target while VR stays active (e.g. a resolution-scale or graphics-setting change),
     // Shutdown/Initialize must be called again to pick up the new pointer.
-    public bool Initialize(DxDeviceContext deviceContext, Vector2D<uint> size, void* compositionTexture, void* geometryTexture, string? logDirectory)
+    public bool Initialize(DxDeviceContext deviceContext, Vector2D<uint> size, void* compositionTexture, void* geometryTexture, void* gBufferTexture, string? logDirectory)
     {
         if (Initialized)
         {
@@ -37,12 +37,12 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
             var logDirectoryBytes = Encoding.UTF8.GetBytes(logDirectory + '\0');
             fixed (byte* pLogDirectory = logDirectoryBytes)
             {
-                Initialized = initFn(deviceContext.Context, size.X, size.Y, compositionTexture, geometryTexture, pLogDirectory);
+                Initialized = initFn(deviceContext.Context, size.X, size.Y, compositionTexture, geometryTexture, gBufferTexture, pLogDirectory);
             }
         }
         else
         {
-            Initialized = initFn(deviceContext.Context, size.X, size.Y, compositionTexture, geometryTexture, null);
+            Initialized = initFn(deviceContext.Context, size.X, size.Y, compositionTexture, geometryTexture, gBufferTexture, null);
         }
         if (Initialized)
         {
@@ -117,7 +117,7 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
             return;
         }
         handle = NativeLibrary.Load(path);
-        initFn = (delegate* unmanaged<ID3D11DeviceContext*, uint, uint, void*, void*, byte*, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_init");
+        initFn = (delegate* unmanaged<ID3D11DeviceContext*, uint, uint, void*, void*, void*, byte*, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_init");
         shutdownFn = (delegate* unmanaged<bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_shutdown");
         setConfigFn = (delegate* unmanaged<bool, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_config");
         setProjectionMatrixFn = (delegate* unmanaged<uint, float*, float*, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_projection_matrix");

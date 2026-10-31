@@ -54,6 +54,11 @@ public static unsafe class GameTextures
         return RenderTargetManager.Instance()->Unk68;
     }
 
+    public static Texture* GetGBufferTexture()
+    {
+        return RenderTargetManager.Instance()->GBuffers[0];
+    }
+
     internal static Cursor? GetCursorTexture()
     {
         var framework = Framework.Instance();
