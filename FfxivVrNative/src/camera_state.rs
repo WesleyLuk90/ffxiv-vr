@@ -1,4 +1,6 @@
-use crate::math::Mat4;
+use crate::math::{Mat4, Vec4};
+
+const UP: Vec4 = Vec4::new(0.0, 1.0, 0.0, 0.0);
 
 #[derive(Clone, Copy)]
 struct EyeRemap {
@@ -10,6 +12,7 @@ pub struct CameraState {
     eyes: [Option<EyeRemap>; 2],
     active_eye: Option<usize>,
     original_projection: Mat4,
+    original_view: Mat4,
     eye_projections: [Option<Mat4>; 2],
     eye_projections_prev: [Option<Mat4>; 2],
 }
@@ -20,6 +23,7 @@ impl CameraState {
             eyes: [None; 2],
             active_eye: None,
             original_projection: Mat4::IDENTITY,
+            original_view: Mat4::IDENTITY,
             eye_projections: [None; 2],
             eye_projections_prev: [None; 2],
         }
@@ -31,6 +35,23 @@ impl CameraState {
 
     pub fn set_original_projection(&mut self, projection: Mat4) {
         self.original_projection = projection;
+    }
+
+    pub fn set_original_view(&mut self, view: Mat4) {
+        self.original_view = view;
+    }
+
+    pub fn eye_screen_up(&self) -> Option<Vec4> {
+        self.active_remap().map(|remap| remap.view.transform(UP))
+    }
+
+    pub fn eye_world_up(&self) -> Option<Vec4> {
+        self.eye_view_from_world().map(|view| view.transform(UP))
+    }
+
+    pub fn eye_view_from_world(&self) -> Option<Mat4> {
+        self.active_remap()
+            .map(|remap| remap.view.mul(&self.original_view))
     }
 
     fn active_remap(&self) -> Option<EyeRemap> {
@@ -48,6 +69,11 @@ impl CameraState {
     pub fn eye_projection(&self) -> Option<Mat4> {
         self.active_remap()
             .map(|remap| self.remap_projection(&remap).mul(&remap.view))
+    }
+
+    pub fn eye_base_projection(&self) -> Option<Mat4> {
+        self.active_remap()
+            .map(|remap| self.remap_projection(&remap))
     }
 
     pub fn eye_screen_correction(&self) -> Option<Mat4> {

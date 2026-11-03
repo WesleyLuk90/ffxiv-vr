@@ -166,6 +166,7 @@ public unsafe class SinglePassRenderStrategy(
         if (RenderSessionData is VRSessionData render)
         {
             SetEyeProjections(render.Views);
+            ffxivVrNative.SetNameplateAnchors(render.NameplateAnchors);
         }
         ExecuteCommandsForEye(context, Eye.Left, executeOriginal);
         logger.Trace("ExecuteCommands replaying top-level call a second time");

@@ -108,6 +108,7 @@ pub fn modify_camera_parameters(buffer: &mut CameraParameters, camera: &mut Came
         return false;
     }
     camera.set_original_projection(buffer.a_main_view_to_projection_matrix.transpose());
+    camera.set_original_view(buffer.view_matrix());
     let Some(projection) = camera.eye_projection() else {
         return false;
     };

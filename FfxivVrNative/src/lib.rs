@@ -10,6 +10,7 @@ use simplelog::WriteLogger;
 use windows::Win32::Graphics::Direct3D11::{ID3D11Device, ID3D11DeviceContext};
 use windows::core::Interface;
 
+mod billboards;
 mod camera_state;
 mod eye_resources;
 mod hooks;
@@ -17,9 +18,10 @@ mod math;
 mod modifiers;
 mod shadow_buffers;
 
+use billboards::{Billboards, NameplateAnchor};
 use camera_state::CameraState;
 use eye_resources::EyeResources;
-use math::Mat4;
+use math::{Mat4, Vec4};
 use modifiers::Pass;
 use modifiers::sun_modifier::SunModifier;
 use shadow_buffers::ShadowBuffers;
@@ -40,6 +42,8 @@ struct AppState {
     current_pass: Option<Pass>,
     primary_draw_started: bool,
     corrected_footprint_buffer: Option<*mut c_void>,
+    billboards: Option<Billboards>,
+    nameplate_anchors: Vec<NameplateAnchor>,
 }
 
 unsafe impl Send for AppState {}
@@ -58,6 +62,7 @@ impl AppState {
         let ctx = unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw) }?;
         let device = unsafe { ctx.GetDevice() }.ok()?;
 
+        let billboards = Billboards::new(&device);
         Some(Self {
             device_context: context,
             device: device.clone(),
@@ -72,6 +77,8 @@ impl AppState {
             current_pass: None,
             primary_draw_started: false,
             corrected_footprint_buffer: None,
+            billboards,
+            nameplate_anchors: Vec::new(),
         })
     }
 }
@@ -247,6 +254,38 @@ pub extern "system" fn ffxiv_vr_native_set_active_eye(eye: i32) -> bool {
     app.corrected_footprint_buffer = None;
     hooks::sync_bound_views(app);
     accepted
+}
+
+/// # Safety
+/// `anchors`, if `count` is non-zero, must point to `count * 7` valid, readable `f32`s: each
+/// nameplate's UI-space x, y and depth, then its world-space x, y, z and w (w is 0 when the
+/// world position is unknown).
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn ffxiv_vr_native_set_nameplate_anchors(
+    anchors: *const f32,
+    count: u32,
+) -> bool {
+    let values = if anchors.is_null() || count == 0 {
+        &[][..]
+    } else {
+        unsafe { std::slice::from_raw_parts(anchors, count as usize * 7) }
+    };
+    let Some(mut guard) = lock_app() else {
+        return false;
+    };
+    let Some(app) = guard.as_mut() else {
+        return false;
+    };
+    app.nameplate_anchors.clear();
+    app.nameplate_anchors
+        .extend(values.chunks_exact(7).map(|anchor| NameplateAnchor {
+            screen: Vec4::new(anchor[0], anchor[1], anchor[2], 1.0),
+            world: (anchor[6] != 0.0).then(|| Vec4::new(anchor[3], anchor[4], anchor[5], 1.0)),
+        }));
+    if let Some(billboards) = app.billboards.as_mut() {
+        billboards.uploaded = None;
+    }
+    true
 }
 
 /// # Safety

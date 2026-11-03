@@ -30,10 +30,10 @@
       <Link>ffxiv_vr_native.dll</Link>
     </Content>
   </ItemGroup>
-  <Target Name="BuildFfxivVrNative" BeforeTargets="BeforeBuild">
+  <Target Name="BuildFfxivVrNative" BeforeTargets="BeforeBuild" DependsOnTargets="CompileShaders">
     <Exec Command="cargo build --release" WorkingDirectory="$(MSBuildThisFileDirectory)..\FfxivVrNative" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   </Target>
-  <Target Name="CompileShaders" Inputs="shaders\VertexShader.hlsl;shaders\PixelShader.hlsl" BeforeTargets="BeforeResGen" Outputs="shaders\VertexShader.cso;shaders\PixelShader.cso">
+  <Target Name="CompileShaders" Inputs="shaders\VertexShader.hlsl;shaders\PixelShader.hlsl;shaders\BillboardShader.hlsl" BeforeTargets="BeforeResGen" Outputs="shaders\VertexShader.cso;shaders\PixelShader.cso;shaders\BillboardShader.cso">
     <Exec Command="bash &quot;$(MSBuildThisFileDirectory)shaders/CompileShaders.sh&quot;" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)shaders\CompileShaders.ps1&quot;" WorkingDirectory="$(MSBuildThisFileDirectory)" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   </Target>
