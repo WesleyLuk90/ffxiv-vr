@@ -19,8 +19,12 @@ fn current_pass(
         let resource = render_target_resource(view)?;
         if resource == app.geometry_texture {
             Some(Pass::Geometry)
-        } else if resource == app.composition_texture && !depth_stencil_view.is_null() {
-            Some(Pass::Compositing)
+        } else if resource == app.composition_texture {
+            Some(if depth_stencil_view.is_null() {
+                Pass::Overlay
+            } else {
+                Pass::Compositing
+            })
         } else {
             None
         }

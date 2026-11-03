@@ -16,6 +16,9 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
     private delegate* unmanaged<bool, bool> setConfigFn;
     private delegate* unmanaged<uint, float*, float*, bool> setProjectionMatrixFn;
     private delegate* unmanaged<int, bool> setActiveEyeFn;
+    private delegate* unmanaged<float, bool, bool> setTargetCursorDepthFn;
+    private delegate* unmanaged<ID3D11RenderTargetView*, ID3D11RenderTargetView*, ID3D11DepthStencilView*, ID3D11DepthStencilView*, bool> setEyeSceneTargetsFn;
+    private delegate* unmanaged<ID3D11ShaderResourceView*, bool> setTargetCursorTextureFn;
     private delegate* unmanaged<bool> onFrameEndFn;
 
     public bool Initialized { get; private set; } = false;
@@ -94,6 +97,21 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
         return Initialized && setActiveEyeFn(eye?.ToIndex() ?? -1);
     }
 
+    public bool SetTargetCursorDepth(float depth, bool depthTested)
+    {
+        return Initialized && setTargetCursorDepthFn(depth, depthTested);
+    }
+
+    public bool SetTargetCursorTexture(ID3D11ShaderResourceView* shaderResourceView)
+    {
+        return Initialized && setTargetCursorTextureFn(shaderResourceView);
+    }
+
+    public bool SetEyeSceneTargets(ID3D11RenderTargetView* left, ID3D11RenderTargetView* right, ID3D11DepthStencilView* leftDepth, ID3D11DepthStencilView* rightDepth)
+    {
+        return Initialized && setEyeSceneTargetsFn(left, right, leftDepth, rightDepth);
+    }
+
     // Call once per real D3D Present.
     public bool OnFrameEnd()
     {
@@ -123,5 +141,8 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
         setProjectionMatrixFn = (delegate* unmanaged<uint, float*, float*, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_projection_matrix");
         setActiveEyeFn = (delegate* unmanaged<int, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_active_eye");
         onFrameEndFn = (delegate* unmanaged<bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_on_frame_end");
+        setTargetCursorDepthFn = (delegate* unmanaged<float, bool, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_target_cursor_depth");
+        setEyeSceneTargetsFn = (delegate* unmanaged<ID3D11RenderTargetView*, ID3D11RenderTargetView*, ID3D11DepthStencilView*, ID3D11DepthStencilView*, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_eye_scene_targets");
+        setTargetCursorTextureFn = (delegate* unmanaged<ID3D11ShaderResourceView*, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_target_cursor_texture");
     }
 }

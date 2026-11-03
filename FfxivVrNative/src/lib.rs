@@ -7,7 +7,9 @@ use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use log::LevelFilter;
 use simplelog::WriteLogger;
-use windows::Win32::Graphics::Direct3D11::{ID3D11Device, ID3D11DeviceContext};
+use windows::Win32::Graphics::Direct3D11::{
+    ID3D11DepthStencilView, ID3D11Device, ID3D11DeviceContext, ID3D11RenderTargetView,
+};
 use windows::core::Interface;
 
 mod camera_state;
@@ -16,6 +18,7 @@ mod hooks;
 mod math;
 mod modifiers;
 mod shadow_buffers;
+mod target_cursor;
 
 use camera_state::CameraState;
 use eye_resources::EyeResources;
@@ -23,6 +26,7 @@ use math::Mat4;
 use modifiers::Pass;
 use modifiers::sun_modifier::SunModifier;
 use shadow_buffers::ShadowBuffers;
+use target_cursor::{EyeSceneTarget, TargetCursor};
 
 struct AppState {
     device_context: *mut ID3D11DeviceContext,
@@ -39,6 +43,7 @@ struct AppState {
     gbuffer_texture: *mut c_void,
     current_pass: Option<Pass>,
     primary_draw_started: bool,
+    target_cursor: TargetCursor,
     corrected_footprint_buffer: Option<*mut c_void>,
 }
 
@@ -57,6 +62,7 @@ impl AppState {
         let raw = context as *mut c_void;
         let ctx = unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw) }?;
         let device = unsafe { ctx.GetDevice() }.ok()?;
+        let target_cursor = TargetCursor::new(&device);
 
         Some(Self {
             device_context: context,
@@ -71,6 +77,7 @@ impl AppState {
             gbuffer_texture,
             current_pass: None,
             primary_draw_started: false,
+            target_cursor,
             corrected_footprint_buffer: None,
         })
     }
@@ -111,6 +118,12 @@ fn lock_app() -> Option<AppGuard> {
     let guard = APP.lock().ok()?;
     APP_LOCKED.set(true);
     Some(AppGuard(guard))
+}
+
+fn with_app_mut(update: impl FnOnce(&mut AppState) -> bool) -> bool {
+    lock_app()
+        .and_then(|mut guard| guard.as_mut().map(update))
+        .unwrap_or(false)
 }
 
 static LOGGER_INIT: OnceLock<()> = OnceLock::new();
@@ -191,14 +204,10 @@ pub extern "system" fn ffxiv_vr_native_shutdown() -> bool {
 
 #[unsafe(no_mangle)]
 pub extern "system" fn ffxiv_vr_native_set_config(hooks_enabled: bool) -> bool {
-    let Some(mut guard) = lock_app() else {
-        return false;
-    };
-    let Some(app) = guard.as_mut() else {
-        return false;
-    };
-    app.hooks_enabled = hooks_enabled;
-    true
+    with_app_mut(|app| {
+        app.hooks_enabled = hooks_enabled;
+        true
+    })
 }
 
 /// # Safety
@@ -223,30 +232,67 @@ pub unsafe extern "system" fn ffxiv_vr_native_set_projection_matrix(
             None => return false,
         }
     };
-    let Some(mut guard) = lock_app() else {
-        return false;
-    };
-    let Some(app) = guard.as_mut() else {
-        return false;
-    };
-    app.camera.update_camera(eye as usize, view, projection)
+    with_app_mut(|app| app.camera.update_camera(eye as usize, view, projection))
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn ffxiv_vr_native_set_active_eye(eye: i32) -> bool {
-    let Some(mut guard) = lock_app() else {
-        return false;
+    with_app_mut(|app| {
+        let accepted = app.camera.set_active_eye(usize::try_from(eye).ok());
+        app.sun_modifier.reset();
+        app.primary_draw_started = false;
+        app.eye_resources.begin_pass();
+        app.corrected_footprint_buffer = None;
+        hooks::sync_bound_views(app);
+        accepted
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn ffxiv_vr_native_set_target_cursor_depth(
+    depth: f32,
+    depth_tested: bool,
+) -> bool {
+    with_app_mut(|app| {
+        app.target_cursor.set_depth(depth, depth_tested);
+        true
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn ffxiv_vr_native_set_target_cursor_texture(
+    shader_resource_view: *mut c_void,
+) -> bool {
+    with_app_mut(|app| {
+        app.target_cursor.set_texture(shader_resource_view);
+        true
+    })
+}
+
+/// # Safety
+/// `left` and `right` must each be null or a valid `ID3D11RenderTargetView*`, and `left_depth`
+/// and `right_depth` must each be null or a valid `ID3D11DepthStencilView*`.
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn ffxiv_vr_native_set_eye_scene_targets(
+    left: *mut c_void,
+    right: *mut c_void,
+    left_depth: *mut c_void,
+    right_depth: *mut c_void,
+) -> bool {
+    let views = [(left, left_depth), (right, right_depth)].map(|(color, depth)| {
+        Some(EyeSceneTarget {
+            color: unsafe { ID3D11RenderTargetView::from_raw_borrowed(&color) }?.clone(),
+            depth: unsafe { ID3D11DepthStencilView::from_raw_borrowed(&depth) }?.clone(),
+        })
+    });
+    let eye_targets = match views {
+        [Some(left), Some(right)] => Some([left, right]),
+        _ => None,
     };
-    let Some(app) = guard.as_mut() else {
-        return false;
-    };
-    let accepted = app.camera.set_active_eye(usize::try_from(eye).ok());
-    app.sun_modifier.reset();
-    app.primary_draw_started = false;
-    app.eye_resources.begin_pass();
-    app.corrected_footprint_buffer = None;
-    hooks::sync_bound_views(app);
-    accepted
+    with_app_mut(|app| {
+        app.target_cursor.set_eye_targets(eye_targets);
+        true
+    })
 }
 
 /// # Safety
@@ -259,19 +305,15 @@ unsafe fn read_mat4(matrix: *const f32) -> Option<Mat4> {
 
 #[unsafe(no_mangle)]
 pub extern "system" fn ffxiv_vr_native_on_frame_end() -> bool {
-    let Some(mut guard) = lock_app() else {
-        return false;
-    };
-    let Some(app) = guard.as_mut() else {
-        return false;
-    };
-    if let Err(err) = unsafe { app.device.GetDeviceRemovedReason() } {
-        log::error!(
-            "D3D11 device removed: {err} (0x{:08X})",
-            err.code().0 as u32
-        );
-    }
-    app.eye_resources.end_frame();
-    app.camera.end_frame();
-    true
+    with_app_mut(|app| {
+        if let Err(err) = unsafe { app.device.GetDeviceRemovedReason() } {
+            log::error!(
+                "D3D11 device removed: {err} (0x{:08X})",
+                err.code().0 as u32
+            );
+        }
+        app.eye_resources.end_frame();
+        app.camera.end_frame();
+        true
+    })
 }
