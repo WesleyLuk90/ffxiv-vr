@@ -243,6 +243,7 @@ public unsafe class ResolutionManager : IDisposable
                     SetWindowStyle(handle, originalStyle);
                 }
                 PInvoke.SetWindowPos(handle, NOTOPMOST, state.OriginalWindow.Origin.X, state.OriginalWindow.Origin.Y, state.OriginalWindow.Size.X, state.OriginalWindow.Size.Y, 0);
+                PInvoke.SendMessage(handle, ExitSizeMove, 0, 0);
             }
 
             var dx11DeviceInstance = Device.Instance();
