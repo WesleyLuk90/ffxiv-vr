@@ -28,6 +28,7 @@ public unsafe class SinglePassRenderStrategy(
     private Vector2D<uint>? pendingNativeSize;
     private nint lastCompositingTexture;
     private nint lastGeometryTexture;
+    private nint lastGBufferTexture;
 
     public void Initialize(Vector2D<uint> size)
     {
@@ -48,7 +49,8 @@ public unsafe class SinglePassRenderStrategy(
         }
         var compositingTexture = GameTextures.GetCompositingTexture();
         var geometryTexture = GameTextures.GetGeometryTexture();
-        if (compositingTexture == null || geometryTexture == null)
+        var gBufferTexture = GameTextures.GetGBufferTexture();
+        if (compositingTexture == null || geometryTexture == null || gBufferTexture == null)
         {
             return;
         }
@@ -62,9 +64,10 @@ public unsafe class SinglePassRenderStrategy(
         }
         var compositingPtr = (nint)compositingTexture->D3D11Texture2D;
         var geometryPtr = (nint)geometryTexture->D3D11Texture2D;
+        var gBufferPtr = (nint)gBufferTexture->D3D11Texture2D;
         if (ffxivVrNative.Initialized)
         {
-            if (compositingPtr == lastCompositingTexture && geometryPtr == lastGeometryTexture)
+            if (compositingPtr == lastCompositingTexture && geometryPtr == lastGeometryTexture && gBufferPtr == lastGBufferTexture)
             {
                 return;
             }
@@ -72,10 +75,11 @@ public unsafe class SinglePassRenderStrategy(
             ffxivVrNative.Shutdown();
         }
         logger.Debug($"Compositing/geometry textures resized to {size}, initializing native render");
-        if (ffxivVrNative.Initialize(dxDeviceContext, size, compositingTexture->D3D11Texture2D, geometryTexture->D3D11Texture2D, configuration.DumpDirectory))
+        if (ffxivVrNative.Initialize(dxDeviceContext, size, compositingTexture->D3D11Texture2D, geometryTexture->D3D11Texture2D, gBufferTexture->D3D11Texture2D, configuration.DumpDirectory))
         {
             lastCompositingTexture = compositingPtr;
             lastGeometryTexture = geometryPtr;
+            lastGBufferTexture = gBufferPtr;
         }
     }
 

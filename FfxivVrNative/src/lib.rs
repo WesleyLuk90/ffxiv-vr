@@ -36,7 +36,9 @@ struct AppState {
 
     geometry_texture: *mut c_void,
     composition_texture: *mut c_void,
+    gbuffer_texture: *mut c_void,
     current_pass: Option<Pass>,
+    primary_draw_started: bool,
     corrected_footprint_buffer: Option<*mut c_void>,
 }
 
@@ -50,6 +52,7 @@ impl AppState {
         context: *mut ID3D11DeviceContext,
         geometry_texture: *mut c_void,
         composition_texture: *mut c_void,
+        gbuffer_texture: *mut c_void,
     ) -> Option<Self> {
         let raw = context as *mut c_void;
         let ctx = unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw) }?;
@@ -65,7 +68,9 @@ impl AppState {
             eye_resources: EyeResources::default(),
             geometry_texture,
             composition_texture,
+            gbuffer_texture,
             current_pass: None,
+            primary_draw_started: false,
             corrected_footprint_buffer: None,
         })
     }
@@ -145,15 +150,21 @@ pub unsafe extern "system" fn ffxiv_vr_native_init(
     _height: u32,
     composition_texture: *mut c_void,
     geometry_texture: *mut c_void,
+    gbuffer_texture: *mut c_void,
     log_dir: *const u8,
 ) -> bool {
     init_logger(log_dir);
     if context.is_null() {
         return false;
     }
-    let Some(app_state) =
-        (unsafe { AppState::new(context, geometry_texture, composition_texture) })
-    else {
+    let Some(app_state) = (unsafe {
+        AppState::new(
+            context,
+            geometry_texture,
+            composition_texture,
+            gbuffer_texture,
+        )
+    }) else {
         return false;
     };
 
@@ -231,6 +242,7 @@ pub extern "system" fn ffxiv_vr_native_set_active_eye(eye: i32) -> bool {
     };
     let accepted = app.camera.set_active_eye(usize::try_from(eye).ok());
     app.sun_modifier.reset();
+    app.primary_draw_started = false;
     app.eye_resources.begin_pass();
     app.corrected_footprint_buffer = None;
     hooks::sync_bound_views(app);

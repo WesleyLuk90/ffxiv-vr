@@ -27,6 +27,16 @@ fn current_pass(
     })
 }
 
+fn binds_gbuffer(app: &AppState, num_views: u32, render_target_views: *mut *mut c_void) -> bool {
+    if render_target_views.is_null() || app.gbuffer_texture.is_null() {
+        return false;
+    }
+    let views = unsafe { std::slice::from_raw_parts(render_target_views, num_views as usize) };
+    views
+        .iter()
+        .any(|&view| render_target_resource(view) == Some(app.gbuffer_texture))
+}
+
 fn render_target_resource(view: *mut c_void) -> Option<*mut c_void> {
     let typed = unsafe { ID3D11RenderTargetView::from_raw_borrowed(&view) }?;
     let resource = unsafe { typed.GetResource() }.ok()?;
@@ -47,6 +57,9 @@ declare_hook!(
             |app, _unhooked| {
                 app.current_pass =
                     current_pass(app, num_views, render_target_views, depth_stencil_view);
+                if binds_gbuffer(app, num_views, render_target_views) {
+                    app.primary_draw_started = true;
+                }
                 let substituted = eye_views(
                     app,
                     ViewKind::RenderTarget,

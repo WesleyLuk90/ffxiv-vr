@@ -249,7 +249,7 @@ declare_hook!(
                     unhooked();
                     return;
                 };
-                if app.camera.has_active_eye() {
+                if app.camera.has_active_eye() && app.primary_draw_started {
                     let shadow =
                         unsafe { std::slice::from_raw_parts(data as *const u8, byte_width as usize) };
                     let scratch = app.shadow_buffers.load_scratch(shadow);
