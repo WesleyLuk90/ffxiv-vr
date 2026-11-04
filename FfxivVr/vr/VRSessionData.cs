@@ -13,6 +13,7 @@ public class VRSessionData(
     public VRCameraMode CameraMode = cameraMode;
     private GameCamera? GameCamera = null;
     public VRInputData VRInputData { get; } = vrInputData;
+    public NameplateAnchor[] NameplateAnchors = [];
 
     internal void ResetGameCamera()
     {

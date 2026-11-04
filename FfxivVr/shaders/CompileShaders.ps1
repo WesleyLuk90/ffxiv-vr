@@ -22,3 +22,6 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 & $fxc.FullName /Fo shaders\PixelShader.cso /T ps_5_0 .\shaders\PixelShader.hlsl
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+& $fxc.FullName /Fo shaders\BillboardShader.cso /T gs_5_0 .\shaders\BillboardShader.hlsl
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

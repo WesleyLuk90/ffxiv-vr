@@ -34,7 +34,8 @@ public unsafe class VRSession(
         DalamudRenderer dalamudRenderer,
     FirstPersonManager firstPersonManager,
     Debugging debugging,
-    ITargetManager targetManager
+    ITargetManager targetManager,
+    NameplateModifier nameplateModifier
 )
 {
     public void Initialize()
@@ -174,6 +175,10 @@ public unsafe class VRSession(
     public void OnNamePlateUpdate(INamePlateUpdateContext context, IReadOnlyList<INamePlateUpdateHandler> handlers)
     {
         gameModifier.OnNamePlateUpdate(context, handlers);
+        if (renderStrategy.VRSessionData is VRSessionData data)
+        {
+            data.NameplateAnchors = nameplateModifier.Anchors;
+        }
     }
 
     public void UpdateGamepad(PadDevice* padDevice)

@@ -1,6 +1,7 @@
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using System;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -17,6 +18,7 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
     private delegate* unmanaged<uint, float*, float*, bool> setProjectionMatrixFn;
     private delegate* unmanaged<int, bool> setActiveEyeFn;
     private delegate* unmanaged<bool> onFrameEndFn;
+    private delegate* unmanaged<float*, uint, bool> setNameplateAnchorsFn;
 
     public bool Initialized { get; private set; } = false;
     private bool renderHooksEnabled = true;
@@ -94,6 +96,18 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
         return Initialized && setActiveEyeFn(eye?.ToIndex() ?? -1);
     }
 
+    public bool SetNameplateAnchors(NameplateAnchor[] anchors)
+    {
+        if (!Initialized)
+        {
+            return false;
+        }
+        fixed (NameplateAnchor* pAnchors = anchors)
+        {
+            return setNameplateAnchorsFn((float*)pAnchors, (uint)anchors.Length);
+        }
+    }
+
     // Call once per real D3D Present.
     public bool OnFrameEnd()
     {
@@ -123,5 +137,9 @@ public unsafe class FfxivVrNative(string path, EndFrameDispatcher endFrameDispat
         setProjectionMatrixFn = (delegate* unmanaged<uint, float*, float*, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_projection_matrix");
         setActiveEyeFn = (delegate* unmanaged<int, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_active_eye");
         onFrameEndFn = (delegate* unmanaged<bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_on_frame_end");
+        setNameplateAnchorsFn = (delegate* unmanaged<float*, uint, bool>)NativeLibrary.GetExport(handle, "ffxiv_vr_native_set_nameplate_anchors");
     }
 }
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly record struct NameplateAnchor(Vector3 Screen, Vector4 World);
