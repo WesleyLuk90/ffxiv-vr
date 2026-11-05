@@ -61,6 +61,9 @@ impl SunModifier {
         let Some((u, v)) = eye_position(camera, position) else {
             return false;
         };
+        if let Some(roll) = eye_roll(camera) {
+            buffer.shape.y += roll;
+        }
         buffer.aspect_position.z = u;
         buffer.aspect_position.w = v;
         self.sun_position = Some(position);
@@ -111,6 +114,13 @@ fn uv_to_ndc((u, v): (f32, f32)) -> (f32, f32) {
 
 fn eye_position(camera: &CameraState, (u, v): (f32, f32)) -> Option<(f32, f32)> {
     reproject_uv(&camera.eye_screen_correction()?, u, v, 0.0)
+}
+
+const MIN_WORLD_UP_LENGTH: f32 = 1e-3;
+
+fn eye_roll(camera: &CameraState) -> Option<f32> {
+    let up = camera.eye_world_up()?;
+    (up.x.hypot(up.y) > MIN_WORLD_UP_LENGTH).then(|| up.x.atan2(up.y))
 }
 
 #[cfg(test)]
@@ -209,6 +219,57 @@ mod tests {
         assert!(modifier.modify_sun_param(&mut buffer, &camera));
         assert!(approximately(buffer.aspect_position.z, 0.617181));
         assert!(approximately(buffer.aspect_position.w, 0.321017));
+    }
+
+    fn rolled(angle: f32) -> Mat4 {
+        let mut matrix = Mat4::IDENTITY;
+        matrix.m11 = angle.cos();
+        matrix.m12 = -angle.sin();
+        matrix.m21 = angle.sin();
+        matrix.m22 = angle.cos();
+        matrix
+    }
+
+    fn rays_after(eye_view: Mat4, game_view: Mat4) -> f32 {
+        let mut camera = armed_camera(eye_view);
+        camera.set_original_view(game_view);
+        let mut modifier = SunModifier::default();
+        let mut buffer = sun();
+        assert!(modifier.modify_sun_param(&mut buffer, &camera));
+        assert_eq!(buffer.shape.x, 3.0);
+        buffer.shape.y
+    }
+
+    #[test]
+    fn level_view_leaves_rays_unchanged() {
+        assert!(approximately(
+            rays_after(Mat4::IDENTITY, Mat4::IDENTITY),
+            1.001611
+        ));
+    }
+
+    #[test]
+    fn rolled_game_camera_turns_rays() {
+        assert!(approximately(
+            rays_after(Mat4::IDENTITY, rolled(0.5)),
+            1.001611 - 0.5
+        ));
+    }
+
+    #[test]
+    fn rolled_eye_turns_rays() {
+        assert!(approximately(
+            rays_after(rolled(0.5), Mat4::IDENTITY),
+            1.001611 - 0.5
+        ));
+    }
+
+    #[test]
+    fn eye_without_game_view_leaves_rays_unchanged() {
+        assert!(approximately(
+            rays_after(rolled(0.5), Mat4::from_row_major(&[0.0; 16])),
+            1.001611
+        ));
     }
 
     #[test]
