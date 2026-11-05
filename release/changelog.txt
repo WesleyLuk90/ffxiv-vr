@@ -1,15 +1,21 @@
-# Add /vr restart command (#156)
+# Fix sun rotation (#169)
 
-# Fix HBAO deadlock from re-entrant hooks (#155)
+# Turn nameplates to face the eye (#168)
 
-# Cleanup footprints (#154)
+# Save resize (#167)
 
-# Refactor hook bodies (#153)
+# Fix portratis (#166)
 
-# Fix footprints (#152)
+# Refactor and cleanup (#164)
 
-# Fade improvements (#151)
+# Disable window resize and move (#163)
 
-# Split hooks (#150)
+# Fix head relative movement (#162)
 
-# Set eye projections from the rendered frame's views (#148)
+# Replace extended structs with ClientStructs equivalents (#161)
+
+# Fix window rendering (#160)
+
+# Fix first person toggle (#159)
+
+# Unscale dalamud (#157)
