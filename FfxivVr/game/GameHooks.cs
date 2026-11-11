@@ -1,3 +1,5 @@
+using Dalamud;
+using Dalamud.Common;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
@@ -69,9 +71,23 @@ public unsafe class GameHooks(
         InitializeHook(ExecuteCommandsHook, nameof(ExecuteCommandsHook));
         InitializeHook(RenderSkeletonListHook, nameof(RenderSkeletonListHook));
         InitializeHook(ProcessUICommandsAltHook, nameof(ProcessUICommandsAltHook));
-        if (!ModDetection.HasShaderMod())
+        var loadMethod = Service<Dalamud.Dalamud>.Get().StartInfo.LoadMethod;
+        if (loadMethod != LoadMethod.Entrypoint)
+        {
+            logger.Info($"Dalamud was loaded with {loadMethod}, the CreateDXGIFactory hook requires the Entrypoint load method");
+        }
+        var shaderModFiles = ModDetection.FindShaderModFiles();
+        if (shaderModFiles.Count == 0)
         {
             InitializeHook(CreateDXGIFactoryHook, nameof(CreateDXGIFactoryHook));
+            if (CreateDXGIFactoryHook != null)
+            {
+                logger.Debug("CreateDXGIFactory hook initialized");
+            }
+        }
+        else
+        {
+            logger.Info($"Skipping CreateDXGIFactory hook, found shader mod files {string.Join(", ", shaderModFiles)} in {ModDetection.GameDirectory}");
         }
         InitializeHook(MousePointScreenToClientHook, nameof(MousePointScreenToClientHook));
         InitializeHook(UpdateLetterboxingHook, nameof(UpdateLetterboxingHook));
@@ -81,6 +97,7 @@ public unsafe class GameHooks(
         InitializeHook(RMIFlyHook, nameof(RMIFlyHook));
         InitializeHook(GetAttachBoneWorldLocationHook, nameof(GetAttachBoneWorldLocationHook));
     }
+
     private void InitializeHook<T>(Hook<T>? hook, string name) where T : Delegate
     {
         if (hook == null)

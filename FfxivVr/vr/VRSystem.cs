@@ -31,7 +31,8 @@ public unsafe class VRSystem(
 
 
     public class FormFactorUnavailableException() : Exception("Form factor unavailable, make sure the headset is connected");
-    public class MissingDXHook() : Exception("DX Hook was not configured");
+    public class WaitForPluginsDisabled() : Exception("Dalamud 'Wait for plugins before game loads' is disabled");
+    public class StartupHookNotCalled() : Exception("CreateDXGIFactory startup hook was not called");
     public class ShaderModDetected() : Exception("Shader mod detected");
 
     private List<string> wantedExtensions = [
@@ -101,23 +102,17 @@ public unsafe class VRSystem(
             logger.Debug("Using OculusRuntimeAdjustments");
             RuntimeAdjustments = new OculusRuntimeAdjustments();
         }
-        if (runtimeName.Contains("SteamVR"))
+        if (runtimeName.Contains("SteamVR") && !hookStatus.IsHookAdded())
         {
+            if (ModDetection.HasShaderMod())
+            {
+                throw new ShaderModDetected();
+            }
             if (!dalamudConfiguration.IsResumeGameAfterPluginLoad)
             {
-                throw new MissingDXHook();
+                throw new WaitForPluginsDisabled();
             }
-            if (!hookStatus.IsHookAdded())
-            {
-                if (ModDetection.HasShaderMod())
-                {
-                    throw new ShaderModDetected();
-                }
-                else
-                {
-                    throw new MissingDXHook();
-                }
-            }
+            throw new StartupHookNotCalled();
         }
 
         var getInfo = new SystemGetInfo(next: null, formFactor: FormFactor.HeadMountedDisplay);
