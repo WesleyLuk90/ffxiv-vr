@@ -44,9 +44,11 @@
   <ItemGroup>
     <IgnoresAccessChecksTo Include="Dalamud" />
     <IgnoresAccessChecksTo Include="FFXIVClientStructs" />
-    <IgnoresAccessChecksToExcludeTypeName Include="Dalamud" />
     <IgnoresAccessChecksToExcludeTypeName Include="Dalamud.Injector" />
     <IgnoresAccessChecksToExcludeTypeName Include="Dalamud.Game.Framework" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Dalamud.Common" Private="false" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.8.0" PrivateAssets="all" />

@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace FfxivVR;
 
@@ -17,23 +20,21 @@ public static class ModDetection
         "dxgi.dll",
         "opengl32.dll"
     };
+
+    public static string GameDirectory => Path.GetDirectoryName(Environment.ProcessPath) ?? Directory.GetCurrentDirectory();
+
+    public static List<string> FindShaderModFiles()
+    {
+        if (CheckDisabled)
+        {
+            return [];
+        }
+        var gameDir = GameDirectory;
+        return ShaderModFiles.Where(file => File.Exists(Path.Combine(gameDir, file))).ToList();
+    }
+
     public static bool HasShaderMod()
     {
-        // If shader mod check is disabled in config, return false immediately
-        if (CheckDisabled == true)
-        {
-            return false;
-        }
-
-        var gameDir = Directory.GetCurrentDirectory();
-        foreach (var file in ShaderModFiles)
-        {
-            var filePath = Path.Combine(gameDir, file);
-            if (File.Exists(filePath))
-            {
-                return true;
-            }
-        }
-        return false;
+        return FindShaderModFiles().Count > 0;
     }
 }

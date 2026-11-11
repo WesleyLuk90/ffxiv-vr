@@ -50,9 +50,13 @@ public unsafe class VRLifecycle(
             {
                 logger.Error("GShade or ReShade is not supported using SteamVR. Either delete GShade/ReShade or use a different runtime.");
             }
-            else if (e is MissingDXHook)
+            else if (e is WaitForPluginsDisabled)
             {
                 logger.Error("SteamVR requires 'Dalamud Settings > Wait for plugins before game loads' to be enabled. Please enable the setting and restart the game.");
+            }
+            else if (e is StartupHookNotCalled)
+            {
+                logger.Error("SteamVR startup hook is missing. Please restart the game.");
             }
             else
             {
