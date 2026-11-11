@@ -3,7 +3,7 @@
     "Author": "Steelgunner90",
     "Name": "FFXIV VR",
     "InternalName": "FfxivVR",
-    "AssemblyVersion": "0.0.84.0",
+    "AssemblyVersion": "0.0.85.0",
     "Description": "A VR mod for FFXIV. Run /vr to open settings",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/WesleyLuk90/ffxiv-vr",
@@ -17,10 +17,10 @@
     "LoadPriority": 69420,
     "Punchline": "A VR mod for FFXIV",
     "AcceptsFeedback": true,
-    "Changelog": "# Fix sun rotation (#169)\r\n\r\n# Turn nameplates to face the eye (#168)\r\n\r\n# Save resize (#167)\r\n\r\n# Fix portratis (#166)\r\n\r\n# Refactor and cleanup (#164)\r\n\r\n# Disable window resize and move (#163)\r\n\r\n# Fix head relative movement (#162)\r\n\r\n# Replace extended structs with ClientStructs equivalents (#161)\r\n\r\n# Fix window rendering (#160)\r\n\r\n# Fix first person toggle (#159)\r\n\r\n# Unscale dalamud (#157)",
-    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.84/FfxivVR.zip",
-    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.84/FfxivVR.zip",
-    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.84/FfxivVR.zip",
-    "LastUpdated": 1793849075
+    "Changelog": "# Report why the SteamVR startup DXGI hook is missing (#170)",
+    "DownloadLinkInstall": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.85/FfxivVR.zip",
+    "DownloadLinkTesting": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.85/FfxivVR.zip",
+    "DownloadLinkUpdate": "https://github.com/WesleyLuk90/ffxiv-vr/releases/download/v0.0.85/FfxivVR.zip",
+    "LastUpdated": 1794381479
   }
 ]
