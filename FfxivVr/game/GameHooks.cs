@@ -403,7 +403,8 @@ public unsafe class GameHooks(
         RMIFlyHook.Original(self, result);
         exceptionHandler.FaultBarrier(() =>
         {
-            if (result->Up == 0 && result->Forward != 0 && vrLifecycle.ShouldDisableCameraVerticalFly())
+            var movingForward = result->Forward != 0 || FFXIVClientStructs.FFXIV.Client.Game.Control.InputManager.IsAutoRunning();
+            if (result->Up == 0 && movingForward && vrLifecycle.ShouldDisableCameraVerticalFly())
             {
                 // If this is non-zero then it overwrites the vertial movement so set it to a small value
                 result->Up = 0.0001f;
