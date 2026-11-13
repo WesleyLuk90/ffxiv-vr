@@ -1,9 +1,11 @@
+using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Silk.NET.Direct3D11;
 using Silk.NET.Maths;
 using Silk.NET.OpenXR;
 using System;
+using System.IO;
 using System.Numerics;
 
 namespace FfxivVR;
@@ -18,7 +20,8 @@ public unsafe class SinglePassRenderStrategy(
     FfxivVrNative ffxivVrNative,
     DxDeviceContext dxDeviceContext,
     Configuration configuration,
-    WaitFrameService waitFrameService
+    WaitFrameService waitFrameService,
+    IDalamudPluginInterface pluginInterface
 ) : IRenderStrategy, IDisposable
 {
     public VRSessionData? VRSessionData { get; private set; }
@@ -33,6 +36,10 @@ public unsafe class SinglePassRenderStrategy(
     public void Initialize(Vector2D<uint> size)
     {
         logger.Debug($"Configure VR with size {size}");
+        if (NativeLogDirectory() is string logDirectory)
+        {
+            logger.Info($"Debug log: {Path.Combine(logDirectory, "ffxiv_vr_native.log")}");
+        }
         pendingNativeSize = size;
     }
 
@@ -75,12 +82,21 @@ public unsafe class SinglePassRenderStrategy(
             ffxivVrNative.Shutdown();
         }
         logger.Debug($"Compositing/geometry textures resized to {size}, initializing native render");
-        if (ffxivVrNative.Initialize(dxDeviceContext, size, compositingTexture->D3D11Texture2D, geometryTexture->D3D11Texture2D, gBufferTexture->D3D11Texture2D, configuration.DumpDirectory))
+        if (ffxivVrNative.Initialize(dxDeviceContext, size, compositingTexture->D3D11Texture2D, geometryTexture->D3D11Texture2D, gBufferTexture->D3D11Texture2D, NativeLogDirectory()))
         {
             lastCompositingTexture = compositingPtr;
             lastGeometryTexture = geometryPtr;
             lastGBufferTexture = gBufferPtr;
         }
+    }
+
+    private string? NativeLogDirectory()
+    {
+        if (!configuration.EnableDebug)
+        {
+            return null;
+        }
+        return pluginInterface.ConfigDirectory.FullName;
     }
 
     public void PrepareCameraPhase(View[] views, VRInputData inputData, VRCameraMode cameraType)

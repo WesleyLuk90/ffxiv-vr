@@ -81,7 +81,7 @@ public class Configuration : IPluginConfiguration
     public bool AltFramePrediction = false;
     public bool UseSinglePassRender = false;
 
-    public string? DumpDirectory = null;
+    public bool EnableDebug = false;
 
     public uint? GetVRGameSetting(string id)
     {
