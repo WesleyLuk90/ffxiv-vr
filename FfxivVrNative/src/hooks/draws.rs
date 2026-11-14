@@ -1,121 +1,19 @@
 use super::buffer_updates::{FOOTPRINT_INSTANCES_SIZE, upload};
+use super::nameplates::{
+    bind_billboard, bind_billboard_shader, bound_screen_projection, unbind_billboard,
+};
 use super::*;
-use crate::billboards::{BillboardConstants, BillboardInputs};
 use crate::modifiers::Pass;
 use crate::modifiers::footprint_instances::{FootprintInstances, modify_footprint_instances};
-use crate::modifiers::projection_matrix::ProjectionMatrix;
-use windows::Win32::Graphics::Direct3D11::ID3D11Buffer;
+use crate::modifiers::projection_matrix::{
+    ProjectionMatrix, modify_target_cursor_projection_matrix,
+};
+use crate::target_cursor::TargetCursorDraw;
+use windows::Win32::Graphics::Direct3D11::{
+    ID3D11Buffer, ID3D11DepthStencilState, ID3D11DepthStencilView,
+};
 
 const FOOTPRINT_VERTEX_BUFFER_SLOTS: usize = 2;
-const QUAD_INDEX_COUNT: u32 = 6;
-const NAMEPLATE_VERTEX_STRIDE: u32 = 40;
-
-fn bound_screen_projection(
-    app: &AppState,
-    context: &ID3D11DeviceContext,
-) -> Option<(*mut c_void, ProjectionMatrix)> {
-    let mut buffers: [Option<ID3D11Buffer>; 1] = Default::default();
-    unsafe { context.VSGetConstantBuffers(0, Some(&mut buffers)) };
-    let resource = buffers[0].as_ref()?.as_raw();
-    let data = app.shadow_buffers.data(resource)?;
-    if data.len() != std::mem::size_of::<ProjectionMatrix>() {
-        return None;
-    }
-    let projection = unsafe { std::ptr::read_unaligned(data.as_ptr() as *const ProjectionMatrix) };
-    projection
-        .is_screen_projection_matrix()
-        .then_some((resource, projection))
-}
-
-fn has_nameplate_vertices(context: &ID3D11DeviceContext) -> bool {
-    let mut buffers: [Option<ID3D11Buffer>; 1] = Default::default();
-    let mut strides = [0u32; 1];
-    unsafe {
-        context.IAGetVertexBuffers(
-            0,
-            1,
-            Some(buffers.as_mut_ptr()),
-            Some(strides.as_mut_ptr()),
-            None,
-        )
-    };
-    buffers[0].is_some() && strides[0] == NAMEPLATE_VERTEX_STRIDE
-}
-
-fn has_geometry_shader(context: &ID3D11DeviceContext) -> bool {
-    let mut shader = None;
-    unsafe { context.GSGetShader(&mut shader, None, None) };
-    shader.is_some()
-}
-
-type GeometryConstants = [Option<ID3D11Buffer>; 1];
-
-fn bind_billboard(app: &mut AppState, index_count: u32) -> Option<GeometryConstants> {
-    if index_count % QUAD_INDEX_COUNT != 0
-        || app.current_pass != Some(Pass::Compositing)
-        || !app.camera.has_active_eye()
-    {
-        return None;
-    }
-    let raw_context = app.device_context as *mut c_void;
-    let context = unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw_context) }?;
-    let (_, screen) = bound_screen_projection(app, context)?;
-    if !has_nameplate_vertices(context) || has_geometry_shader(context) {
-        return None;
-    }
-    let inputs = BillboardInputs {
-        projection: app.camera.eye_base_projection()?,
-        clip_from_screen: app.camera.eye_screen_correction()?.mul(&screen.matrix),
-        view_from_world: app.camera.eye_view_from_world()?,
-        screen_up: app.camera.eye_screen_up()?,
-        world_up: app.camera.eye_world_up()?,
-    };
-    let billboards = app.billboards.as_mut()?;
-    if billboards.uploaded != Some(inputs) {
-        let constants = BillboardConstants::new(&inputs, &app.nameplate_anchors)?;
-        upload(
-            app.device_context,
-            billboards.constants.as_raw(),
-            0,
-            constants.as_bytes(),
-        );
-        billboards.uploaded = Some(inputs);
-    }
-    let mut saved = GeometryConstants::default();
-    unsafe {
-        context.GSGetConstantBuffers(0, Some(&mut saved));
-        context.GSSetShader(&billboards.shader, None);
-        context.GSSetConstantBuffers(0, Some(&[Some(billboards.constants.clone())]));
-    }
-    Some(saved)
-}
-
-fn unbind_billboard(context: *mut ID3D11DeviceContext, saved: GeometryConstants) {
-    let raw_context = context as *mut c_void;
-    let Some(context) = (unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw_context) }) else {
-        return;
-    };
-    unsafe {
-        context.GSSetShader(None, None);
-        context.GSSetConstantBuffers(0, Some(&saved));
-    }
-}
-
-declare_hook!(
-    draw_indexed,
-    12,
-    fn(context, index_count: u32, start_index_location: u32, base_vertex_location: i32) {
-        let saved = run_hook(
-            context,
-            |app, _unhooked| bind_billboard(app, index_count),
-            || None,
-        );
-        original(context, index_count, start_index_location, base_vertex_location);
-        if let Some(saved) = saved {
-            unbind_billboard(context, saved);
-        }
-    }
-);
 
 fn correct_bound_footprints(app: &mut AppState) {
     if !app.camera.has_active_eye() {
@@ -181,6 +79,148 @@ declare_hook!(
             start_index_location,
             base_vertex_location,
             start_instance_location,
+        );
+    }
+);
+
+struct SavedOutputMerger<'a> {
+    context: &'a ID3D11DeviceContext,
+    render_target_views: [Option<ID3D11RenderTargetView>; RENDER_TARGET_SLOT_COUNT],
+    depth_stencil_view: Option<ID3D11DepthStencilView>,
+    depth_stencil_state: Option<ID3D11DepthStencilState>,
+    stencil_ref: u32,
+}
+
+impl<'a> SavedOutputMerger<'a> {
+    fn capture(context: &'a ID3D11DeviceContext) -> Self {
+        let mut saved = Self {
+            context,
+            render_target_views: Default::default(),
+            depth_stencil_view: None,
+            depth_stencil_state: None,
+            stencil_ref: 0,
+        };
+        unsafe {
+            context.OMGetRenderTargets(
+                Some(&mut saved.render_target_views),
+                Some(&mut saved.depth_stencil_view),
+            )
+        };
+        unsafe {
+            context.OMGetDepthStencilState(
+                Some(&mut saved.depth_stencil_state),
+                Some(&mut saved.stencil_ref),
+            )
+        };
+        saved
+    }
+}
+
+impl Drop for SavedOutputMerger<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            self.context
+                .OMSetDepthStencilState(self.depth_stencil_state.as_ref(), self.stencil_ref)
+        };
+        let mut views = self.render_target_views.each_ref().map(|view| {
+            view.as_ref()
+                .map_or(std::ptr::null_mut(), Interface::as_raw)
+        });
+        om_set_render_targets::original(
+            self.context.as_raw().cast(),
+            RENDER_TARGET_SLOT_COUNT as u32,
+            views.as_mut_ptr(),
+            self.depth_stencil_view
+                .as_ref()
+                .map_or(std::ptr::null_mut(), Interface::as_raw),
+        );
+    }
+}
+
+fn samples_texture(context: &ID3D11DeviceContext, texture: *mut c_void) -> bool {
+    let mut textures: [Option<ID3D11ShaderResourceView>; 1] = Default::default();
+    unsafe { context.PSGetShaderResources(0, Some(&mut textures)) };
+    textures[0]
+        .as_ref()
+        .is_some_and(|view| view.as_raw() == texture)
+}
+
+fn draw_target_cursor(app: &mut AppState, draw: impl FnOnce()) -> Option<()> {
+    if app.current_pass != Some(Pass::Overlay) {
+        return None;
+    }
+    let cursor = app.target_cursor.draw_for_eye(app.camera.active_eye()?)?;
+    let raw_context = app.device_context as *mut c_void;
+    let context = unsafe { ID3D11DeviceContext::from_raw_borrowed(&raw_context) }?;
+    if !samples_texture(context, cursor.texture) {
+        return None;
+    }
+    let (projection_buffer, screen) = bound_screen_projection(app, context)?;
+    let scratch = app
+        .shadow_buffers
+        .load_scratch_from_shadow(projection_buffer)?;
+    let projection = unsafe { &mut *(scratch as *mut ProjectionMatrix) };
+    modify_target_cursor_projection_matrix(projection, &app.camera, cursor.depth).then_some(())?;
+    upload(
+        app.device_context,
+        projection_buffer,
+        0,
+        app.shadow_buffers.scratch(),
+    );
+    let saved = bind_billboard_shader(app, context, &screen);
+    draw_into(context, &cursor, draw);
+    if let Some(saved) = saved {
+        unbind_billboard(app.device_context, saved);
+    }
+    if let Some(original) = app.shadow_buffers.data(projection_buffer) {
+        upload(app.device_context, projection_buffer, 0, original);
+    }
+    Some(())
+}
+
+fn draw_into(context: &ID3D11DeviceContext, cursor: &TargetCursorDraw, draw: impl FnOnce()) {
+    let _saved = SavedOutputMerger::capture(context);
+    let mut eye_views = [cursor.eye_target.as_raw()];
+    om_set_render_targets::original(
+        context.as_raw().cast(),
+        1,
+        eye_views.as_mut_ptr(),
+        cursor
+            .depth_test
+            .as_ref()
+            .map_or(std::ptr::null_mut(), |depth_test| depth_test.view.as_raw()),
+    );
+    if let Some(depth_test) = &cursor.depth_test {
+        unsafe { context.OMSetDepthStencilState(&depth_test.state, 0) };
+    }
+    draw();
+}
+
+declare_hook!(
+    draw_indexed,
+    12,
+    fn(
+        context,
+        index_count: u32,
+        start_index_location: u32,
+        base_vertex_location: i32,
+    ) {
+        let draw = || {
+            original(context, index_count, start_index_location, base_vertex_location);
+        };
+        run_hook(
+            context,
+            |app, unhooked| {
+                if draw_target_cursor(app, draw).is_some() {
+                    return;
+                }
+                let saved = bind_billboard(app, index_count);
+                unhooked();
+                if let Some(saved) = saved {
+                    unbind_billboard(context, saved);
+                }
+            },
+            draw,
         );
     }
 );

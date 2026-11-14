@@ -50,6 +50,7 @@ mod buffer_updates;
 mod clears;
 mod copies;
 mod draws;
+mod nameplates;
 mod render_targets;
 mod shader_resources;
 
